@@ -1,0 +1,16 @@
+{
+  "name": "stream-overlays",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lightweight, self-hosted OBS overlays for streamers",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "serve": "node tools/serve.js"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

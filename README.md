@@ -17,6 +17,17 @@ Overlays are plain web pages used as OBS browser sources with a transparent back
 Overlays are configured through URL parameters of the browser source.
 Local configuration files are never committed: files named `*.config.json` or `*.local.json` are ignored by Git. Each one has a committed template next to it named `*.config.example.json`, which you copy and fill in.
 
+### Development
+Requires [Node.js](https://nodejs.org/) (LTS). The only dependency is the TypeScript compiler.
+
+```
+npm install
+npm run build    # compile src/ to web/scripts/ (or: npm run watch)
+npm run serve    # optional local test server at http://127.0.0.1:8080/
+```
+
+The diagnostics page `web/diagnostics/index.html` checks whether a browser source can load the overlays: ES modules, URL parameters, local files, the emote APIs and the anonymous Twitch chat connection. Add `?channel=yourname` to also test joining a channel.
+
 ### License
 [MIT](LICENSE)
 
@@ -34,6 +45,17 @@ Die Overlays sind einfache Webseiten, die als OBS-Browserquelle mit transparente
 ### Konfiguration
 Die Overlays werden über URL-Parameter der Browserquelle eingestellt.
 Lokale Konfigurationsdateien werden nie eingecheckt: Dateien mit der Endung `*.config.json` oder `*.local.json` ignoriert Git. Daneben liegt jeweils eine eingecheckte Vorlage `*.config.example.json`, die man kopiert und ausfüllt.
+
+### Entwicklung
+Voraussetzung ist [Node.js](https://nodejs.org/) (LTS). Einzige Abhängigkeit ist der TypeScript-Compiler.
+
+```
+npm install
+npm run build    # übersetzt src/ nach web/scripts/ (oder: npm run watch)
+npm run serve    # optionaler lokaler Testserver unter http://127.0.0.1:8080/
+```
+
+Die Diagnoseseite `web/diagnostics/index.html` prüft, ob eine Browserquelle die Overlays laden kann: ES-Module, URL-Parameter, lokale Dateien, die Emote-APIs und die anonyme Verbindung zum Twitch-Chat. Mit `?channel=deinname` wird zusätzlich das Betreten eines Kanals getestet.
 
 ### Lizenz
 [MIT](LICENSE)

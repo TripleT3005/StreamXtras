@@ -1,0 +1,79 @@
+/* Base */
+:root {
+  color-scheme: dark;
+  --color-text: #f2f2f2;
+  --color-muted: #b8b8b8;
+  --color-panel: rgb(20 20 24 / 80%);
+  --color-ok: #4ade80;
+  --color-failed: #f87171;
+  --color-pending: #facc15;
+}
+
+html,
+body {
+  margin: 0;
+  background: transparent;
+}
+
+body {
+  padding: 24px;
+  color: var(--color-text);
+  font: 16px/1.5 system-ui, sans-serif;
+}
+
+/* Layout */
+.panel {
+  max-width: 720px;
+  padding: 20px 24px;
+  border-radius: 12px;
+  background: var(--color-panel);
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+}
+
+p {
+  margin: 0 0 16px;
+  color: var(--color-muted);
+}
+
+/* Results */
+#results {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#results li {
+  display: grid;
+  grid-template-columns: 1.5em 14em 1fr;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+#results li::before {
+  font-weight: bold;
+}
+
+#results .ok::before {
+  content: "✓";
+  color: var(--color-ok);
+}
+
+#results .failed::before {
+  content: "✗";
+  color: var(--color-failed);
+}
+
+#results .pending::before {
+  content: "…";
+  color: var(--color-pending);
+}
+
+#results .failed .result {
+  color: var(--color-failed);
+}
