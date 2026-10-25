@@ -29,15 +29,26 @@ pub fn is_running(port: u16) -> bool {
 #[cfg(test)]
 mod tests {
     use std::net::TcpListener;
+    use std::path::PathBuf;
+    use std::sync::{Arc, Mutex};
 
     use super::*;
-    use crate::server;
+    use crate::config::Config;
+    use crate::events::EventBroadcaster;
+    use crate::server::{self, AppState};
 
     #[test]
     fn detects_a_running_instance() {
         let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
         let port = listener.local_addr().unwrap().port();
-        server::start(listener).unwrap();
+        let state = AppState {
+            port,
+            web_root: PathBuf::new(),
+            config_dir: PathBuf::new(),
+            config: Mutex::new(Config::default()),
+            events: EventBroadcaster::default(),
+        };
+        server::start(listener, Arc::new(state)).unwrap();
         assert!(is_running(port));
     }
 

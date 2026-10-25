@@ -1,0 +1,141 @@
+/* Base */
+:root {
+  color-scheme: dark;
+  --color-background: #18181b;
+  --color-surface: #26262c;
+  --color-border: #3a3a43;
+  --color-text: #efeff1;
+  --color-muted: #adadb8;
+  --color-accent: #9146ff;
+  --color-accent-hover: #a970ff;
+  --color-ok: #4ade80;
+  --color-error: #f87171;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 20px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font: 16px/1.5 system-ui, sans-serif;
+}
+
+h1,
+h2 {
+  margin: 0 0 8px;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 1.6rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+}
+
+a {
+  color: var(--color-accent-hover);
+}
+
+.muted {
+  margin: 0 0 12px;
+  color: var(--color-muted);
+}
+
+/* Layout */
+header {
+  margin-bottom: 24px;
+}
+
+section {
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+footer {
+  font-size: 0.9rem;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+/* Forms */
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+input,
+button {
+  font: inherit;
+  border-radius: 6px;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-accent-hover);
+  outline-offset: 1px;
+}
+
+button {
+  padding: 8px 16px;
+  border: 0;
+  background: var(--color-accent);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--color-accent-hover);
+}
+
+.status {
+  min-height: 1.5em;
+  margin: 8px 0 0;
+}
+
+.status.ok {
+  color: var(--color-ok);
+}
+
+.status.error {
+  color: var(--color-error);
+}
+
+/* Links */
+.links {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links li {
+  display: grid;
+  grid-template-columns: 8em 1fr auto;
+  gap: 8px;
+  align-items: center;
+}

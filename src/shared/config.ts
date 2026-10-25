@@ -1,32 +1,50 @@
+import { isRecord } from "./json.ts";
+
 // Types
 export type ConfigSource = Readonly<Record<string, unknown>>;
 
 // Loading
-export async function loadConfigSource(fileUrl: URL, search: string): Promise<ConfigSource> {
-  const fileValues = await loadConfigFile(fileUrl);
+export async function loadOverlaySettings(overlayId: string, search: string): Promise<ConfigSource> {
+  const storedValues = await fetchOverlaySettings(overlayId);
   const urlValues = Object.fromEntries(new URLSearchParams(search));
-  return { ...fileValues, ...urlValues };
+  return { ...storedValues, ...urlValues };
 }
 
-async function loadConfigFile(fileUrl: URL): Promise<ConfigSource> {
-  let response: Response;
+export async function fetchOverlaySettings(overlayId: string): Promise<ConfigSource> {
   try {
-    response = await fetch(fileUrl, { cache: "no-store" });
-  } catch {
+    const response = await fetch(settingsUrl(overlayId), { cache: "no-store" });
+    const data: unknown = response.ok ? await response.json() : null;
+    return isRecord(data) ? data : {};
+  } catch (error: unknown) {
+    console.error(`Loading the settings of ${overlayId} failed`, error);
     return {};
   }
-  if (!response.ok) {
-    return {};
-  }
-  const data: unknown = await response.json().catch((error: unknown) => {
-    console.error(`Invalid JSON in ${fileUrl.pathname}`, error);
-    return {};
+}
+
+export async function saveOverlaySettings(overlayId: string, settings: ConfigSource): Promise<void> {
+  const response = await fetch(settingsUrl(overlayId), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
   });
-  if (typeof data !== "object" || data === null || Array.isArray(data)) {
-    console.error(`${fileUrl.pathname} must contain a JSON object`);
-    return {};
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
   }
-  return data as ConfigSource;
+}
+
+export function subscribeToSettings(overlayId: string, listener: (settings: ConfigSource) => void): () => void {
+  const events = new EventSource("/api/events");
+  events.addEventListener("settings", (event: MessageEvent<string>) => {
+    const data: unknown = JSON.parse(event.data);
+    if (isRecord(data) && data["overlay"] === overlayId && isRecord(data["settings"])) {
+      listener(data["settings"]);
+    }
+  });
+  return () => events.close();
+}
+
+function settingsUrl(overlayId: string): string {
+  return `/api/overlays/${encodeURIComponent(overlayId)}/settings`;
 }
 
 // Readers

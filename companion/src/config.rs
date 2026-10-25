@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fmt;
 use std::fs;
 use std::io;
@@ -14,11 +15,15 @@ pub const DEFAULT_PORT: u16 = 47_820;
 #[serde(default, rename_all = "camelCase")]
 pub struct Config {
     pub port: u16,
+    pub overlays: BTreeMap<String, serde_json::Map<String, serde_json::Value>>,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Self { port: DEFAULT_PORT }
+        Self {
+            port: DEFAULT_PORT,
+            overlays: BTreeMap::new(),
+        }
     }
 }
 
@@ -138,11 +143,15 @@ mod tests {
     #[test]
     fn saves_and_reloads() {
         let directory = temporary_directory("save");
-        save(&directory, &Config { port: 40_000 }).unwrap();
-        assert_eq!(
-            load_or_create(&directory).unwrap().0,
-            Config { port: 40_000 }
-        );
+        let mut config = Config {
+            port: 40_000,
+            ..Config::default()
+        };
+        let mut settings = serde_json::Map::new();
+        settings.insert("channel".to_owned(), "test".into());
+        config.overlays.insert("chatbox".to_owned(), settings);
+        save(&directory, &config).unwrap();
+        assert_eq!(load_or_create(&directory).unwrap().0, config);
         fs::remove_dir_all(directory).unwrap();
     }
 }
