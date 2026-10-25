@@ -11,6 +11,7 @@ use crate::config::{self, Config};
 use crate::events::EventBroadcaster;
 use crate::http::{self, Method, ParseError, Request, Response};
 use crate::twitch::account::TwitchAccount;
+use crate::twitch::eventsub;
 use crate::twitch::helix::{HelixClient, HelixError};
 
 // Constants
@@ -86,6 +87,9 @@ fn route(request: &Request, state: &AppState) -> Outcome {
             .unwrap_or_else(|| twitch_status(&state.twitch.login())),
         (Method::Put, "/api/twitch/logout", _) => check_write_request(request, state)
             .unwrap_or_else(|| twitch_status(&state.twitch.logout())),
+        (Method::Put, "/api/alerts/test", _) => {
+            check_write_request(request, state).unwrap_or_else(|| send_test_alert(request, state))
+        }
         (Method::Get, _, Some(id)) => get_overlay_settings(state, id),
         (Method::Put, _, Some(id)) => put_overlay_settings(request, state, id),
         (Method::Get, _, None) if path.starts_with("/api/twitch/") => twitch_data(state, path),
@@ -161,6 +165,21 @@ fn put_overlay_settings(request: &Request, state: &AppState, id: &str) -> Respon
         &serde_json::json!({ "overlay": id, "settings": settings }),
     );
     Response::json(200, &settings)
+}
+
+// Alerts
+fn send_test_alert(request: &Request, state: &AppState) -> Response {
+    let kind = serde_json::from_slice::<serde_json::Value>(&request.body)
+        .ok()
+        .and_then(|body| body["type"].as_str().map(str::to_owned))
+        .unwrap_or_default();
+    match eventsub::test_alert(&kind) {
+        Some(alert) => {
+            state.events.publish("alert", &alert);
+            Response::json(200, &alert)
+        }
+        None => Response::text(400, "Unknown alert type"),
+    }
 }
 
 // Twitch
@@ -516,6 +535,53 @@ mod tests {
             404
         );
         assert_eq!(reply(&get("/api/twitch/unknown"), &test.state).status, 404);
+    }
+
+    #[test]
+    fn sends_test_alerts_from_the_settings_page_only() {
+        let test = test_state("test-alert");
+        let alerts = test.state.events.subscribe();
+        let origin = format!("http://127.0.0.1:{PORT}");
+        let sent = reply(
+            &put(
+                "/api/alerts/test",
+                &origin,
+                "application/json",
+                r#"{"type":"follow"}"#,
+            ),
+            &test.state,
+        );
+        assert_eq!(sent.status, 200);
+        assert!(alerts.try_recv().unwrap().starts_with(
+            "event: alert
+"
+        ));
+        assert_eq!(
+            reply(
+                &put(
+                    "/api/alerts/test",
+                    &origin,
+                    "application/json",
+                    r#"{"type":"raid"}"#
+                ),
+                &test.state
+            )
+            .status,
+            400
+        );
+        assert_eq!(
+            reply(
+                &put(
+                    "/api/alerts/test",
+                    "https://evil.example",
+                    "application/json",
+                    r#"{"type":"follow"}"#
+                ),
+                &test.state
+            )
+            .status,
+            403
+        );
     }
 
     #[test]

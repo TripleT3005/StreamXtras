@@ -240,6 +240,19 @@ pub mod tests {
                 .collect();
             self.next(format!("GET {url} {}", fields.join("; ")))
         }
+
+        fn post_json(
+            &self,
+            url: &str,
+            headers: &[(&str, &str)],
+            body: &str,
+        ) -> Result<HttpResponse, String> {
+            let fields: Vec<String> = headers
+                .iter()
+                .map(|(key, value)| format!("{key}: {value}"))
+                .collect();
+            self.next(format!("POST {url} {} {body}", fields.join("; ")))
+        }
     }
 
     #[test]
