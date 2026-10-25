@@ -422,10 +422,8 @@ mod tests {
     }
 
     fn fixture(name: &str, responses: &[(u16, &str)]) -> Fixture {
-        let directory = std::env::temp_dir().join(format!(
-            "stream-overlays-twitch-{name}-{}",
-            std::process::id()
-        ));
+        let directory =
+            std::env::temp_dir().join(format!("streamxtras-twitch-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir_all(&directory).unwrap();
         Fixture {

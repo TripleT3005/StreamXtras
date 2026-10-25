@@ -1,10 +1,10 @@
-# Stream Overlays
+# StreamXtras
 
 [English](#english) · [Deutsch](#deutsch)
 
 ## English
 
-Lightweight, self-hosted overlays for OBS as a free alternative to hosted overlay services.
+Lightweight, self-hosted extras for your stream in OBS – chat box, alerts and more – as a free alternative to hosted overlay services.
 A small companion app runs in the system tray, serves the overlays and a settings page on your computer and connects them to Twitch. No account with a third-party service, no tracking, no external fonts or scripts.
 
 > Work in progress. Not affiliated with or endorsed by Twitch, 7TV, BetterTTV or FrankerFaceZ. Twitch is a trademark of Twitch Interactive, Inc.
@@ -20,7 +20,7 @@ A small companion app runs in the system tray, serves the overlays and a setting
 2. Enter your Twitch channel in the settings.
 3. Copy the URL of the overlay (e.g. `http://127.0.0.1:47820/chatbox/`) and add it to OBS as a browser source with **Local file** unchecked.
 
-The companion app only listens on `127.0.0.1`. Its configuration lives outside the repository (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
+The companion app only listens on `127.0.0.1`. Its configuration lives outside the repository (Windows: `%APPDATA%\StreamXtras`, macOS: `~/Library/Application Support/StreamXtras`, Linux: `~/.config/streamxtras`).
 
 ### Twitch login
 For all Twitch badges, streamer icons in shared chat and later alerts, the companion app connects to the Twitch API. Log in on the settings page: Twitch opens with a code already filled in, you confirm, done. The login only grants read access (bits, channel point redemptions, subscriptions, followers), is renewed automatically and stays valid as long as the app runs at least once every 30 days. The token is stored only in `twitch-token.json` in the configuration folder and never leaves the companion app.
@@ -63,7 +63,7 @@ The diagnostics page (`/diagnostics/`) checks the emote APIs and the anonymous T
 
 ## Deutsch
 
-Schlanke, selbst betriebene Overlays für OBS als kostenlose Alternative zu gehosteten Overlay-Diensten.
+Schlanke, selbst betriebene Extras für deinen Stream in OBS – Chatbox, Alerts und mehr – als kostenlose Alternative zu gehosteten Overlay-Diensten.
 Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays und eine Einstellungsseite auf deinem Rechner aus und verbindet sie mit Twitch. Kein Konto bei einem Drittanbieter, kein Tracking, keine externen Schriften oder Skripte.
 
 > In Arbeit. Keine Verbindung zu Twitch, 7TV, BetterTTV oder FrankerFaceZ und nicht von ihnen unterstützt. Twitch ist eine Marke von Twitch Interactive, Inc.
@@ -79,7 +79,7 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 2. In den Einstellungen den eigenen Twitch-Kanal eintragen.
 3. Die URL des Overlays kopieren (z. B. `http://127.0.0.1:47820/chatbox/`) und in OBS als Browserquelle hinzufügen, **Lokale Datei** nicht anhaken.
 
-Die Begleit-Anwendung lauscht nur auf `127.0.0.1`. Ihre Konfiguration liegt außerhalb des Repos (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
+Die Begleit-Anwendung lauscht nur auf `127.0.0.1`. Ihre Konfiguration liegt außerhalb des Repos (Windows: `%APPDATA%\StreamXtras`, macOS: `~/Library/Application Support/StreamXtras`, Linux: `~/.config/streamxtras`).
 
 ### Twitch-Login
 Für alle Twitch-Badges, Streamer-Icons im geteilten Chat und später Alerts verbindet sich die Begleit-Anwendung mit der Twitch-API. Die Anmeldung erfolgt auf der Einstellungsseite: Twitch öffnet sich mit bereits eingetragenem Code, du bestätigst, fertig. Der Login gewährt nur Lesezugriff (Bits, Kanalpunkte-Einlösungen, Abos, Follower), wird automatisch erneuert und bleibt gültig, solange die Anwendung mindestens alle 30 Tage einmal läuft. Das Token liegt nur in `twitch-token.json` im Konfigurationsordner und verlässt die Begleit-Anwendung nie.
