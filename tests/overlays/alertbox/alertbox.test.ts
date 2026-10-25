@@ -100,6 +100,9 @@ describe("alert box settings", () => {
       assert.equal(readMediaReference({ value: invalid }, "value", "fallback"), "fallback");
     }
     assert.equal(mediaUrl("media/a-1.png"), "/media/a-1.png");
+    assert.equal(mediaUrl("assets/sounds/chime.wav"), "/assets/sounds/chime.wav");
     assert.equal(mediaUrl(""), null);
+    assert.equal(mediaUrl("javascript:alert(1)"), null);
+    assert.equal(mediaUrl("//evil.example/a.png"), null);
   });
 });

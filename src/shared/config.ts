@@ -84,15 +84,15 @@ export function readMediaReference(source: ConfigSource, key: string, fallback: 
   if (typeof value !== "string") {
     return fallback;
   }
-  const isValid =
-    value === "" ||
-    /^assets\/(sounds|images)\/[a-z0-9-]+\.(wav|svg)$/.test(value) ||
-    /^media\/[a-z0-9-]+\.(mp3|ogg|wav|png|gif|webp|jpg)$/.test(value);
-  return isValid ? value : fallback;
+  return value === "" || isMediaReference(value) ? value : fallback;
+}
+
+export function isMediaReference(value: string): boolean {
+  return /^assets\/(sounds|images)\/[a-z0-9-]+\.(wav|svg)$/.test(value) || /^media\/[a-z0-9-]+\.(mp3|ogg|wav|png|gif|webp|jpg)$/.test(value);
 }
 
 export function mediaUrl(reference: string): string | null {
-  return reference === "" ? null : `/${reference}`;
+  return isMediaReference(reference) ? `/${reference}` : null;
 }
 
 export function readStringList(source: ConfigSource, key: string, fallback: readonly string[]): readonly string[] {
