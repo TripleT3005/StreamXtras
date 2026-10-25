@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { chatboxSettings, readChatboxConfig } from "../../../src/overlays/chatbox/chatbox-config.ts";
-import { isTransparent, toFontFamily } from "../../../src/overlays/chatbox/chatbox-style.ts";
+import { isTransparent } from "../../../src/overlays/chatbox/chatbox-style.ts";
+import { toFontFamily } from "../../../src/shared/fonts.ts";
 import { defaultSettings } from "../../../src/shared/settings.ts";
 
 describe("chat box style helpers", () => {

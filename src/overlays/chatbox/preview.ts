@@ -1,6 +1,7 @@
 import type { EmoteLookup } from "../../shared/emotes/emote.ts";
 import { buildFragments } from "../../shared/emotes/fragments.ts";
 import type { AnnouncementColor, ChatBadge, ChatMessageEvent, EmotePlacement } from "../../shared/events.ts";
+import { onPreviewMessage, previewSettingsMessage } from "../../shared/preview-messages.ts";
 import { isRecord } from "../../shared/json.ts";
 import { hasStructuralChange } from "../../shared/settings.ts";
 import { normalizeChannel } from "../../shared/twitch/twitch-chat-source.ts";
@@ -25,7 +26,6 @@ interface DemoMessage {
 export type PreviewMode = "demo" | "live";
 
 // Constants
-export const previewMessageType = "streamxtras:preview-settings";
 const demoIntervalMs = 2500;
 const liveRestartDelayMs = 700;
 const initialMessageCount = 6;
@@ -47,9 +47,9 @@ const demoMessages: readonly DemoMessage[] = [
 // Preview
 export function startPreview(root: HTMLElement, container: HTMLElement, status: HTMLElement, mode: PreviewMode): void {
   const apply = mode === "live" ? createLivePreview(root, container, status) : createDemoPreview(root, container);
-  window.addEventListener("message", (event: MessageEvent<unknown>) => {
-    if (event.origin === location.origin && isRecord(event.data) && event.data["type"] === previewMessageType && isRecord(event.data["settings"])) {
-      apply(readChatboxConfig(event.data["settings"]));
+  onPreviewMessage(previewSettingsMessage, (data) => {
+    if (isRecord(data["settings"])) {
+      apply(readChatboxConfig(data["settings"]));
     }
   });
   apply(readChatboxConfig({}));

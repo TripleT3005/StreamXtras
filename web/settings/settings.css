@@ -264,6 +264,22 @@ button.secondary:hover {
   color: var(--color-error);
 }
 
+.media-thumbnail {
+  display: block;
+  width: 72px;
+  height: 72px;
+  margin-top: 8px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  object-fit: contain;
+  background: repeating-conic-gradient(#3a3a43 0 25%, #2a2a30 0 50%) 0 0 / 16px 16px;
+}
+
+.control button[hidden] {
+  display: none;
+}
+
 /* Preview */
 .preview-toolbar {
   display: flex;

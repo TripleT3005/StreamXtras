@@ -10,6 +10,7 @@ use std::time::Duration;
 use crate::config::{self, Config};
 use crate::events::EventBroadcaster;
 use crate::http::{self, Method, ParseError, Request, Response};
+use crate::media::{self, MediaError};
 use crate::twitch::account::TwitchAccount;
 use crate::twitch::eventsub;
 use crate::twitch::helix::{HelixClient, HelixError};
@@ -54,7 +55,7 @@ pub fn start(listener: TcpListener, state: Arc<AppState>) -> io::Result<()> {
 
 fn handle_connection(stream: &TcpStream, state: &AppState) {
     let _ = stream.set_read_timeout(Some(READ_TIMEOUT));
-    let outcome = match http::read_request(stream) {
+    let outcome = match http::read_request(stream, body_limit) {
         Ok(request) => route(&request, state),
         Err(ParseError::TooLarge) => Outcome::Reply(Response::text(413, "Request too large")),
         Err(ParseError::Malformed) => Outcome::Reply(Response::text(400, "Bad request")),
@@ -65,6 +66,14 @@ fn handle_connection(stream: &TcpStream, state: &AppState) {
             let _ = http::write_response(stream, &response);
         }
         Outcome::EventStream => stream_events(stream, state),
+    }
+}
+
+fn body_limit(path: &str) -> usize {
+    if path == "/api/media" {
+        http::MAX_UPLOAD_BYTES
+    } else {
+        http::MAX_BODY_BYTES
     }
 }
 
@@ -89,6 +98,17 @@ fn route(request: &Request, state: &AppState) -> Outcome {
             .unwrap_or_else(|| twitch_status(&state.twitch.logout())),
         (Method::Put, "/api/alerts/test", _) => {
             check_write_request(request, state).unwrap_or_else(|| send_test_alert(request, state))
+        }
+        (Method::Get, "/api/media", _) => Response::json(
+            200,
+            &serde_json::Value::Array(media::list(&state.config_dir)),
+        ),
+        (Method::Put, "/api/media", _) => upload_media(request, state),
+        (Method::Delete, _, _) if path.starts_with("/api/media/") => {
+            delete_media(request, state, &path["/api/media/".len()..])
+        }
+        (Method::Get, _, None) if path.starts_with("/media/") => {
+            serve_media(state, &path["/media/".len()..])
         }
         (Method::Get, _, Some(id)) => get_overlay_settings(state, id),
         (Method::Put, _, Some(id)) => put_overlay_settings(request, state, id),
@@ -165,6 +185,77 @@ fn put_overlay_settings(request: &Request, state: &AppState, id: &str) -> Respon
         &serde_json::json!({ "overlay": id, "settings": settings }),
     );
     Response::json(200, &settings)
+}
+
+// Media
+fn upload_media(request: &Request, state: &AppState) -> Response {
+    if !is_local_origin(request.header("origin"), state.port, "http://") {
+        return Response::text(403, "Forbidden");
+    }
+    let name = request
+        .query
+        .split('&')
+        .find_map(|pair| pair.strip_prefix("name="))
+        .map_or_else(|| "file".to_owned(), percent_decode);
+    match media::store(&state.config_dir, &name, &request.body) {
+        Ok(stored) => Response::json(201, &stored),
+        Err(MediaError::UnsupportedFormat) => Response::text(
+            415,
+            "Supported formats: MP3, OGG, WAV, PNG, GIF, WebP, JPEG",
+        ),
+        Err(error) => {
+            eprintln!("Saving media failed: {error}");
+            Response::text(500, "Saving the file failed")
+        }
+    }
+}
+
+fn percent_decode(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        let hex = bytes
+            .get(index + 1..index + 3)
+            .and_then(|pair| std::str::from_utf8(pair).ok())
+            .and_then(|pair| u8::from_str_radix(pair, 16).ok());
+        match (bytes[index], hex) {
+            (b'%', Some(byte)) => {
+                decoded.push(byte);
+                index += 3;
+            }
+            (b'+', _) => {
+                decoded.push(b' ');
+                index += 1;
+            }
+            (byte, _) => {
+                decoded.push(byte);
+                index += 1;
+            }
+        }
+    }
+    String::from_utf8_lossy(&decoded).into_owned()
+}
+
+fn delete_media(request: &Request, state: &AppState, file: &str) -> Response {
+    if !is_local_origin(request.header("origin"), state.port, "http://") {
+        return Response::text(403, "Forbidden");
+    }
+    match media::delete(&state.config_dir, file) {
+        Ok(()) => Response::new(204, "text/plain; charset=utf-8", ""),
+        Err(MediaError::NotFound) => Response::text(404, "Not found"),
+        Err(error) => {
+            eprintln!("Deleting media failed: {error}");
+            Response::text(500, "Deleting the file failed")
+        }
+    }
+}
+
+fn serve_media(state: &AppState, file: &str) -> Response {
+    match media::read(&state.config_dir, file) {
+        Ok((bytes, content_type)) => Response::new(200, content_type, bytes),
+        Err(_) => Response::text(404, "Not found"),
+    }
 }
 
 // Alerts
@@ -261,6 +352,10 @@ fn content_type(path: &Path) -> &'static str {
         Some("webp") => "image/webp",
         Some("gif") => "image/gif",
         Some("ico") => "image/x-icon",
+        Some("jpg") => "image/jpeg",
+        Some("wav") => "audio/wav",
+        Some("mp3") => "audio/mpeg",
+        Some("ogg") => "audio/ogg",
         Some("woff2") => "font/woff2",
         _ => "application/octet-stream",
     }
@@ -342,7 +437,7 @@ mod tests {
     }
 
     fn request(raw: &str) -> Request {
-        http::read_request(raw.as_bytes()).unwrap()
+        http::read_request(raw.as_bytes(), body_limit).unwrap()
     }
 
     fn get(path: &str) -> Request {
@@ -582,6 +677,79 @@ mod tests {
             .status,
             403
         );
+    }
+
+    fn upload(origin: &str, name: &str, body: &[u8]) -> Request {
+        let mut raw = format!(
+            "PUT /api/media?name={name} HTTP/1.1\r\nHost: 127.0.0.1:{PORT}\r\nOrigin: {origin}\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n",
+            body.len()
+        )
+        .into_bytes();
+        raw.extend_from_slice(body);
+        http::read_request(raw.as_slice(), body_limit).unwrap()
+    }
+
+    #[test]
+    fn uploads_lists_serves_and_deletes_media() {
+        let test = test_state("media");
+        let origin = format!("http://127.0.0.1:{PORT}");
+        let png = b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR";
+        let uploaded = reply(&upload(&origin, "My%20Image.png", png), &test.state);
+        assert_eq!(uploaded.status, 201);
+        let stored: serde_json::Value = serde_json::from_slice(&uploaded.body).unwrap();
+        let file = stored["file"].as_str().unwrap().to_owned();
+        assert!(file.starts_with("my-image-"));
+
+        let listed = reply(&get("/api/media"), &test.state);
+        assert!(String::from_utf8(listed.body).unwrap().contains(&file));
+        let served = reply(&get(&format!("/media/{file}")), &test.state);
+        assert_eq!(
+            (served.status, served.content_type, served.body.as_slice()),
+            (200, "image/png", &png[..])
+        );
+
+        let delete = request(&format!(
+            "DELETE /api/media/{file} HTTP/1.1\r\nHost: 127.0.0.1:{PORT}\r\nOrigin: {origin}\r\n\r\n"
+        ));
+        assert_eq!(reply(&delete, &test.state).status, 204);
+        assert_eq!(
+            reply(&get(&format!("/media/{file}")), &test.state).status,
+            404
+        );
+    }
+
+    #[test]
+    fn rejects_unsafe_media_requests() {
+        let test = test_state("media-reject");
+        let origin = format!("http://127.0.0.1:{PORT}");
+        assert_eq!(
+            reply(
+                &upload(&origin, "x.svg", b"<svg onload=alert(1)>"),
+                &test.state
+            )
+            .status,
+            415
+        );
+        assert_eq!(
+            reply(
+                &upload("https://evil.example", "x.png", b"\x89PNG\r\n\x1a\n"),
+                &test.state
+            )
+            .status,
+            403
+        );
+        assert_eq!(
+            reply(&get("/media/..%2Fconfig.json"), &test.state).status,
+            404
+        );
+        assert_eq!(
+            reply(&get("/media/twitch-token.json"), &test.state).status,
+            404
+        );
+        let foreign_delete = request(&format!(
+            "DELETE /api/media/a-1.png HTTP/1.1\r\nHost: 127.0.0.1:{PORT}\r\nOrigin: https://evil.example\r\n\r\n"
+        ));
+        assert_eq!(reply(&foreign_delete, &test.state).status, 403);
     }
 
     #[test]

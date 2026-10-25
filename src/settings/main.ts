@@ -1,10 +1,10 @@
-import { chatboxOverlayId, chatboxSettings, readChatboxConfig } from "../overlays/chatbox/chatbox-config.ts";
-import { previewMessageType } from "../overlays/chatbox/preview.ts";
-import { fetchOverlaySettings, saveOverlaySettings, type ConfigSource } from "../shared/config.ts";
+import { alertboxOverlayId, alertboxSettings } from "../overlays/alertbox/alertbox-config.ts";
+import { chatboxOverlayId, chatboxSettings } from "../overlays/chatbox/chatbox-config.ts";
 import { isRecord } from "../shared/json.ts";
-import { defaultSettings } from "../shared/settings.ts";
+import { postPreviewMessage, previewAlertMessage } from "../shared/preview-messages.ts";
 import { normalizeChannel } from "../shared/twitch/twitch-chat-source.ts";
-import { createSettingsForm, type FormValues } from "./settings-form.ts";
+import { MediaLibrary } from "./media-library.ts";
+import { createOverlayEditor } from "./overlay-editor.ts";
 import { setupTwitchAccount } from "./twitch-account.ts";
 
 // Types
@@ -14,7 +14,10 @@ interface OverlayLink {
 }
 
 // Constants
-const overlayLinks: readonly OverlayLink[] = [{ name: "Chat box", path: "/chatbox/" }];
+const overlayLinks: readonly OverlayLink[] = [
+  { name: "Chat box", path: "/chatbox/" },
+  { name: "Alert box", path: "/alertbox/" },
+];
 
 // Elements
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -22,6 +25,17 @@ function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
   if (!(element instanceof type)) {
     throw new Error(`Element #${id} is missing`);
   }
+  return element;
+}
+
+function button(label: string, className: string, onClick: () => void): HTMLButtonElement {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.textContent = label;
+  if (className !== "") {
+    element.className = className;
+  }
+  element.addEventListener("click", onClick);
   return element;
 }
 
@@ -47,130 +61,84 @@ function renderOverlayLink(overlay: OverlayLink): HTMLLIElement {
   const item = document.createElement("li");
   const name = document.createElement("span");
   const url = document.createElement("input");
-  const copy = document.createElement("button");
-
   name.textContent = overlay.name;
   url.readOnly = true;
   url.value = new URL(overlay.path, location.origin).href;
   url.setAttribute("aria-label", `${overlay.name} URL`);
   url.addEventListener("focus", () => url.select());
-  copy.type = "button";
-  copy.className = "secondary";
-  copy.textContent = "Copy";
-  copy.addEventListener("click", () => {
+  const copy = button("Copy", "secondary", () => {
     void navigator.clipboard.writeText(url.value).then(() => {
       copy.textContent = "Copied";
       setTimeout(() => (copy.textContent = "Copy"), 1500);
     });
   });
-
   item.append(name, url, copy);
   return item;
 }
 
-// Chat box settings
-async function setupChatboxSettings(): Promise<void> {
-  const formContainer = getElement("chatbox-form", HTMLFormElement);
-  const fieldsContainer = getElement("chatbox-fields", HTMLDivElement);
-  const saveButton = getElement("chatbox-save", HTMLButtonElement);
-  const resetButton = getElement("chatbox-reset", HTMLButtonElement);
-  const status = getElement("chatbox-status", HTMLParagraphElement);
-  const frame = getElement("chatbox-preview", HTMLIFrameElement);
-  const stage = getElement("chatbox-stage", HTMLDivElement);
-  const livePreview = getElement("chatbox-live-preview", HTMLInputElement);
-
-  let stored: ConfigSource = await fetchOverlaySettings(chatboxOverlayId);
-  let savedValues = JSON.stringify(readChatboxConfig(stored));
-  let previewScheduled = false;
-
-  const form = createSettingsForm(chatboxSettings, "chatbox", () => {
-    updateDirtyState();
-    schedulePreview();
-  });
-  fieldsContainer.replaceChildren(form.element);
-  form.setValues(readChatboxConfig(stored));
-
-  const currentConfig = (): ReturnType<typeof readChatboxConfig> => readChatboxConfig(form.values());
-
-  const updateDirtyState = (): void => {
-    const isDirty = JSON.stringify(currentConfig()) !== savedValues;
-    saveButton.disabled = !isDirty;
-    if (isDirty) {
-      showStatus(status, "", "Unsaved changes. The preview already shows them.");
-    }
-  };
-
-  const updatePreview = (): void => {
-    previewScheduled = false;
-    const config = currentConfig();
-    const scale = Math.min(1, stage.clientWidth / config.width);
-    frame.style.width = `${config.width}px`;
-    frame.style.height = `${config.height}px`;
-    frame.style.transform = `scale(${scale})`;
-    stage.style.height = `${Math.ceil(config.height * scale)}px`;
-    frame.contentWindow?.postMessage({ type: previewMessageType, settings: config }, location.origin);
-  };
-
-  const schedulePreview = (): void => {
-    if (!previewScheduled) {
-      previewScheduled = true;
-      setTimeout(updatePreview, 0);
-    }
-  };
-
-  formContainer.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const values: FormValues = form.values();
-    const channel = normalizeChannel(typeof values["channel"] === "string" ? values["channel"] : "");
-    if (channel === null) {
-      showStatus(status, "error", "Please enter a valid Twitch channel name.");
-      return;
-    }
-    const updated = { ...stored, ...currentConfig(), channel };
-    saveOverlaySettings(chatboxOverlayId, updated).then(
-      () => {
-        stored = updated;
-        savedValues = JSON.stringify(readChatboxConfig(stored));
-        form.setValues(readChatboxConfig(stored));
-        saveButton.disabled = true;
-        showStatus(status, "ok", "Saved. Open chat boxes in OBS update automatically.");
-      },
-      (error: unknown) => showStatus(status, "error", `Saving failed: ${error instanceof Error ? error.message : String(error)}`),
-    );
+// Editors
+async function setupChatboxEditor(media: MediaLibrary): Promise<void> {
+  const editor = await createOverlayEditor({
+    container: getElement("chatbox-editor", HTMLElement),
+    title: "Chat box",
+    overlayId: chatboxOverlayId,
+    schema: chatboxSettings,
+    previewPath: "/chatbox/?preview",
+    media,
+    keepOnReset: ["channel"],
+    prepareSave: (values) => {
+      const channel = normalizeChannel(values.channel);
+      return channel === null ? "Please enter a valid Twitch channel name." : { ...values, channel };
+    },
   });
 
-  resetButton.addEventListener("click", () => {
-    form.setValues({ ...defaultSettings(chatboxSettings), channel: currentConfig().channel });
-    updateDirtyState();
-    schedulePreview();
-  });
-
-  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-preview-background]")) {
-    button.addEventListener("click", () => {
-      stage.dataset["background"] = button.dataset["previewBackground"] ?? "checkered";
-      for (const other of document.querySelectorAll("[data-preview-background]")) {
-        other.setAttribute("aria-pressed", String(other === button));
-      }
-    });
-  }
-
-  const loadPreview = (): void => {
-    frame.src = livePreview.checked ? "/chatbox/?preview=live" : "/chatbox/?preview";
-  };
-  livePreview.addEventListener("change", loadPreview);
-  frame.addEventListener("load", schedulePreview);
-  new ResizeObserver(schedulePreview).observe(stage);
-  loadPreview();
-  saveButton.disabled = true;
+  const toggle = document.createElement("label");
+  toggle.className = "toggle";
+  toggle.title = "Shows the real chat of the entered channel instead of sample messages";
+  const live = document.createElement("input");
+  live.type = "checkbox";
+  live.addEventListener("change", () => editor.setPreviewPath(live.checked ? "/chatbox/?preview=live" : "/chatbox/?preview"));
+  toggle.append(live, " Live chat");
+  editor.toolbar.append(toggle);
 }
 
-function showStatus(target: HTMLElement, kind: "" | "ok" | "error", message: string): void {
-  target.className = `status ${kind}`.trim();
-  target.textContent = message;
+async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
+  const editor = await createOverlayEditor({
+    container: getElement("alertbox-editor", HTMLElement),
+    title: "Alert box",
+    overlayId: alertboxOverlayId,
+    schema: alertboxSettings,
+    previewPath: "/alertbox/?preview",
+    media,
+  });
+
+  const showInPreview = button("Show in preview", "secondary", () => postPreviewMessage(editor.frame, previewAlertMessage));
+  const sendTest = button("Send test alert", "secondary", () => {
+    fetch("/api/alerts/test", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "follow" }),
+    }).then(
+      (response) =>
+        response.ok
+          ? editor.showStatus("ok", "Test alert sent to all open alert boxes (with the saved settings).")
+          : editor.showStatus("error", `Sending the test alert failed: HTTP ${response.status}`),
+      (error: unknown) => editor.showStatus("error", `Sending the test alert failed: ${error instanceof Error ? error.message : String(error)}`),
+    );
+  });
+  sendTest.title = "Plays a follow alert in every open alert box, e.g. in OBS";
+  editor.toolbar.append(showInPreview);
+  editor.actions.insertBefore(sendTest, editor.actions.lastElementChild);
 }
 
 // Startup
-setupTwitchAccount(getElement("twitch-account", HTMLDivElement));
-renderOverlayLinks();
-void showVersion();
-void setupChatboxSettings();
+async function start(): Promise<void> {
+  setupTwitchAccount(getElement("twitch-account", HTMLDivElement));
+  renderOverlayLinks();
+  void showVersion();
+  const media = new MediaLibrary();
+  await media.refresh().catch(() => undefined);
+  await Promise.all([setupChatboxEditor(media), setupAlertboxEditor(media)]);
+}
+
+void start();

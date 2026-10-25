@@ -3,12 +3,15 @@ import type {
   ChoiceSetting,
   ColorSetting,
   FontSetting,
+  MediaSetting,
   MultiChoiceSetting,
   NumberSetting,
   Setting,
   SettingsSchema,
   TextSetting,
 } from "../shared/settings.ts";
+import { mediaUrl } from "../shared/config.ts";
+import type { MediaLibrary } from "./media-library.ts";
 
 // Types
 interface LocalFontData {
@@ -32,7 +35,11 @@ interface Field {
 }
 
 // Form
-export function createSettingsForm(schema: SettingsSchema, idPrefix: string, onChange: () => void): SettingsForm {
+export interface FormContext {
+  readonly media: MediaLibrary;
+}
+
+export function createSettingsForm(schema: SettingsSchema, idPrefix: string, onChange: () => void, context: FormContext): SettingsForm {
   const element = document.createElement("div");
   element.className = "settings-form";
   const groups = new Map<string, HTMLFieldSetElement>();
@@ -48,7 +55,7 @@ export function createSettingsForm(schema: SettingsSchema, idPrefix: string, onC
       groups.set(setting.group, group);
       element.append(group);
     }
-    const field = createField(`${idPrefix}-${key}`, setting);
+    const field = createField(`${idPrefix}-${key}`, setting, context);
     field.element.addEventListener("input", onChange);
     field.element.addEventListener("change", onChange);
     group.append(field.element);
@@ -66,7 +73,7 @@ export function createSettingsForm(schema: SettingsSchema, idPrefix: string, onC
   };
 }
 
-function createField(id: string, setting: Setting): Field {
+function createField(id: string, setting: Setting, context: FormContext): Field {
   switch (setting.kind) {
     case "text":
       return createTextField(id, setting);
@@ -82,6 +89,8 @@ function createField(id: string, setting: Setting): Field {
       return createMultiChoiceField(id, setting);
     case "color":
       return createColorField(id, setting);
+    case "media":
+      return createMediaField(id, setting, context.media);
   }
 }
 
@@ -300,6 +309,136 @@ function createColorField(id: string, setting: ColorSetting): Field {
       updateOutput();
     },
   };
+}
+
+function createMediaField(id: string, setting: MediaSetting, media: MediaLibrary): Field {
+  const { wrapper, control } = createLabeledField(id, setting);
+  const select = document.createElement("select");
+  select.id = id;
+  const upload = document.createElement("input");
+  upload.type = "file";
+  upload.hidden = true;
+  upload.accept = setting.mediaKind === "sound" ? ".mp3,.ogg,.wav,audio/mpeg,audio/ogg,audio/wav" : ".png,.gif,.webp,.jpg,.jpeg,image/png,image/gif,image/webp,image/jpeg";
+  const uploadButton = button("Upload…", "secondary", () => upload.click());
+  const deleteButton = button("Delete file", "secondary", () => void removeCurrent());
+  const status = document.createElement("p");
+  status.className = "hint";
+  const preview = setting.mediaKind === "image" ? document.createElement("img") : null;
+  if (preview !== null) {
+    preview.className = "media-thumbnail";
+    preview.alt = "";
+  }
+  const play = setting.mediaKind === "sound" ? button("Play", "secondary", () => playCurrent()) : null;
+
+  let current = setting.default;
+
+  const renderOptions = (): void => {
+    const included = optionGroup("Included", setting.builtIns.map((option) => new Option(option.label, option.value)));
+    const uploaded = media.files.filter((file) => file.kind === setting.mediaKind);
+    const own = optionGroup("Your files", uploaded.map((file) => new Option(file.file, file.value)));
+    const isKnown = current === "" || setting.builtIns.some((option) => option.value === current) || uploaded.some((file) => file.value === current);
+    const missing = isKnown ? [] : [new Option(`Missing file (${current})`, current)];
+    select.replaceChildren(new Option("None", ""), included, ...(own.children.length > 0 ? [own] : []), ...missing);
+    select.value = current;
+    updateControls();
+  };
+
+  const updateControls = (): void => {
+    const url = mediaUrl(current);
+    deleteButton.hidden = !current.startsWith("media/");
+    if (preview !== null) {
+      preview.hidden = url === null;
+      if (url !== null) {
+        preview.src = url;
+      }
+    }
+    if (play !== null) {
+      play.disabled = url === null;
+    }
+  };
+
+  const changed = (): void => {
+    updateControls();
+    wrapper.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
+  const playCurrent = (): void => {
+    const url = mediaUrl(current);
+    if (url !== null) {
+      const audio = new Audio(url);
+      audio.volume = 0.7;
+      void audio.play().catch(() => (status.textContent = "Playing the sound failed."));
+    }
+  };
+
+  const removeCurrent = async (): Promise<void> => {
+    const file = current.slice("media/".length);
+    try {
+      await media.remove(file);
+      current = setting.default;
+      renderOptions();
+      changed();
+      status.textContent = "File deleted.";
+    } catch (error: unknown) {
+      status.textContent = `Deleting failed: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  };
+
+  select.addEventListener("change", () => {
+    current = select.value;
+    status.textContent = "";
+    updateControls();
+  });
+  upload.addEventListener("change", () => {
+    const file = upload.files?.[0];
+    upload.value = "";
+    if (file === undefined) {
+      return;
+    }
+    status.textContent = "Uploading…";
+    media.upload(file).then(
+      (stored) => {
+        current = stored.value;
+        renderOptions();
+        changed();
+        status.textContent = "Uploaded.";
+      },
+      (error: unknown) => (status.textContent = `Upload failed: ${error instanceof Error ? error.message : String(error)}`),
+    );
+  });
+  media.subscribe(renderOptions);
+
+  control.append(select, uploadButton, ...(play === null ? [] : [play]), deleteButton, upload);
+  if (preview !== null) {
+    wrapper.insertBefore(preview, control.nextSibling);
+  }
+  wrapper.append(status);
+  renderOptions();
+
+  return {
+    element: wrapper,
+    read: () => current,
+    write: (value) => {
+      current = typeof value === "string" ? value : setting.default;
+      renderOptions();
+    },
+  };
+}
+
+function optionGroup(label: string, options: readonly HTMLOptionElement[]): HTMLOptGroupElement {
+  const group = document.createElement("optgroup");
+  group.label = label;
+  group.append(...options);
+  return group;
+}
+
+function button(label: string, className: string, onClick: () => void): HTMLButtonElement {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.className = className;
+  element.textContent = label;
+  element.addEventListener("click", onClick);
+  return element;
 }
 
 // Helpers

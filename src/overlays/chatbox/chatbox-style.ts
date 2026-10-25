@@ -1,7 +1,7 @@
+import { toFontFamily } from "../../shared/fonts.ts";
 import type { ChatboxConfig } from "./chatbox-config.ts";
 
 // Constants
-const fallbackFonts = "system-ui, sans-serif";
 const textShadow = "0 1px 2px rgb(0 0 0 / 80%)";
 
 // Style
@@ -18,11 +18,6 @@ export function applyChatboxStyle(root: HTMLElement, config: ChatboxConfig): voi
   style.setProperty("--emote-height", `${config.emoteSize / 100}em`);
   root.dataset["alignment"] = config.alignment;
   root.dataset["animation"] = config.animation;
-}
-
-export function toFontFamily(fontFamily: string): string {
-  const name = fontFamily.replace(/["\\;{}]/g, "").trim();
-  return name === "" ? fallbackFonts : `"${name}", ${fallbackFonts}`;
 }
 
 export function isTransparent(color: string): boolean {
