@@ -6,6 +6,7 @@ mod event_loop;
 mod events;
 mod http;
 mod instance;
+mod media;
 mod paths;
 mod server;
 mod tray;

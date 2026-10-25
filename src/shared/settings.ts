@@ -1,4 +1,4 @@
-import { readBoolean, readColor, readInteger, readString, readStringList, type ConfigSource } from "./config.ts";
+import { readBoolean, readColor, readInteger, readMediaReference, readString, readStringList, type ConfigSource } from "./config.ts";
 
 // Types
 interface SettingBase<T> {
@@ -33,6 +33,14 @@ export interface BooleanSetting extends SettingBase<boolean> {
   readonly kind: "boolean";
 }
 
+export type MediaKind = "sound" | "image";
+
+export interface MediaSetting extends SettingBase<string> {
+  readonly kind: "media";
+  readonly mediaKind: MediaKind;
+  readonly builtIns: readonly SettingOption<string>[];
+}
+
 export interface ColorSetting extends SettingBase<string> {
   readonly kind: "color";
 }
@@ -52,7 +60,15 @@ export interface MultiChoiceSetting<T extends string = string> extends SettingBa
   readonly options: readonly SettingOption<T>[];
 }
 
-export type Setting = TextSetting | FontSetting | NumberSetting | BooleanSetting | ColorSetting | ChoiceSetting | MultiChoiceSetting;
+export type Setting =
+  | TextSetting
+  | FontSetting
+  | NumberSetting
+  | BooleanSetting
+  | ColorSetting
+  | MediaSetting
+  | ChoiceSetting
+  | MultiChoiceSetting;
 
 export type SettingsSchema = Readonly<Record<string, Setting>>;
 
@@ -107,6 +123,12 @@ export function booleanSetting(options: CommonOptions<boolean>): BooleanSetting 
 
 export function colorSetting(options: CommonOptions<string>): ColorSetting {
   return { ...options, kind: "color", live: options.live ?? true, read: (source, key) => readColor(source, key, options.default) };
+}
+
+export function mediaSetting(
+  options: CommonOptions<string> & { readonly mediaKind: MediaKind; readonly builtIns: readonly SettingOption<string>[] },
+): MediaSetting {
+  return { ...options, kind: "media", live: options.live ?? true, read: (source, key) => readMediaReference(source, key, options.default) };
 }
 
 export function choiceSetting<T extends string>(options: CommonOptions<T> & { readonly options: readonly SettingOption<T>[] }): ChoiceSetting<T> {

@@ -5,12 +5,14 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 // Constants
 const MAX_HEAD_BYTES: usize = 16 * 1024;
 pub const MAX_BODY_BYTES: usize = 64 * 1024;
+pub const MAX_UPLOAD_BYTES: usize = 10 * 1024 * 1024;
 
 // Types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Method {
     Get,
     Put,
+    Delete,
     Other,
 }
 
@@ -18,6 +20,7 @@ pub enum Method {
 pub struct Request {
     pub method: Method,
     pub path: String,
+    pub query: String,
     headers: HashMap<String, String>,
     pub body: Vec<u8>,
 }
@@ -81,8 +84,11 @@ impl Response {
 }
 
 // Parsing
-pub fn read_request(stream: impl Read) -> Result<Request, ParseError> {
-    let mut reader = BufReader::new(stream.take((MAX_HEAD_BYTES + MAX_BODY_BYTES) as u64));
+pub fn read_request(
+    stream: impl Read,
+    body_limit: impl Fn(&str) -> usize,
+) -> Result<Request, ParseError> {
+    let mut reader = BufReader::new(stream.take((MAX_HEAD_BYTES + MAX_UPLOAD_BYTES) as u64));
     let mut head_bytes = 0;
 
     let request_line = read_line(&mut reader, &mut head_bytes)?;
@@ -110,20 +116,22 @@ pub fn read_request(stream: impl Read) -> Result<Request, ParseError> {
         Some(value) => value.parse::<usize>().map_err(|_| ParseError::Malformed)?,
         None => 0,
     };
-    if content_length > MAX_BODY_BYTES {
+    let (path, query) = target.split_once('?').unwrap_or((target, ""));
+    if content_length > body_limit(path).min(MAX_UPLOAD_BYTES) {
         return Err(ParseError::TooLarge);
     }
     let mut body = vec![0; content_length];
     reader.read_exact(&mut body).map_err(ParseError::Io)?;
 
-    let path = target.split_once('?').map_or(target, |(path, _)| path);
     Ok(Request {
         method: match method {
             "GET" => Method::Get,
             "PUT" => Method::Put,
+            "DELETE" => Method::Delete,
             _ => Method::Other,
         },
         path: path.to_owned(),
+        query: query.to_owned(),
         headers,
         body,
     })
@@ -191,6 +199,7 @@ fn common_headers() -> &'static str {
 fn reason(status: u16) -> &'static str {
     match status {
         200 => "OK",
+        201 => "Created",
         204 => "No Content",
         302 => "Found",
         400 => "Bad Request",
@@ -214,7 +223,7 @@ mod tests {
     #[test]
     fn parses_request_line_headers_and_body() {
         let raw = b"PUT /api/x?a=1 HTTP/1.1\r\nHost: 127.0.0.1:1\r\nContent-Length: 4\r\nX-Test:  value \r\n\r\nbody";
-        let request = read_request(&raw[..]).unwrap();
+        let request = read_request(&raw[..], |_| MAX_BODY_BYTES).unwrap();
         assert_eq!(request.method, Method::Put);
         assert_eq!(request.path, "/api/x");
         assert_eq!(request.header("HOST"), Some("127.0.0.1:1"));
@@ -223,8 +232,41 @@ mod tests {
     }
 
     #[test]
+    fn applies_the_body_limit_per_path_and_parses_delete() {
+        let limit = |path: &str| {
+            if path == "/api/media" {
+                MAX_UPLOAD_BYTES
+            } else {
+                MAX_BODY_BYTES
+            }
+        };
+        let mut raw = format!(
+            "PUT /api/media?name=a.png HTTP/1.1\r\nContent-Length: {}\r\n\r\n",
+            MAX_BODY_BYTES + 1
+        )
+        .into_bytes();
+        raw.resize(raw.len() + MAX_BODY_BYTES + 1, b'x');
+        let request = read_request(raw.as_slice(), limit).unwrap();
+        assert_eq!(
+            (request.path.as_str(), request.query.as_str()),
+            ("/api/media", "name=a.png")
+        );
+        let other = format!(
+            "PUT /api/other HTTP/1.1\r\nContent-Length: {}\r\n\r\n",
+            MAX_BODY_BYTES + 1
+        );
+        assert!(matches!(
+            read_request(other.as_bytes(), limit),
+            Err(ParseError::TooLarge)
+        ));
+        let delete = read_request(&b"DELETE /api/media/a.png HTTP/1.1\r\n\r\n"[..], limit).unwrap();
+        assert_eq!(delete.method, Method::Delete);
+    }
+
+    #[test]
     fn accepts_bare_line_feeds() {
-        let request = read_request(&b"GET / HTTP/1.0\nHost: a\n\n"[..]).unwrap();
+        let request =
+            read_request(&b"GET / HTTP/1.0\nHost: a\n\n"[..], |_| MAX_BODY_BYTES).unwrap();
         assert_eq!(request.method, Method::Get);
         assert_eq!(request.header("host"), Some("a"));
     }
@@ -240,7 +282,10 @@ mod tests {
             b"PUT / HTTP/1.1\r\nContent-Length: x\r\n\r\n",
         ] {
             assert!(
-                matches!(read_request(raw), Err(ParseError::Malformed)),
+                matches!(
+                    read_request(raw, |_| MAX_BODY_BYTES),
+                    Err(ParseError::Malformed)
+                ),
                 "{raw:?}"
             );
         }
@@ -253,7 +298,7 @@ mod tests {
             "a".repeat(MAX_HEAD_BYTES)
         );
         assert!(matches!(
-            read_request(long_header.as_bytes()),
+            read_request(long_header.as_bytes(), |_| MAX_BODY_BYTES),
             Err(ParseError::TooLarge)
         ));
         let big_body = format!(
@@ -261,7 +306,7 @@ mod tests {
             MAX_BODY_BYTES + 1
         );
         assert!(matches!(
-            read_request(big_body.as_bytes()),
+            read_request(big_body.as_bytes(), |_| MAX_BODY_BYTES),
             Err(ParseError::TooLarge)
         ));
     }

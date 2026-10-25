@@ -79,6 +79,22 @@ export function readColor(source: ConfigSource, key: string, fallback: string): 
   return typeof value === "string" && /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(value.trim()) ? value.trim().toLowerCase() : fallback;
 }
 
+export function readMediaReference(source: ConfigSource, key: string, fallback: string): string {
+  const value = source[key];
+  if (typeof value !== "string") {
+    return fallback;
+  }
+  const isValid =
+    value === "" ||
+    /^assets\/(sounds|images)\/[a-z0-9-]+\.(wav|svg)$/.test(value) ||
+    /^media\/[a-z0-9-]+\.(mp3|ogg|wav|png|gif|webp|jpg)$/.test(value);
+  return isValid ? value : fallback;
+}
+
+export function mediaUrl(reference: string): string | null {
+  return reference === "" ? null : `/${reference}`;
+}
+
 export function readStringList(source: ConfigSource, key: string, fallback: readonly string[]): readonly string[] {
   const value = source[key];
   const items = typeof value === "string" ? value.split(",") : Array.isArray(value) ? value : null;
