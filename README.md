@@ -15,8 +15,19 @@ A small companion app runs in the system tray, serves the overlays and a setting
 - **Twitch login** – device code login with automatic renewal; with it, the chat box shows all global and channel badges and, during a shared chat, the icon of the channel each message comes from
 - **Planned** – alerts
 
+### Installation
+1. Download the archive for your system from [Releases](../../releases): `windows-x64`, `macos-arm64` (Apple silicon) or `linux-x64`.
+2. Extract it to a folder of your choice, e.g. `DocumentsStreamXtras`. Keep the `web` folder next to the program.
+3. Start `streamxtras`. The app is not signed, so the system may warn on the first start:
+   - **Windows:** SmartScreen → "More info" → "Run anyway"
+   - **macOS:** right-click the program → "Open", or allow it under System Settings → Privacy & Security
+   - **Linux:** the tray icon needs a desktop with StatusNotifierItem support (KDE Plasma, or GNOME with the AppIndicator extension)
+4. To start it automatically, add a shortcut to your autostart (Windows: press Win+R, enter `shell:startup`).
+
+Each archive has a `.sha256` file to verify the download.
+
 ### Usage
-1. Start the companion app (see [Development](#development) until releases are available). On the first start the settings page opens in your browser; later you open it with a click on the tray icon.
+1. Start the companion app. On the first start the settings page opens in your browser; later you open it with a click on the tray icon.
 2. Enter your Twitch channel in the settings.
 3. Copy the URL of the overlay (e.g. `http://127.0.0.1:47820/chatbox/`) and add it to OBS as a browser source with **Local file** unchecked.
 
@@ -25,7 +36,7 @@ The companion app only listens on `127.0.0.1`. Its configuration lives outside t
 ### Twitch login
 For all Twitch badges, streamer icons in shared chat and later alerts, the companion app connects to the Twitch API. Log in on the settings page: Twitch opens with a code already filled in, you confirm, done. The login only grants read access (bits, channel point redemptions, subscriptions, followers), is renewed automatically and stays valid as long as the app runs at least once every 30 days. The token is stored only in `twitch-token.json` in the configuration folder and never leaves the companion app.
 
-Release builds will contain the Client ID of this project (once releases are published). To use your own Twitch application (or when building yourself), register one at [dev.twitch.tv](https://dev.twitch.tv/console) with client type **Public** and redirect URL `http://localhost`, and add its Client ID to `config.json`:
+Release builds contain the Client ID of this project. To use your own Twitch application (or when building yourself), register one at [dev.twitch.tv](https://dev.twitch.tv/console) with client type **Public** and redirect URL `http://localhost`, and add its Client ID to `config.json`:
 
 ```json
 { "twitchClientId": "your-client-id" }
@@ -55,6 +66,8 @@ cargo run
 
 On Windows PowerShell with a restrictive execution policy, use `npm.cmd` instead of `npm`.
 
+Releases: a new version in `companion/Cargo.toml` and `package.json` (both must match) creates a release with archives for all three systems when merged into `main`. The release workflow needs the repository secret `TWITCH_CLIENT_ID`; `VT_API_KEY` (VirusTotal) is optional.
+
 Tests: `npm test` for the overlays, `cargo test` in `companion/` for the companion app.
 The diagnostics page (`/diagnostics/`) checks the emote APIs and the anonymous Twitch chat connection; add `?channel=yourname` to also test joining a channel.
 
@@ -74,8 +87,19 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 - **Twitch-Login** – Anmeldung per Gerätecode mit automatischer Erneuerung; damit zeigt die Chatbox alle globalen und kanaleigenen Badges und im geteilten Chat das Icon des Kanals, aus dem eine Nachricht kommt
 - **Geplant** – Alerts
 
+### Installation
+1. Das Archiv für dein System unter [Releases](../../releases) herunterladen: `windows-x64`, `macos-arm64` (Apple Silicon) oder `linux-x64`.
+2. In einen beliebigen Ordner entpacken, z. B. `DokumenteStreamXtras`. Der Ordner `web` muss neben dem Programm bleiben.
+3. `streamxtras` starten. Die Anwendung ist nicht signiert, deshalb warnt das System beim ersten Start eventuell:
+   - **Windows:** SmartScreen → „Weitere Informationen“ → „Trotzdem ausführen“
+   - **macOS:** Rechtsklick auf das Programm → „Öffnen“, oder unter Systemeinstellungen → Datenschutz & Sicherheit erlauben
+   - **Linux:** Das Tray-Icon braucht einen Desktop mit StatusNotifierItem-Unterstützung (KDE Plasma oder GNOME mit AppIndicator-Erweiterung)
+4. Für den automatischen Start eine Verknüpfung in den Autostart legen (Windows: Win+R, `shell:startup` eingeben).
+
+Zu jedem Archiv gibt es eine `.sha256`-Datei, um den Download zu prüfen.
+
 ### Verwendung
-1. Begleit-Anwendung starten (bis es Releases gibt, siehe [Entwicklung](#entwicklung)). Beim ersten Start öffnet sich die Einstellungsseite im Browser, danach per Klick auf das Tray-Icon.
+1. Begleit-Anwendung starten. Beim ersten Start öffnet sich die Einstellungsseite im Browser, danach per Klick auf das Tray-Icon.
 2. In den Einstellungen den eigenen Twitch-Kanal eintragen.
 3. Die URL des Overlays kopieren (z. B. `http://127.0.0.1:47820/chatbox/`) und in OBS als Browserquelle hinzufügen, **Lokale Datei** nicht anhaken.
 
@@ -84,7 +108,7 @@ Die Begleit-Anwendung lauscht nur auf `127.0.0.1`. Ihre Konfiguration liegt auß
 ### Twitch-Login
 Für alle Twitch-Badges, Streamer-Icons im geteilten Chat und später Alerts verbindet sich die Begleit-Anwendung mit der Twitch-API. Die Anmeldung erfolgt auf der Einstellungsseite: Twitch öffnet sich mit bereits eingetragenem Code, du bestätigst, fertig. Der Login gewährt nur Lesezugriff (Bits, Kanalpunkte-Einlösungen, Abos, Follower), wird automatisch erneuert und bleibt gültig, solange die Anwendung mindestens alle 30 Tage einmal läuft. Das Token liegt nur in `twitch-token.json` im Konfigurationsordner und verlässt die Begleit-Anwendung nie.
 
-Release-Builds werden die Client-ID dieses Projekts enthalten (sobald es Releases gibt). Um eine eigene Twitch-Anwendung zu nutzen (oder beim Selbstbauen), unter [dev.twitch.tv](https://dev.twitch.tv/console) eine Anwendung mit Client-Typ **Öffentlich** und Weiterleitungs-URL `http://localhost` registrieren und ihre Client-ID in die `config.json` eintragen:
+Release-Builds enthalten die Client-ID dieses Projekts. Um eine eigene Twitch-Anwendung zu nutzen (oder beim Selbstbauen), unter [dev.twitch.tv](https://dev.twitch.tv/console) eine Anwendung mit Client-Typ **Öffentlich** und Weiterleitungs-URL `http://localhost` registrieren und ihre Client-ID in die `config.json` eintragen:
 
 ```json
 { "twitchClientId": "deine-client-id" }
@@ -113,6 +137,8 @@ cargo run
 ```
 
 In Windows PowerShell mit restriktiver Ausführungsrichtlinie `npm.cmd` statt `npm` verwenden.
+
+Releases: Eine neue Version in `companion/Cargo.toml` und `package.json` (beide müssen übereinstimmen) erzeugt beim Merge in `main` ein Release mit Archiven für alle drei Systeme. Der Release-Workflow braucht das Repository-Secret `TWITCH_CLIENT_ID`; `VT_API_KEY` (VirusTotal) ist optional.
 
 Tests: `npm test` für die Overlays, `cargo test` in `companion/` für die Begleit-Anwendung.
 Die Diagnoseseite (`/diagnostics/`) prüft die Emote-APIs und die anonyme Verbindung zum Twitch-Chat; mit `?channel=deinname` wird zusätzlich das Betreten eines Kanals getestet.
