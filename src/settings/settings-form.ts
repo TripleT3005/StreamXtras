@@ -2,6 +2,7 @@ import type {
   BooleanSetting,
   ChoiceSetting,
   ColorSetting,
+  FontSetting,
   MultiChoiceSetting,
   NumberSetting,
   Setting,
@@ -10,6 +11,12 @@ import type {
 } from "../shared/settings.ts";
 
 // Types
+interface LocalFontData {
+  readonly family: string;
+}
+
+type WindowWithLocalFonts = Window & { queryLocalFonts?: () => Promise<readonly LocalFontData[]> };
+
 export type FormValues = Readonly<Record<string, unknown>>;
 
 export interface SettingsForm {
@@ -63,6 +70,8 @@ function createField(id: string, setting: Setting): Field {
   switch (setting.kind) {
     case "text":
       return createTextField(id, setting);
+    case "font":
+      return createFontField(id, setting);
     case "number":
       return createNumberField(id, setting);
     case "boolean":
@@ -97,6 +106,72 @@ function createTextField(id: string, setting: TextSetting): Field {
     read: () => input.value.trim(),
     write: (value) => (input.value = typeof value === "string" ? value : ""),
   };
+}
+
+function createFontField(id: string, setting: FontSetting): Field {
+  const { wrapper, control } = createLabeledField(id, setting);
+  const customValue = "__custom__";
+  const select = document.createElement("select");
+  select.id = id;
+  const custom = document.createElement("input");
+  custom.placeholder = "Font name";
+  custom.autocomplete = "off";
+  custom.spellcheck = false;
+  custom.setAttribute("aria-label", `${setting.label} name`);
+  custom.hidden = true;
+
+  let fonts: readonly string[] = setting.suggestions;
+  const renderOptions = (selected: string): void => {
+    const options = [new Option("System font", ""), ...fonts.map((font) => fontOption(font)), new Option("Other…", customValue)];
+    select.replaceChildren(...options);
+    const isListed = selected === "" || fonts.includes(selected);
+    select.value = isListed ? selected : customValue;
+    custom.hidden = isListed;
+    custom.value = isListed ? "" : selected;
+  };
+  const read = (): string => (select.value === customValue ? custom.value.trim() : select.value);
+
+  select.addEventListener("change", () => {
+    custom.hidden = select.value !== customValue;
+    if (!custom.hidden) {
+      custom.focus();
+    }
+  });
+  control.append(select);
+
+  const queryLocalFonts = (window as WindowWithLocalFonts).queryLocalFonts;
+  if (queryLocalFonts !== undefined) {
+    const load = document.createElement("button");
+    load.type = "button";
+    load.className = "secondary";
+    load.textContent = "Installed fonts";
+    load.title = "Lists the fonts installed on this computer. The browser asks for permission once.";
+    load.addEventListener("click", () => {
+      queryLocalFonts.call(window).then(
+        (installed) => {
+          fonts = [...new Set(installed.map((font) => font.family))].sort((first, second) => first.localeCompare(second));
+          renderOptions(read());
+          load.remove();
+        },
+        () => (load.textContent = "Not allowed"),
+      );
+    });
+    control.append(load);
+  }
+  wrapper.insertBefore(custom, control.nextSibling);
+  renderOptions(setting.default);
+
+  return {
+    element: wrapper,
+    read,
+    write: (value) => renderOptions(typeof value === "string" ? value : setting.default),
+  };
+}
+
+function fontOption(font: string): HTMLOptionElement {
+  const option = new Option(font, font);
+  option.style.fontFamily = `"${font.replace(/["\\]/g, "")}", system-ui`;
+  return option;
 }
 
 function createNumberField(id: string, setting: NumberSetting): Field {

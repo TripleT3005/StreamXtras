@@ -201,6 +201,11 @@ button.secondary:hover {
   width: 5.5em;
 }
 
+.field > input:not([type="checkbox"]) {
+  width: 100%;
+  margin-top: 6px;
+}
+
 .unit {
   min-width: 2.5em;
   color: var(--color-muted);
@@ -278,6 +283,15 @@ button.secondary:hover {
   color: var(--color-text);
   font-size: 0.85rem;
   font-weight: 500;
+}
+
+.toggle {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
 .chip[aria-pressed="true"] {

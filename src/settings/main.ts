@@ -76,6 +76,7 @@ async function setupChatboxSettings(): Promise<void> {
   const status = getElement("chatbox-status", HTMLParagraphElement);
   const frame = getElement("chatbox-preview", HTMLIFrameElement);
   const stage = getElement("chatbox-stage", HTMLDivElement);
+  const livePreview = getElement("chatbox-live-preview", HTMLInputElement);
 
   let stored: ConfigSource = await fetchOverlaySettings(chatboxOverlayId);
   let savedValues = JSON.stringify(readChatboxConfig(stored));
@@ -112,7 +113,7 @@ async function setupChatboxSettings(): Promise<void> {
   const schedulePreview = (): void => {
     if (!previewScheduled) {
       previewScheduled = true;
-      requestAnimationFrame(updatePreview);
+      setTimeout(updatePreview, 0);
     }
   };
 
@@ -152,9 +153,13 @@ async function setupChatboxSettings(): Promise<void> {
     });
   }
 
+  const loadPreview = (): void => {
+    frame.src = livePreview.checked ? "/chatbox/?preview=live" : "/chatbox/?preview";
+  };
+  livePreview.addEventListener("change", loadPreview);
   frame.addEventListener("load", schedulePreview);
   new ResizeObserver(schedulePreview).observe(stage);
-  frame.src = "/chatbox/?preview";
+  loadPreview();
   saveButton.disabled = true;
 }
 

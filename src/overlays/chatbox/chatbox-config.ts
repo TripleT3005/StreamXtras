@@ -4,6 +4,7 @@ import {
   booleanSetting,
   choiceSetting,
   colorSetting,
+  fontSetting,
   multiChoiceSetting,
   numberSetting,
   readSettings,
@@ -14,6 +15,7 @@ import {
 
 // Constants
 export const chatboxOverlayId = "chatbox";
+export const missingChannelMessage = "No valid channel configured. Open the settings from the tray icon and enter your channel.";
 
 const fontSuggestions = ["Segoe UI", "Arial", "Verdana", "Tahoma", "Trebuchet MS", "Georgia", "Consolas", "Comic Sans MS"];
 
@@ -51,12 +53,11 @@ export const chatboxSettings = {
     ],
   }),
 
-  fontFamily: textSetting({
+  fontFamily: fontSetting({
     label: "Font",
     group: "Appearance",
-    hint: "Any font installed on this computer. Empty uses the system font.",
+    hint: "The font must be installed on the computer running OBS.",
     default: "",
-    placeholder: "System font",
     suggestions: fontSuggestions,
   }),
   fontSize: numberSetting({ label: "Font size", group: "Appearance", default: 18, min: 10, max: 64, unit: "px" }),
