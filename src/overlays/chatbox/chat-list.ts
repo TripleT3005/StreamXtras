@@ -1,5 +1,3 @@
-import type { ChatMessageEvent } from "../../shared/events.ts";
-
 // Chat list
 export class ChatList {
   readonly #container: HTMLElement;
@@ -10,24 +8,7 @@ export class ChatList {
     this.#maxMessages = maxMessages;
   }
 
-  add(message: ChatMessageEvent): void {
-    const item = document.createElement("li");
-    item.className = message.isAction ? "message action" : "message";
-    item.dataset["messageId"] = message.id;
-    item.dataset["userId"] = message.user.id;
-
-    const name = document.createElement("span");
-    name.className = "name";
-    name.textContent = message.user.displayName;
-    if (message.user.color !== null) {
-      name.style.color = message.user.color;
-    }
-
-    const text = document.createElement("span");
-    text.className = "text";
-    text.textContent = message.text;
-
-    item.append(name, text);
+  add(item: HTMLElement): void {
     this.#container.append(item);
     this.#trim();
   }

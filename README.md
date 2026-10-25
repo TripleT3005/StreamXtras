@@ -28,6 +28,8 @@ When an overlay is served over HTTP, URL parameters (e.g. `?channel=yourname`) o
 |---|---|---|
 | `channel` | – | Twitch channel to show (required) |
 | `maxMessages` | `30` | Maximum number of visible messages (1–200) |
+| `showBadges` | `true` | Show global badges (broadcaster, moderator, VIP, subscriber …) |
+| `emoteProviders` | `["7tv", "bttv", "ffz"]` | Third-party emote providers to load; Twitch emotes are always shown |
 
 ### Development
 Requires [Node.js](https://nodejs.org/) (LTS). The only dependency is the TypeScript compiler.
@@ -70,6 +72,8 @@ Wird ein Overlay über HTTP ausgeliefert, überschreiben URL-Parameter (z. B. `?
 |---|---|---|
 | `channel` | – | Anzuzeigender Twitch-Kanal (Pflicht) |
 | `maxMessages` | `30` | Maximale Anzahl sichtbarer Nachrichten (1–200) |
+| `showBadges` | `true` | Globale Badges anzeigen (Broadcaster, Moderator, VIP, Abonnent …) |
+| `emoteProviders` | `["7tv", "bttv", "ffz"]` | Zu ladende Emote-Anbieter; Twitch-Emotes werden immer angezeigt |
 
 ### Entwicklung
 Voraussetzung ist [Node.js](https://nodejs.org/) (LTS). Einzige Abhängigkeit ist der TypeScript-Compiler.
