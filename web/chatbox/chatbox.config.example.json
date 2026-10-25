@@ -1,7 +1,0 @@
-{
-  "channel": "yourchannel",
-  "maxMessages": 30,
-  "showBadges": true,
-  "readableColors": true,
-  "emoteProviders": ["7tv", "bttv", "ffz"]
-}

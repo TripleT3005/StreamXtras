@@ -1,4 +1,4 @@
-import { loadConfigSource } from "../../shared/config.ts";
+import { loadOverlaySettings, subscribeToSettings } from "../../shared/config.ts";
 import { bttvProvider } from "../../shared/emotes/bttv.ts";
 import type { EmoteProvider } from "../../shared/emotes/emote.ts";
 import { EmoteLibrary } from "../../shared/emotes/emote-library.ts";
@@ -12,6 +12,7 @@ import { ChatList } from "./chat-list.ts";
 import { renderMessage } from "./message-view.ts";
 
 // Constants
+const overlayId = "chatbox";
 const emoteRefreshIntervalMs = 10 * 60_000;
 const emoteProviders: readonly EmoteProvider[] = [sevenTvProvider, bttvProvider, ffzProvider];
 
@@ -74,9 +75,10 @@ async function start(): Promise<void> {
     return;
   }
 
-  const config = readChatboxConfig(await loadConfigSource(new URL("chatbox.config.json", location.href), location.search));
+  subscribeToSettings(overlayId, () => location.reload());
+  const config = readChatboxConfig(await loadOverlaySettings(overlayId, location.search));
   if (normalizeChannel(config.channel) === null) {
-    status.textContent = "No valid channel configured. Copy chatbox.config.example.json to chatbox.config.json and set \"channel\".";
+    status.textContent = "No valid channel configured. Open the settings from the tray icon and enter your channel.";
     status.hidden = false;
     return;
   }

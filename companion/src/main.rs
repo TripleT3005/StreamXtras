@@ -3,6 +3,8 @@
 mod browser;
 mod config;
 mod event_loop;
+mod events;
+mod http;
 mod instance;
 mod paths;
 mod server;
@@ -11,7 +13,12 @@ mod tray;
 use std::error::Error;
 use std::io;
 use std::net::{Ipv4Addr, SocketAddr, TcpListener};
+use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::{Arc, Mutex};
+
+use events::EventBroadcaster;
+use server::AppState;
 
 // Entry point
 fn main() -> ExitCode {
@@ -25,21 +32,27 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let directory = paths::config_dir().ok_or(config::ConfigError::NoConfigDirectory)?;
-    let (config, is_first_start) = config::load_or_create(&directory)?;
-    let url = format!("http://127.0.0.1:{}/", config.port);
+    let config_dir = paths::config_dir().ok_or(config::ConfigError::NoConfigDirectory)?;
+    let (config, is_first_start) = config::load_or_create(&config_dir)?;
+    let port = config.port;
+    let url = format!("http://127.0.0.1:{port}/");
 
-    let listener = match TcpListener::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, config.port))) {
+    let listener = match TcpListener::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, port))) {
         Ok(listener) => listener,
-        Err(error)
-            if error.kind() == io::ErrorKind::AddrInUse && instance::is_running(config.port) =>
-        {
+        Err(error) if error.kind() == io::ErrorKind::AddrInUse && instance::is_running(port) => {
             browser::open(&url)?;
             return Ok(());
         }
-        Err(error) => return Err(format!("port {} is not available: {error}", config.port).into()),
+        Err(error) => return Err(format!("port {port} is not available: {error}").into()),
     };
-    server::start(listener).map_err(|error| error.to_string())?;
+    let state = Arc::new(AppState {
+        port,
+        web_root: web_root(),
+        config_dir,
+        config: Mutex::new(config),
+        events: EventBroadcaster::default(),
+    });
+    server::start(listener, state)?;
 
     event_loop::init();
     let _tray = tray::create(url.clone())?;
@@ -48,4 +61,28 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
     event_loop::run();
     Ok(())
+}
+
+fn web_root() -> PathBuf {
+    let bundled = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(|directory| directory.join("web")));
+    if let Some(directory) = bundled
+        && directory.is_dir()
+    {
+        return directory;
+    }
+    development_web_root()
+}
+
+#[cfg(debug_assertions)]
+fn development_web_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("web")
+}
+
+#[cfg(not(debug_assertions))]
+fn development_web_root() -> PathBuf {
+    PathBuf::from("web")
 }

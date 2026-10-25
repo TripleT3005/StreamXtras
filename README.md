@@ -5,34 +5,26 @@
 ## English
 
 Lightweight, self-hosted overlays for OBS as a free alternative to hosted overlay services.
-Overlays are plain web pages used as OBS browser sources with a transparent background. No account, no tracking, no external fonts or scripts.
+A small companion app runs in the system tray, serves the overlays and a settings page on your computer and connects them to Twitch. No account with a third-party service, no tracking, no external fonts or scripts.
 
 > Work in progress. Not affiliated with or endorsed by Twitch, 7TV, BetterTTV or FrankerFaceZ. Twitch is a trademark of Twitch Interactive, Inc.
 
-### Planned
+### Features
 - **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ, highlights announcements and removes messages deleted by moderators
-- **Alerts and more** – later, via a small optional local companion app
+- **Companion app** – tray icon, local settings page, overlay settings that apply live without reloading the OBS source
+- **Planned** – all Twitch badges and streamer icons in shared chat via the Twitch API, alerts
 
-### Companion app (in development)
-The companion app in `companion/` (Rust) will serve the overlays and a settings page on `http://127.0.0.1:47820/`, sit in the system tray and connect to the Twitch API for badges and later alerts. Its configuration lives outside the repository (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
+### Usage
+1. Start the companion app (see [Development](#development) until releases are available). On the first start the settings page opens in your browser; later you open it with a click on the tray icon.
+2. Enter your Twitch channel in the settings.
+3. Copy the URL of the overlay (e.g. `http://127.0.0.1:47820/chatbox/`) and add it to OBS as a browser source with **Local file** unchecked.
 
-```
-cd companion
-cargo run
-```
+The companion app only listens on `127.0.0.1`. Its configuration lives outside the repository (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
 
-### Usage in OBS
-1. Build the overlays once (see [Development](#development))
-2. Copy `web/chatbox/chatbox.config.example.json` to `web/chatbox/chatbox.config.json` and set your channel
-3. Add a browser source in OBS, check **Local file** and select `web/chatbox/index.html`
+### Chat box settings
+URL parameters (e.g. `?channel=othername`) override the stored settings for a single browser source.
 
-The overlays must be added as a local file: with a `file:///` URL, OBS blocks the scripts.
-
-### Configuration
-Each overlay reads its settings from a JSON file next to its `index.html`. Local configuration files are never committed: files named `*.config.json` or `*.local.json` are ignored by Git. Each one has a committed template next to it named `*.config.example.json`, which you copy and fill in.
-When an overlay is served over HTTP, URL parameters (e.g. `?channel=yourname`) override the values from the file.
-
-| Chat box setting | Default | Description |
+| Setting | Default | Description |
 |---|---|---|
 | `channel` | – | Twitch channel to show (required) |
 | `maxMessages` | `30` | Maximum number of visible messages (1–200) |
@@ -43,16 +35,16 @@ When an overlay is served over HTTP, URL parameters (e.g. `?channel=yourname`) o
 Users who never picked a name color get a random default color on Twitch that changes with every page load. The chat box instead assigns them a fixed color from the same palette, based on their user ID.
 
 ### Development
-Requires [Node.js](https://nodejs.org/) (LTS). The only dependency is the TypeScript compiler.
+Requires [Node.js](https://nodejs.org/) (LTS) for the overlays and [Rust](https://www.rust-lang.org/) (stable) for the companion app. The only Node dependency is the TypeScript compiler.
 
 ```
 npm install
-npm run build    # compile src/ to web/scripts/ (or: npm run watch)
-npm test         # type-check and run the unit tests
-npm run serve    # optional local test server at http://127.0.0.1:8080/
+npm run watch            # compile src/ to web/scripts/ on every change
+cd companion && cargo run  # serves web/ from the repository in debug builds
 ```
 
-The diagnostics page `web/diagnostics/index.html` checks whether a browser source can load the overlays: ES modules, URL parameters, local files, the emote APIs and the anonymous Twitch chat connection. Add `?channel=yourname` to also test joining a channel.
+Tests: `npm test` for the overlays, `cargo test` in `companion/` for the companion app.
+The diagnostics page (`/diagnostics/`) checks the emote APIs and the anonymous Twitch chat connection; add `?channel=yourname` to also test joining a channel.
 
 ### License
 [MIT](LICENSE)
@@ -60,34 +52,26 @@ The diagnostics page `web/diagnostics/index.html` checks whether a browser sourc
 ## Deutsch
 
 Schlanke, selbst betriebene Overlays für OBS als kostenlose Alternative zu gehosteten Overlay-Diensten.
-Die Overlays sind einfache Webseiten, die als OBS-Browserquelle mit transparentem Hintergrund eingebunden werden. Kein Konto, kein Tracking, keine externen Schriften oder Skripte.
+Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays und eine Einstellungsseite auf deinem Rechner aus und verbindet sie mit Twitch. Kein Konto bei einem Drittanbieter, kein Tracking, keine externen Schriften oder Skripte.
 
 > In Arbeit. Keine Verbindung zu Twitch, 7TV, BetterTTV oder FrankerFaceZ und nicht von ihnen unterstützt. Twitch ist eine Marke von Twitch Interactive, Inc.
 
-### Geplant
+### Funktionen
 - **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ, hebt Ankündigungen hervor und entfernt von Moderatoren gelöschte Nachrichten
-- **Alerts und mehr** – später, über eine kleine optionale lokale Begleit-Anwendung
+- **Begleit-Anwendung** – Tray-Icon, lokale Einstellungsseite, Overlay-Einstellungen wirken sofort, ohne die OBS-Quelle neu zu laden
+- **Geplant** – alle Twitch-Badges und Streamer-Icons im geteilten Chat über die Twitch-API, Alerts
 
-### Begleit-Anwendung (in Entwicklung)
-Die Begleit-Anwendung in `companion/` (Rust) wird die Overlays und eine Einstellungsseite unter `http://127.0.0.1:47820/` ausliefern, im Infobereich (Tray) laufen und sich für Badges und später Alerts mit der Twitch-API verbinden. Ihre Konfiguration liegt außerhalb des Repos (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
+### Verwendung
+1. Begleit-Anwendung starten (bis es Releases gibt, siehe [Entwicklung](#entwicklung)). Beim ersten Start öffnet sich die Einstellungsseite im Browser, danach per Klick auf das Tray-Icon.
+2. In den Einstellungen den eigenen Twitch-Kanal eintragen.
+3. Die URL des Overlays kopieren (z. B. `http://127.0.0.1:47820/chatbox/`) und in OBS als Browserquelle hinzufügen, **Lokale Datei** nicht anhaken.
 
-```
-cd companion
-cargo run
-```
+Die Begleit-Anwendung lauscht nur auf `127.0.0.1`. Ihre Konfiguration liegt außerhalb des Repos (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
 
-### Verwendung in OBS
-1. Overlays einmal bauen (siehe [Entwicklung](#entwicklung))
-2. `web/chatbox/chatbox.config.example.json` nach `web/chatbox/chatbox.config.json` kopieren und den eigenen Kanal eintragen
-3. In OBS eine Browserquelle hinzufügen, **Lokale Datei** anhaken und `web/chatbox/index.html` auswählen
+### Chatbox-Einstellungen
+URL-Parameter (z. B. `?channel=andererkanal`) überschreiben die gespeicherten Einstellungen für eine einzelne Browserquelle.
 
-Die Overlays müssen als lokale Datei eingebunden werden: Mit einer `file:///`-URL blockiert OBS die Skripte.
-
-### Konfiguration
-Jedes Overlay liest seine Einstellungen aus einer JSON-Datei neben seiner `index.html`. Lokale Konfigurationsdateien werden nie eingecheckt: Dateien mit der Endung `*.config.json` oder `*.local.json` ignoriert Git. Daneben liegt jeweils eine eingecheckte Vorlage `*.config.example.json`, die man kopiert und ausfüllt.
-Wird ein Overlay über HTTP ausgeliefert, überschreiben URL-Parameter (z. B. `?channel=deinname`) die Werte aus der Datei.
-
-| Chatbox-Einstellung | Standard | Beschreibung |
+| Einstellung | Standard | Beschreibung |
 |---|---|---|
 | `channel` | – | Anzuzeigender Twitch-Kanal (Pflicht) |
 | `maxMessages` | `30` | Maximale Anzahl sichtbarer Nachrichten (1–200) |
@@ -98,16 +82,16 @@ Wird ein Overlay über HTTP ausgeliefert, überschreiben URL-Parameter (z. B. `?
 Nutzer, die nie eine Namensfarbe gewählt haben, bekommen auf Twitch bei jedem Laden der Seite eine zufällige Standardfarbe. Die Chatbox gibt ihnen stattdessen eine feste Farbe aus derselben Palette, abhängig von ihrer Nutzer-ID.
 
 ### Entwicklung
-Voraussetzung ist [Node.js](https://nodejs.org/) (LTS). Einzige Abhängigkeit ist der TypeScript-Compiler.
+Voraussetzung sind [Node.js](https://nodejs.org/) (LTS) für die Overlays und [Rust](https://www.rust-lang.org/) (stable) für die Begleit-Anwendung. Einzige Node-Abhängigkeit ist der TypeScript-Compiler.
 
 ```
 npm install
-npm run build    # übersetzt src/ nach web/scripts/ (oder: npm run watch)
-npm test         # Typprüfung und Unit-Tests
-npm run serve    # optionaler lokaler Testserver unter http://127.0.0.1:8080/
+npm run watch            # übersetzt src/ bei jeder Änderung nach web/scripts/
+cd companion && cargo run  # liefert in Debug-Builds web/ aus dem Repo aus
 ```
 
-Die Diagnoseseite `web/diagnostics/index.html` prüft, ob eine Browserquelle die Overlays laden kann: ES-Module, URL-Parameter, lokale Dateien, die Emote-APIs und die anonyme Verbindung zum Twitch-Chat. Mit `?channel=deinname` wird zusätzlich das Betreten eines Kanals getestet.
+Tests: `npm test` für die Overlays, `cargo test` in `companion/` für die Begleit-Anwendung.
+Die Diagnoseseite (`/diagnostics/`) prüft die Emote-APIs und die anonyme Verbindung zum Twitch-Chat; mit `?channel=deinname` wird zusätzlich das Betreten eines Kanals getestet.
 
 ### Lizenz
 [MIT](LICENSE)

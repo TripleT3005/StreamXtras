@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Stream Overlays – Settings</title>
+  <link rel="stylesheet" href="settings.css">
+  <script type="module" src="../scripts/settings/main.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Stream Overlays</h1>
+    <p id="version" class="muted"></p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Overlays</h2>
+      <p class="muted">Add each overlay to OBS as a browser source with this URL. Leave “Local file” unchecked.</p>
+      <ul id="overlay-links" class="links"></ul>
+    </section>
+
+    <section>
+      <h2>Chat box</h2>
+      <form id="chatbox-form">
+        <label for="chatbox-channel">Twitch channel</label>
+        <div class="row">
+          <input id="chatbox-channel" name="channel" autocomplete="off" spellcheck="false" placeholder="yourchannel" required>
+          <button type="submit">Save</button>
+        </div>
+        <p id="chatbox-status" class="status" role="status"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <a href="../diagnostics/">Diagnostics</a>
+  </footer>
+</body>
+</html>
