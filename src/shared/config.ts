@@ -1,3 +1,4 @@
+import { subscribeToCompanionEvent } from "./companion-events.ts";
 import { isRecord } from "./json.ts";
 
 // Types
@@ -33,14 +34,11 @@ export async function saveOverlaySettings(overlayId: string, settings: ConfigSou
 }
 
 export function subscribeToSettings(overlayId: string, listener: (settings: ConfigSource) => void): () => void {
-  const events = new EventSource("/api/events");
-  events.addEventListener("settings", (event: MessageEvent<string>) => {
-    const data: unknown = JSON.parse(event.data);
+  return subscribeToCompanionEvent("settings", (data) => {
     if (isRecord(data) && data["overlay"] === overlayId && isRecord(data["settings"])) {
       listener(data["settings"]);
     }
   });
-  return () => events.close();
 }
 
 function settingsUrl(overlayId: string): string {

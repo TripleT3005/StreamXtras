@@ -5,6 +5,7 @@ import { isRecord } from "../shared/json.ts";
 import { defaultSettings } from "../shared/settings.ts";
 import { normalizeChannel } from "../shared/twitch/twitch-chat-source.ts";
 import { createSettingsForm, type FormValues } from "./settings-form.ts";
+import { setupTwitchAccount } from "./twitch-account.ts";
 
 // Types
 interface OverlayLink {
@@ -169,6 +170,7 @@ function showStatus(target: HTMLElement, kind: "" | "ok" | "error", message: str
 }
 
 // Startup
+setupTwitchAccount(getElement("twitch-account", HTMLDivElement));
 renderOverlayLinks();
 void showVersion();
 void setupChatboxSettings();

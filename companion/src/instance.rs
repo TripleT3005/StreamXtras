@@ -36,6 +36,8 @@ mod tests {
     use crate::config::Config;
     use crate::events::EventBroadcaster;
     use crate::server::{self, AppState};
+    use crate::twitch::account::TwitchAccount;
+    use crate::twitch::auth::tests::FakeHttp;
 
     #[test]
     fn detects_a_running_instance() {
@@ -46,7 +48,13 @@ mod tests {
             web_root: PathBuf::new(),
             config_dir: PathBuf::new(),
             config: Mutex::new(Config::default()),
-            events: EventBroadcaster::default(),
+            events: Arc::new(EventBroadcaster::default()),
+            twitch: TwitchAccount::new(
+                Arc::new(FakeHttp::default()),
+                None,
+                &std::env::temp_dir(),
+                Arc::new(EventBroadcaster::default()),
+            ),
         };
         server::start(listener, Arc::new(state)).unwrap();
         assert!(is_running(port));

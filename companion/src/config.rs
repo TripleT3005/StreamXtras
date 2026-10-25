@@ -15,6 +15,8 @@ pub const DEFAULT_PORT: u16 = 47_820;
 #[serde(default, rename_all = "camelCase")]
 pub struct Config {
     pub port: u16,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub twitch_client_id: Option<String>,
     pub overlays: BTreeMap<String, serde_json::Map<String, serde_json::Value>>,
 }
 
@@ -22,6 +24,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             port: DEFAULT_PORT,
+            twitch_client_id: None,
             overlays: BTreeMap::new(),
         }
     }
@@ -70,13 +73,28 @@ pub fn load_or_create(directory: &Path) -> Result<(Config, bool), ConfigError> {
 
 pub fn save(directory: &Path, config: &Config) -> Result<(), ConfigError> {
     let path = config_path(directory);
-    let temporary_path = path.with_extension("json.tmp");
     let content = serde_json::to_string_pretty(config)
         .map_err(|error| ConfigError::Invalid(path.clone(), error))?;
-    fs::create_dir_all(directory)
-        .and_then(|()| fs::write(&temporary_path, content + "\n"))
-        .and_then(|()| fs::rename(&temporary_path, &path))
-        .map_err(|error| ConfigError::Io(path, error))
+    write_private_file(&path, &content).map_err(|error| ConfigError::Io(path, error))
+}
+
+pub fn write_private_file(path: &Path, content: &str) -> io::Result<()> {
+    if let Some(directory) = path.parent() {
+        fs::create_dir_all(directory)?;
+    }
+    let mut temporary_name = path.as_os_str().to_owned();
+    temporary_name.push(".tmp");
+    let temporary_path = PathBuf::from(temporary_name);
+    fs::write(&temporary_path, format!("{content}\n"))?;
+    #[cfg(unix)]
+    restrict_permissions(&temporary_path)?;
+    fs::rename(&temporary_path, path)
+}
+
+#[cfg(unix)]
+fn restrict_permissions(path: &Path) -> io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    fs::set_permissions(path, fs::Permissions::from_mode(0o600))
 }
 
 // Tests
