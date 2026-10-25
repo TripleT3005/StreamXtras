@@ -39,9 +39,17 @@ Requires [Node.js](https://nodejs.org/) (LTS) for the overlays and [Rust](https:
 
 ```
 npm install
-npm run watch            # compile src/ to web/scripts/ on every change
-cd companion && cargo run  # serves web/ from the repository in debug builds
+npm run watch
 ```
+
+`npm run watch` compiles `src/` to `web/scripts/` on every change. In a second terminal start the companion app, which serves `web/` from the repository in debug builds:
+
+```
+cd companion
+cargo run
+```
+
+On Windows PowerShell with a restrictive execution policy, use `npm.cmd` instead of `npm`.
 
 Tests: `npm test` for the overlays, `cargo test` in `companion/` for the companion app.
 The diagnostics page (`/diagnostics/`) checks the emote APIs and the anonymous Twitch chat connection; add `?channel=yourname` to also test joining a channel.
@@ -86,9 +94,17 @@ Voraussetzung sind [Node.js](https://nodejs.org/) (LTS) für die Overlays und [R
 
 ```
 npm install
-npm run watch            # übersetzt src/ bei jeder Änderung nach web/scripts/
-cd companion && cargo run  # liefert in Debug-Builds web/ aus dem Repo aus
+npm run watch
 ```
+
+`npm run watch` übersetzt `src/` bei jeder Änderung nach `web/scripts/`. In einem zweiten Terminal die Begleit-Anwendung starten, die in Debug-Builds `web/` aus dem Repo ausliefert:
+
+```
+cd companion
+cargo run
+```
+
+In Windows PowerShell mit restriktiver Ausführungsrichtlinie `npm.cmd` statt `npm` verwenden.
 
 Tests: `npm test` für die Overlays, `cargo test` in `companion/` für die Begleit-Anwendung.
 Die Diagnoseseite (`/diagnostics/`) prüft die Emote-APIs und die anonyme Verbindung zum Twitch-Chat; mit `?channel=deinname` wird zusätzlich das Betreten eines Kanals getestet.
