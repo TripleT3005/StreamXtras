@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 web/scripts/
+companion/target/
 
 # Local configuration
 *.config.json
