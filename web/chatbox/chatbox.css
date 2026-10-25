@@ -1,8 +1,14 @@
 /* Base */
 :root {
+  --font-family: system-ui, sans-serif;
+  --font-size: 18px;
+  --font-weight: 600;
   --color-text: #ffffff;
   --color-status: #f87171;
   --text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+  --message-background: transparent;
+  --message-padding: 0;
+  --message-spacing: 4px;
   --emote-height: 1.75em;
   --announcement-purple: #9146ff;
   --announcement-primary: linear-gradient(var(--announcement-purple), var(--announcement-purple));
@@ -24,22 +30,37 @@ body {
   padding: 12px;
   box-sizing: border-box;
   color: var(--color-text);
-  font: 600 18px/1.4 system-ui, sans-serif;
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  font-weight: var(--font-weight);
+  line-height: 1.4;
   text-shadow: var(--text-shadow);
+}
+
+[data-alignment="top"] body {
+  justify-content: flex-start;
 }
 
 /* Messages */
 #messages {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--message-spacing);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .message {
+  padding: var(--message-padding);
+  border-radius: 6px;
+  background: var(--message-background);
   overflow-wrap: anywhere;
+}
+
+.message.leaving {
+  opacity: 0;
+  transition: opacity 400ms ease;
 }
 
 .name {
@@ -57,6 +78,38 @@ body {
 
 .action .text {
   font-style: italic;
+}
+
+/* Animations */
+[data-animation="fade"] .message {
+  animation: fade-in 250ms ease-out;
+}
+
+[data-animation="slide"] .message {
+  animation: slide-in 300ms ease-out;
+}
+
+[data-rerendering] .message {
+  animation: none;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message {
+    animation: none !important;
+  }
 }
 
 /* Status */

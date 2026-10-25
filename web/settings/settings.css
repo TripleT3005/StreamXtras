@@ -17,12 +17,12 @@
 }
 
 body {
-  max-width: 760px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 32px 20px;
   background: var(--color-background);
   color: var(--color-text);
-  font: 16px/1.5 system-ui, sans-serif;
+  font: 15px/1.5 system-ui, sans-serif;
 }
 
 h1,
@@ -36,7 +36,8 @@ h1 {
 }
 
 h2 {
-  font-size: 1.15rem;
+  margin-bottom: 16px;
+  font-size: 1.2rem;
 }
 
 a {
@@ -65,37 +66,63 @@ footer {
   font-size: 0.9rem;
 }
 
-.row {
-  display: flex;
-  gap: 8px;
+.editor {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+  gap: 24px;
+  align-items: start;
 }
 
-/* Forms */
-label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
+.editor-preview {
+  position: sticky;
+  top: 16px;
 }
 
+@media (max-width: 860px) {
+  .editor {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-preview {
+    position: static;
+  }
+}
+
+/* Controls */
 input,
+select,
 button {
   font: inherit;
   border-radius: 6px;
 }
 
-input {
-  flex: 1;
+input:not([type="checkbox"], [type="range"], [type="color"]),
+select {
   min-width: 0;
-  padding: 8px 10px;
+  padding: 6px 10px;
   border: 1px solid var(--color-border);
   background: var(--color-background);
   color: var(--color-text);
 }
 
 input:focus-visible,
+select:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--color-accent-hover);
   outline-offset: 1px;
+}
+
+input[type="checkbox"],
+input[type="range"] {
+  accent-color: var(--color-accent);
+}
+
+input[type="color"] {
+  width: 44px;
+  height: 34px;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
 }
 
 button {
@@ -111,9 +138,117 @@ button:hover {
   background: var(--color-accent-hover);
 }
 
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.secondary {
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+}
+
+button.secondary:hover {
+  background: var(--color-border);
+}
+
+/* Settings form */
+.settings-form fieldset {
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+.settings-form > fieldset > legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.field > label,
+.field.choices > legend {
+  display: block;
+  margin-bottom: 4px;
+  padding: 0;
+  font-weight: 600;
+}
+
+.control {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.control > input:not([type="range"], [type="color"], .number),
+.control > select {
+  flex: 1;
+}
+
+.control > input[type="range"] {
+  flex: 1;
+}
+
+.control > .number {
+  width: 5.5em;
+}
+
+.unit {
+  min-width: 2.5em;
+  color: var(--color-muted);
+}
+
+.field.checkbox {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.field.checkbox > label {
+  font-weight: 600;
+}
+
+.field.checkbox > .hint {
+  flex-basis: 100%;
+}
+
+.field.choices .choice {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin-right: 16px;
+}
+
+.hint {
+  margin: 4px 0 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 0;
+  background: var(--color-surface);
+}
+
 .status {
   min-height: 1.5em;
-  margin: 8px 0 0;
+  margin: 0;
+  color: var(--color-muted);
 }
 
 .status.ok {
@@ -122,6 +257,58 @@ button:hover {
 
 .status.error {
   color: var(--color-error);
+}
+
+/* Preview */
+.preview-toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.preview-toolbar .muted {
+  margin: 0 6px 0 0;
+}
+
+.chip {
+  padding: 3px 10px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.preview-stage {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.preview-stage[data-background="checkered"] {
+  background: repeating-conic-gradient(#3a3a43 0 25%, #2a2a30 0 50%) 0 0 / 24px 24px;
+}
+
+.preview-stage[data-background="dark"] {
+  background: #0e0e10;
+}
+
+.preview-stage[data-background="light"] {
+  background: #f2f2f2;
+}
+
+.preview-stage iframe {
+  display: block;
+  border: 0;
+  color-scheme: normal;
+  transform-origin: top left;
 }
 
 /* Links */

@@ -11,7 +11,7 @@ A small companion app runs in the system tray, serves the overlays and a setting
 
 ### Features
 - **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ, highlights announcements and removes messages deleted by moderators
-- **Companion app** – tray icon, local settings page, overlay settings that apply live without reloading the OBS source
+- **Companion app** – tray icon, local settings page with live preview, overlay settings that apply live without reloading the OBS source
 - **Planned** – all Twitch badges and streamer icons in shared chat via the Twitch API, alerts
 
 ### Usage
@@ -22,15 +22,9 @@ A small companion app runs in the system tray, serves the overlays and a setting
 The companion app only listens on `127.0.0.1`. Its configuration lives outside the repository (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
 
 ### Chat box settings
-URL parameters (e.g. `?channel=othername`) override the stored settings for a single browser source.
+All settings are edited on the settings page with a live preview: channel, number of messages, hiding after a time, animation, position, font, size, colors, message background, spacing, emote size, badges, readable name colors, third-party emote providers and the browser source size. Saved changes apply to open chat boxes immediately; only a new channel or other emote providers reload them.
 
-| Setting | Default | Description |
-|---|---|---|
-| `channel` | – | Twitch channel to show (required) |
-| `maxMessages` | `30` | Maximum number of visible messages (1–200) |
-| `showBadges` | `true` | Show global badges (broadcaster, moderator, VIP, subscriber …) |
-| `readableColors` | `true` | Lighten dark name colors exactly like Twitch's dark chat does |
-| `emoteProviders` | `["7tv", "bttv", "ffz"]` | Third-party emote providers to load; Twitch emotes are always shown |
+URL parameters override the stored settings for a single browser source, e.g. `?channel=othername&fontSize=24`. The parameter names are the keys in the `chatbox` section of `config.json`.
 
 Users who never picked a name color get a random default color on Twitch that changes with every page load. The chat box instead assigns them a fixed color from the same palette, based on their user ID.
 
@@ -66,7 +60,7 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 
 ### Funktionen
 - **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ, hebt Ankündigungen hervor und entfernt von Moderatoren gelöschte Nachrichten
-- **Begleit-Anwendung** – Tray-Icon, lokale Einstellungsseite, Overlay-Einstellungen wirken sofort, ohne die OBS-Quelle neu zu laden
+- **Begleit-Anwendung** – Tray-Icon, lokale Einstellungsseite mit Live-Vorschau, Overlay-Einstellungen wirken sofort, ohne die OBS-Quelle neu zu laden
 - **Geplant** – alle Twitch-Badges und Streamer-Icons im geteilten Chat über die Twitch-API, Alerts
 
 ### Verwendung
@@ -77,15 +71,9 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 Die Begleit-Anwendung lauscht nur auf `127.0.0.1`. Ihre Konfiguration liegt außerhalb des Repos (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
 
 ### Chatbox-Einstellungen
-URL-Parameter (z. B. `?channel=andererkanal`) überschreiben die gespeicherten Einstellungen für eine einzelne Browserquelle.
+Alle Einstellungen werden auf der Einstellungsseite mit Live-Vorschau bearbeitet: Kanal, Anzahl der Nachrichten, Ausblenden nach Zeit, Animation, Position, Schrift, Größe, Farben, Hintergrund der Nachrichten, Abstand, Emote-Größe, Badges, lesbare Namensfarben, Emote-Anbieter und die Größe der Browserquelle. Gespeicherte Änderungen wirken sofort in geöffneten Chatboxen; nur ein neuer Kanal oder andere Emote-Anbieter laden sie neu.
 
-| Einstellung | Standard | Beschreibung |
-|---|---|---|
-| `channel` | – | Anzuzeigender Twitch-Kanal (Pflicht) |
-| `maxMessages` | `30` | Maximale Anzahl sichtbarer Nachrichten (1–200) |
-| `showBadges` | `true` | Globale Badges anzeigen (Broadcaster, Moderator, VIP, Abonnent …) |
-| `readableColors` | `true` | Dunkle Namensfarben genau so aufhellen wie der dunkle Twitch-Chat |
-| `emoteProviders` | `["7tv", "bttv", "ffz"]` | Zu ladende Emote-Anbieter; Twitch-Emotes werden immer angezeigt |
+URL-Parameter überschreiben die gespeicherten Einstellungen für eine einzelne Browserquelle, z. B. `?channel=andererkanal&fontSize=24`. Die Parameternamen sind die Schlüssel im Abschnitt `chatbox` der `config.json`.
 
 Nutzer, die nie eine Namensfarbe gewählt haben, bekommen auf Twitch bei jedem Laden der Seite eine zufällige Standardfarbe. Die Chatbox gibt ihnen stattdessen eine feste Farbe aus derselben Palette, abhängig von ihrer Nutzer-ID.
 

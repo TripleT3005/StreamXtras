@@ -76,6 +76,11 @@ export function readBoolean(source: ConfigSource, key: string, fallback: boolean
   return fallback;
 }
 
+export function readColor(source: ConfigSource, key: string, fallback: string): string {
+  const value = source[key];
+  return typeof value === "string" && /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(value.trim()) ? value.trim().toLowerCase() : fallback;
+}
+
 export function readStringList(source: ConfigSource, key: string, fallback: readonly string[]): readonly string[] {
   const value = source[key];
   const items = typeof value === "string" ? value.split(",") : Array.isArray(value) ? value : null;

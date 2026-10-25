@@ -23,14 +23,28 @@
 
     <section>
       <h2>Chat box</h2>
-      <form id="chatbox-form">
-        <label for="chatbox-channel">Twitch channel</label>
-        <div class="row">
-          <input id="chatbox-channel" name="channel" autocomplete="off" spellcheck="false" placeholder="yourchannel" required>
-          <button type="submit">Save</button>
+      <div class="editor">
+        <form id="chatbox-form" class="editor-form" novalidate>
+          <div id="chatbox-fields"></div>
+          <div class="actions">
+            <button id="chatbox-save" type="submit">Save</button>
+            <button id="chatbox-reset" type="button" class="secondary">Reset to defaults</button>
+            <p id="chatbox-status" class="status" role="status"></p>
+          </div>
+        </form>
+
+        <div class="editor-preview">
+          <div class="preview-toolbar" role="group" aria-label="Preview background">
+            <span class="muted">Preview</span>
+            <button type="button" class="chip" data-preview-background="checkered" aria-pressed="true">Checkered</button>
+            <button type="button" class="chip" data-preview-background="dark" aria-pressed="false">Dark</button>
+            <button type="button" class="chip" data-preview-background="light" aria-pressed="false">Light</button>
+          </div>
+          <div id="chatbox-stage" class="preview-stage" data-background="checkered">
+            <iframe id="chatbox-preview" title="Chat box preview"></iframe>
+          </div>
         </div>
-        <p id="chatbox-status" class="status" role="status"></p>
-      </form>
+      </div>
     </section>
   </main>
 
