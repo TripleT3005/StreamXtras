@@ -29,7 +29,10 @@ When an overlay is served over HTTP, URL parameters (e.g. `?channel=yourname`) o
 | `channel` | – | Twitch channel to show (required) |
 | `maxMessages` | `30` | Maximum number of visible messages (1–200) |
 | `showBadges` | `true` | Show global badges (broadcaster, moderator, VIP, subscriber …) |
+| `readableColors` | `true` | Lighten dark name colors exactly like Twitch's dark chat does |
 | `emoteProviders` | `["7tv", "bttv", "ffz"]` | Third-party emote providers to load; Twitch emotes are always shown |
+
+Users who never picked a name color get a random default color on Twitch that changes with every page load. The chat box instead assigns them a fixed color from the same palette, based on their user ID.
 
 ### Development
 Requires [Node.js](https://nodejs.org/) (LTS). The only dependency is the TypeScript compiler.
@@ -73,7 +76,10 @@ Wird ein Overlay über HTTP ausgeliefert, überschreiben URL-Parameter (z. B. `?
 | `channel` | – | Anzuzeigender Twitch-Kanal (Pflicht) |
 | `maxMessages` | `30` | Maximale Anzahl sichtbarer Nachrichten (1–200) |
 | `showBadges` | `true` | Globale Badges anzeigen (Broadcaster, Moderator, VIP, Abonnent …) |
+| `readableColors` | `true` | Dunkle Namensfarben genau so aufhellen wie der dunkle Twitch-Chat |
 | `emoteProviders` | `["7tv", "bttv", "ffz"]` | Zu ladende Emote-Anbieter; Twitch-Emotes werden immer angezeigt |
+
+Nutzer, die nie eine Namensfarbe gewählt haben, bekommen auf Twitch bei jedem Laden der Seite eine zufällige Standardfarbe. Die Chatbox gibt ihnen stattdessen eine feste Farbe aus derselben Palette, abhängig von ihrer Nutzer-ID.
 
 ### Entwicklung
 Voraussetzung ist [Node.js](https://nodejs.org/) (LTS). Einzige Abhängigkeit ist der TypeScript-Compiler.

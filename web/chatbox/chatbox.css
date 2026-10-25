@@ -1,7 +1,6 @@
 /* Base */
 :root {
   --color-text: #ffffff;
-  --color-name: #c9c9ff;
   --color-status: #f87171;
   --text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
   --emote-height: 1.75em;
@@ -41,7 +40,6 @@ body {
 }
 
 .name {
-  color: var(--color-name);
   font-weight: 700;
 }
 
