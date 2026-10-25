@@ -16,6 +16,11 @@ export interface TextSetting extends SettingBase<string> {
   readonly suggestions: readonly string[];
 }
 
+export interface FontSetting extends SettingBase<string> {
+  readonly kind: "font";
+  readonly suggestions: readonly string[];
+}
+
 export interface NumberSetting extends SettingBase<number> {
   readonly kind: "number";
   readonly min: number;
@@ -47,7 +52,7 @@ export interface MultiChoiceSetting<T extends string = string> extends SettingBa
   readonly options: readonly SettingOption<T>[];
 }
 
-export type Setting = TextSetting | NumberSetting | BooleanSetting | ColorSetting | ChoiceSetting | MultiChoiceSetting;
+export type Setting = TextSetting | FontSetting | NumberSetting | BooleanSetting | ColorSetting | ChoiceSetting | MultiChoiceSetting;
 
 export type SettingsSchema = Readonly<Record<string, Setting>>;
 
@@ -68,6 +73,16 @@ export function textSetting(options: CommonOptions<string> & { readonly placehol
     kind: "text",
     live: options.live ?? true,
     placeholder: options.placeholder ?? "",
+    suggestions: options.suggestions ?? [],
+    read: (source, key) => readString(source, key, options.default),
+  };
+}
+
+export function fontSetting(options: CommonOptions<string> & { readonly suggestions?: readonly string[] }): FontSetting {
+  return {
+    ...options,
+    kind: "font",
+    live: options.live ?? true,
     suggestions: options.suggestions ?? [],
     read: (source, key) => readString(source, key, options.default),
   };

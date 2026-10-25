@@ -2,7 +2,10 @@ import type { EmoteLookup } from "../../shared/emotes/emote.ts";
 import { buildFragments } from "../../shared/emotes/fragments.ts";
 import type { AnnouncementColor, ChatBadge, ChatMessageEvent, EmotePlacement } from "../../shared/events.ts";
 import { isRecord } from "../../shared/json.ts";
-import { readChatboxConfig, type ChatboxConfig } from "./chatbox-config.ts";
+import { hasStructuralChange } from "../../shared/settings.ts";
+import { normalizeChannel } from "../../shared/twitch/twitch-chat-source.ts";
+import { Chatbox } from "./chatbox.ts";
+import { chatboxSettings, missingChannelMessage, readChatboxConfig, type ChatboxConfig } from "./chatbox-config.ts";
 import { applyChatboxStyle } from "./chatbox-style.ts";
 import { ChatList } from "./chat-list.ts";
 import { renderMessage } from "./message-view.ts";
@@ -18,9 +21,12 @@ interface DemoMessage {
   readonly announcement?: AnnouncementColor;
 }
 
+export type PreviewMode = "demo" | "live";
+
 // Constants
 export const previewMessageType = "stream-overlays:preview-settings";
 const demoIntervalMs = 2500;
+const liveRestartDelayMs = 700;
 const initialMessageCount = 6;
 const noEmotes: EmoteLookup = { get: () => undefined };
 
@@ -36,8 +42,53 @@ const demoMessages: readonly DemoMessage[] = [
 ];
 
 // Preview
-export function startPreview(root: HTMLElement, container: HTMLElement, initial: ChatboxConfig): void {
-  let config = initial;
+export function startPreview(root: HTMLElement, container: HTMLElement, status: HTMLElement, mode: PreviewMode): void {
+  const apply = mode === "live" ? createLivePreview(root, container, status) : createDemoPreview(root, container);
+  window.addEventListener("message", (event: MessageEvent<unknown>) => {
+    if (event.origin === location.origin && isRecord(event.data) && event.data["type"] === previewMessageType && isRecord(event.data["settings"])) {
+      apply(readChatboxConfig(event.data["settings"]));
+    }
+  });
+  apply(readChatboxConfig({}));
+}
+
+function createLivePreview(root: HTMLElement, container: HTMLElement, status: HTMLElement): (config: ChatboxConfig) => void {
+  let current: ChatboxConfig | null = null;
+  let chatbox: Chatbox | null = null;
+  let restartTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const restart = (config: ChatboxConfig): void => {
+    chatbox?.stop();
+    chatbox = null;
+    container.replaceChildren();
+    const hasChannel = normalizeChannel(config.channel) !== null;
+    status.textContent = hasChannel ? "" : missingChannelMessage;
+    status.hidden = hasChannel;
+    if (hasChannel) {
+      chatbox = new Chatbox(config, container);
+      chatbox.start();
+    }
+  };
+
+  return (next) => {
+    applyChatboxStyle(root, next);
+    const isStructural = current === null || hasStructuralChange(chatboxSettings, current, next);
+    current = next;
+    if (!isStructural) {
+      chatbox?.configure(next);
+      return;
+    }
+    clearTimeout(restartTimer);
+    restartTimer = setTimeout(() => {
+      if (current !== null) {
+        restart(current);
+      }
+    }, liveRestartDelayMs);
+  };
+}
+
+function createDemoPreview(root: HTMLElement, container: HTMLElement): (config: ChatboxConfig) => void {
+  let config = readChatboxConfig({});
   let nextIndex = 0;
   const chatList = new ChatList(container, config.maxMessages, config.hideAfterSeconds);
 
@@ -57,24 +108,16 @@ export function startPreview(root: HTMLElement, container: HTMLElement, initial:
     for (let count = 0; count < initialMessageCount; count++) {
       addMessage();
     }
-    requestAnimationFrame(() => delete root.dataset["rerendering"]);
+    setTimeout(() => delete root.dataset["rerendering"], 50);
   };
 
-  const apply = (next: ChatboxConfig): void => {
+  setInterval(addMessage, demoIntervalMs);
+  return (next) => {
     config = next;
     applyChatboxStyle(root, config);
     chatList.configure(config.maxMessages, config.hideAfterSeconds);
     renderAll();
   };
-
-  window.addEventListener("message", (event: MessageEvent<unknown>) => {
-    if (event.origin === location.origin && isRecord(event.data) && event.data["type"] === previewMessageType && isRecord(event.data["settings"])) {
-      apply(readChatboxConfig(event.data["settings"]));
-    }
-  });
-
-  apply(config);
-  setInterval(addMessage, demoIntervalMs);
 }
 
 function toChatMessage(demo: DemoMessage, sequence: number): ChatMessageEvent {
