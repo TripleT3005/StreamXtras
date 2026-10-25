@@ -1,0 +1,64 @@
+/* Base */
+:root {
+  --color-text: #ffffff;
+  --color-name: #c9c9ff;
+  --color-status: #f87171;
+  --text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px;
+  box-sizing: border-box;
+  color: var(--color-text);
+  font: 600 18px/1.4 system-ui, sans-serif;
+  text-shadow: var(--text-shadow);
+}
+
+/* Messages */
+#messages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message {
+  overflow-wrap: anywhere;
+}
+
+.name {
+  color: var(--color-name);
+  font-weight: 700;
+}
+
+.message:not(.action) .name::after {
+  content: ": ";
+  color: var(--color-text);
+}
+
+.action .name::after {
+  content: " ";
+}
+
+.action .text {
+  font-style: italic;
+}
+
+/* Status */
+#status {
+  margin: 0;
+  color: var(--color-status);
+}

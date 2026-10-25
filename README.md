@@ -13,9 +13,21 @@ Overlays are plain web pages used as OBS browser sources with a transparent back
 - **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ and removes messages deleted by moderators
 - **Alerts and more** – later, via a small optional local companion app
 
+### Usage in OBS
+1. Build the overlays once (see [Development](#development))
+2. Copy `web/chatbox/chatbox.config.example.json` to `web/chatbox/chatbox.config.json` and set your channel
+3. Add a browser source in OBS, check **Local file** and select `web/chatbox/index.html`
+
+The overlays must be added as a local file: with a `file:///` URL, OBS blocks the scripts.
+
 ### Configuration
-Overlays are configured through URL parameters of the browser source.
-Local configuration files are never committed: files named `*.config.json` or `*.local.json` are ignored by Git. Each one has a committed template next to it named `*.config.example.json`, which you copy and fill in.
+Each overlay reads its settings from a JSON file next to its `index.html`. Local configuration files are never committed: files named `*.config.json` or `*.local.json` are ignored by Git. Each one has a committed template next to it named `*.config.example.json`, which you copy and fill in.
+When an overlay is served over HTTP, URL parameters (e.g. `?channel=yourname`) override the values from the file.
+
+| Chat box setting | Default | Description |
+|---|---|---|
+| `channel` | – | Twitch channel to show (required) |
+| `maxMessages` | `30` | Maximum number of visible messages (1–200) |
 
 ### Development
 Requires [Node.js](https://nodejs.org/) (LTS). The only dependency is the TypeScript compiler.
@@ -23,6 +35,7 @@ Requires [Node.js](https://nodejs.org/) (LTS). The only dependency is the TypeSc
 ```
 npm install
 npm run build    # compile src/ to web/scripts/ (or: npm run watch)
+npm test         # type-check and run the unit tests
 npm run serve    # optional local test server at http://127.0.0.1:8080/
 ```
 
@@ -42,9 +55,21 @@ Die Overlays sind einfache Webseiten, die als OBS-Browserquelle mit transparente
 - **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ und entfernt von Moderatoren gelöschte Nachrichten
 - **Alerts und mehr** – später, über eine kleine optionale lokale Begleit-Anwendung
 
+### Verwendung in OBS
+1. Overlays einmal bauen (siehe [Entwicklung](#entwicklung))
+2. `web/chatbox/chatbox.config.example.json` nach `web/chatbox/chatbox.config.json` kopieren und den eigenen Kanal eintragen
+3. In OBS eine Browserquelle hinzufügen, **Lokale Datei** anhaken und `web/chatbox/index.html` auswählen
+
+Die Overlays müssen als lokale Datei eingebunden werden: Mit einer `file:///`-URL blockiert OBS die Skripte.
+
 ### Konfiguration
-Die Overlays werden über URL-Parameter der Browserquelle eingestellt.
-Lokale Konfigurationsdateien werden nie eingecheckt: Dateien mit der Endung `*.config.json` oder `*.local.json` ignoriert Git. Daneben liegt jeweils eine eingecheckte Vorlage `*.config.example.json`, die man kopiert und ausfüllt.
+Jedes Overlay liest seine Einstellungen aus einer JSON-Datei neben seiner `index.html`. Lokale Konfigurationsdateien werden nie eingecheckt: Dateien mit der Endung `*.config.json` oder `*.local.json` ignoriert Git. Daneben liegt jeweils eine eingecheckte Vorlage `*.config.example.json`, die man kopiert und ausfüllt.
+Wird ein Overlay über HTTP ausgeliefert, überschreiben URL-Parameter (z. B. `?channel=deinname`) die Werte aus der Datei.
+
+| Chatbox-Einstellung | Standard | Beschreibung |
+|---|---|---|
+| `channel` | – | Anzuzeigender Twitch-Kanal (Pflicht) |
+| `maxMessages` | `30` | Maximale Anzahl sichtbarer Nachrichten (1–200) |
 
 ### Entwicklung
 Voraussetzung ist [Node.js](https://nodejs.org/) (LTS). Einzige Abhängigkeit ist der TypeScript-Compiler.
@@ -52,6 +77,7 @@ Voraussetzung ist [Node.js](https://nodejs.org/) (LTS). Einzige Abhängigkeit is
 ```
 npm install
 npm run build    # übersetzt src/ nach web/scripts/ (oder: npm run watch)
+npm test         # Typprüfung und Unit-Tests
 npm run serve    # optionaler lokaler Testserver unter http://127.0.0.1:8080/
 ```
 

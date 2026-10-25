@@ -6,6 +6,7 @@
     "moduleResolution": "bundler",
     "rewriteRelativeImportExtensions": true,
     "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
     "rootDir": "src",
     "outDir": "web/scripts",
     "types": [],
