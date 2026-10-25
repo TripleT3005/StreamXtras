@@ -4,6 +4,9 @@
   --color-status: #f87171;
   --text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
   --emote-height: 1.75em;
+  --announcement-purple: #9146ff;
+  --announcement-primary: linear-gradient(var(--announcement-purple), var(--announcement-purple));
+  --announcement-border-width: 6px;
 }
 
 html,
@@ -60,6 +63,30 @@ body {
 #status {
   margin: 0;
   color: var(--color-status);
+}
+
+/* Announcements */
+.announcement {
+  padding: 4px 10px;
+  border-inline: var(--announcement-border-width) solid var(--announcement-purple);
+  border-image-slice: 1;
+  border-image-source: var(--announcement-primary);
+}
+
+.announcement-purple {
+  border-image-source: linear-gradient(var(--announcement-purple), #ff75e6);
+}
+
+.announcement-blue {
+  border-image-source: linear-gradient(#00d6d6, var(--announcement-purple));
+}
+
+.announcement-green {
+  border-image-source: linear-gradient(#00db84, #57bee6);
+}
+
+.announcement-orange {
+  border-image-source: linear-gradient(#ffb31a, #e0e000);
 }
 
 /* Badges and emotes */

@@ -33,6 +33,7 @@ describe("mapChatEvent", () => {
       },
       text: "Kappa Keepo Kappa",
       isAction: false,
+      announcement: null,
       emotes: [
         { id: "25", start: 0, end: 4 },
         { id: "1902", start: 6, end: 10 },
@@ -50,6 +51,51 @@ describe("mapChatEvent", () => {
     assert.equal(event.user.displayName, "lowercase");
     assert.equal(event.user.color, null);
     assert.equal(event.timestamp, 1_000);
+  });
+
+  test("maps an announcement with its color and the sender from the login tag", () => {
+    const event = map(
+      "@badges=moderator/1;color=#1E90FF;display-name=ModName;emotes=25:6-10;id=ann-1;login=modname;mod=1;msg-id=announcement;" +
+        "msg-param-color=ORANGE;room-id=1337;system-msg=;tmi-sent-ts=1700000000001;user-id=77 " +
+        ":tmi.twitch.tv USERNOTICE #channel :Hello Kappa",
+    );
+    assert.ok(event?.type === "chat.message");
+    assert.equal(event.id, "ann-1");
+    assert.equal(event.announcement, "orange");
+    assert.equal(event.user.login, "modname");
+    assert.equal(event.user.displayName, "ModName");
+    assert.equal(event.text, "Hello Kappa");
+    assert.deepEqual(event.emotes, [{ id: "25", start: 6, end: 10 }]);
+  });
+
+  test("falls back to the primary announcement color", () => {
+    const event = map("@id=ann-2;login=mod;msg-id=announcement;user-id=1 :tmi.twitch.tv USERNOTICE #channel :Hi");
+    assert.ok(event?.type === "chat.message");
+    assert.equal(event.announcement, "primary");
+  });
+
+  test("maps announcements forwarded from a shared chat", () => {
+    const event = map(
+      "@badges=;id=ann-3;login=othermod;msg-id=sharedchatnotice;msg-param-color=BLUE;source-badges=moderator/1;" +
+        "source-msg-id=announcement;source-room-id=99;user-id=5 :tmi.twitch.tv USERNOTICE #channel :From the other channel",
+    );
+    assert.ok(event?.type === "chat.message");
+    assert.equal(event.announcement, "blue");
+    assert.deepEqual(event.user.badges, [{ set: "moderator", version: "1" }]);
+  });
+
+  test("ignores other user notices such as subscriptions", () => {
+    assert.equal(map("@id=sub-1;login=fan;msg-id=resub;user-id=2 :tmi.twitch.tv USERNOTICE #channel :Great stream"), null);
+    assert.equal(
+      map("@id=sub-2;login=fan;msg-id=sharedchatnotice;source-msg-id=sub;user-id=2 :tmi.twitch.tv USERNOTICE #channel"),
+      null,
+    );
+  });
+
+  test("prefers the source badges of shared chat messages", () => {
+    const event = map("@badges=;source-badges=vip/1;id=m;user-id=3 :fan!fan@fan.tmi.twitch.tv PRIVMSG #channel :hi");
+    assert.ok(event?.type === "chat.message");
+    assert.deepEqual(event.user.badges, [{ set: "vip", version: "1" }]);
   });
 
   test("ignores chat messages without id", () => {

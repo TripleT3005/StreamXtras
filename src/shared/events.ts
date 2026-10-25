@@ -20,6 +20,8 @@ export interface ChatUser {
   readonly badges: readonly ChatBadge[];
 }
 
+export type AnnouncementColor = "primary" | "blue" | "green" | "orange" | "purple";
+
 export interface ChatMessageEvent {
   readonly type: "chat.message";
   readonly platform: Platform;
@@ -28,6 +30,7 @@ export interface ChatMessageEvent {
   readonly user: ChatUser;
   readonly text: string;
   readonly isAction: boolean;
+  readonly announcement: AnnouncementColor | null;
   readonly emotes: readonly EmotePlacement[];
   readonly timestamp: number;
 }
