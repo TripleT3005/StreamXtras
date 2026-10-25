@@ -153,6 +153,7 @@ jobs:
             $prerelease
 
           if [ -z "$VT_API_KEY" ]; then
+            echo "::warning::The repository secret VT_API_KEY is not set, so the release has no VirusTotal scan"
             exit 0
           fi
 
