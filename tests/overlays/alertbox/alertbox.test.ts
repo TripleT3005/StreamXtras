@@ -1,35 +1,66 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { formatAlertText, parseAlert } from "../../../src/overlays/alertbox/alert.ts";
+import { formatAlertText, parseAlert, type OverlayAlert } from "../../../src/overlays/alertbox/alert.ts";
 import { AlertQueue } from "../../../src/overlays/alertbox/alert-queue.ts";
-import { alertStyle, readAlertboxConfig } from "../../../src/overlays/alertbox/alertbox-config.ts";
-import { mediaUrl, readMediaReference } from "../../../src/shared/config.ts";
+import { alertStyle, alertTypeForSection, readAlertboxConfig, variantMatches } from "../../../src/overlays/alertbox/alertbox-config.ts";
+import { isVideoReference, mediaUrl, readMediaReference } from "../../../src/shared/config.ts";
 
+// Helpers
+function alert(overrides: Partial<OverlayAlert>): OverlayAlert {
+  return { type: "follow", userName: "Fan", userLogin: "fan", amount: 0, avatarUrl: null, test: false, ...overrides };
+}
+
+const variant = {
+  match: "exact",
+  value: "67",
+  text: "Six seven, {name}!",
+  image: "media/clip-1.webm",
+  avatar: false,
+  sound: "",
+  duration: 10,
+} as const;
+
+// Tests
 describe("alerts", () => {
-  test("parses follow alerts from the companion app", () => {
+  test("parses alerts from the companion app", () => {
     assert.deepEqual(parseAlert({ type: "follow", userName: "NewFollower", userLogin: "newfollower", test: false }), {
       type: "follow",
       userName: "NewFollower",
+      userLogin: "newfollower",
+      amount: 0,
+      avatarUrl: null,
       test: false,
     });
+    assert.deepEqual(parseAlert({ type: "cheer", userName: "Anonymous", amount: 67 })?.amount, 67);
     assert.equal(parseAlert({ type: "follow", userName: "" }), null);
-    assert.equal(parseAlert({ type: "raid", userName: "Raider" }), null);
+    assert.equal(parseAlert({ type: "host", userName: "Raider" }), null);
     assert.equal(parseAlert("follow"), null);
+    assert.equal(parseAlert({ type: "gift", userName: "Fan", amount: -3 })?.amount, 0);
   });
 
-  test("splits the text template around the name", () => {
-    assert.deepEqual(formatAlertText("{name} is now following!", "Fan"), [
-      { kind: "name", text: "Fan" },
+  test("accepts only Twitch profile pictures", () => {
+    const twitch = "https://static-cdn.jtvnw.net/user/abc-profile_image-300x300.png";
+    assert.equal(parseAlert({ type: "raid", userName: "Raider", avatarUrl: twitch })?.avatarUrl, twitch);
+    for (const avatarUrl of ["https://evil.example/a.png", "javascript:alert(1)", "//static-cdn.jtvnw.net/a.png", 5]) {
+      assert.equal(parseAlert({ type: "raid", userName: "Raider", avatarUrl })?.avatarUrl, null);
+    }
+  });
+
+  test("replaces name and amount in the text template", () => {
+    assert.deepEqual(formatAlertText("{name} is now following!", { userName: "Fan", amount: 0 }), [
+      { kind: "highlight", text: "Fan" },
       { kind: "text", text: " is now following!" },
     ]);
-    assert.deepEqual(formatAlertText("Welcome {name}, thanks {name}!", "Fan"), [
-      { kind: "text", text: "Welcome " },
-      { kind: "name", text: "Fan" },
-      { kind: "text", text: ", thanks " },
-      { kind: "name", text: "Fan" },
+    assert.deepEqual(formatAlertText("Thanks {name} for {amount} bits, {name}!", { userName: "Fan", amount: 67 }), [
+      { kind: "text", text: "Thanks " },
+      { kind: "highlight", text: "Fan" },
+      { kind: "text", text: " for " },
+      { kind: "highlight", text: "67" },
+      { kind: "text", text: " bits, " },
+      { kind: "highlight", text: "Fan" },
       { kind: "text", text: "!" },
     ]);
-    assert.deepEqual(formatAlertText("New follower", "Fan"), [{ kind: "text", text: "New follower" }]);
+    assert.deepEqual(formatAlertText("New follower {nam}", { userName: "Fan", amount: 0 }), [{ kind: "text", text: "New follower {nam}" }]);
   });
 });
 
@@ -81,19 +112,63 @@ describe("AlertQueue", () => {
 });
 
 describe("alert box settings", () => {
-  test("ship with the included image and sound", () => {
+  test("ship with the included images and sounds for every type", () => {
     const config = readAlertboxConfig({});
-    assert.deepEqual(alertStyle(config, "follow"), {
+    assert.deepEqual(alertStyle(config, alert({ type: "follow" })), {
       enabled: true,
       text: "{name} is now following!",
       image: "assets/images/heart.svg",
+      avatar: false,
       sound: "assets/sounds/chime.wav",
       durationMs: 6000,
     });
+    assert.equal(alertStyle(config, alert({ type: "cheer", amount: 100 })).text, "{name} cheered {amount} bits!");
+    assert.equal(alertStyle(config, alert({ type: "raid" })).avatar, true);
+  });
+
+  test("keep settings saved by earlier versions", () => {
+    const config = readAlertboxConfig({ followEnabled: false, followText: "Hi {name}", followDuration: 9 });
+    const style = alertStyle(config, alert({ type: "follow" }));
+    assert.equal(style.enabled, false);
+    assert.equal(style.text, "Hi {name}");
+    assert.equal(style.durationMs, 9000);
+  });
+
+  test("use the first matching variant", () => {
+    const config = readAlertboxConfig({
+      cheerVariants: [variant, { ...variant, match: "min", value: "500", text: "Big cheer!" }, "not a variant"],
+    });
+    assert.equal(config.cheerVariants.length, 2);
+    assert.equal(alertStyle(config, alert({ type: "cheer", amount: 67 })).text, "Six seven, {name}!");
+    assert.equal(alertStyle(config, alert({ type: "cheer", amount: 67 })).durationMs, 10000);
+    assert.equal(alertStyle(config, alert({ type: "cheer", amount: 1000 })).text, "Big cheer!");
+    assert.equal(alertStyle(config, alert({ type: "cheer", amount: 66 })).text, "{name} cheered {amount} bits!");
+    assert.equal(alertStyle(config, alert({ type: "gift", amount: 67 })).text, "{name} gifted {amount} subs!");
+  });
+
+  test("match variants by amount or Twitch user", () => {
+    const friend = { userName: "BestFriend", userLogin: "bestfriend", amount: 3 };
+    assert.equal(variantMatches({ match: "user", value: "@bestfriend" }, friend), true);
+    assert.equal(variantMatches({ match: "user", value: "BESTFRIEND " }, friend), true);
+    assert.equal(variantMatches({ match: "user", value: "" }, friend), false);
+    assert.equal(variantMatches({ match: "user", value: "other" }, friend), false);
+    assert.equal(variantMatches({ match: "exact", value: "3" }, friend), true);
+    assert.equal(variantMatches({ match: "min", value: "2" }, friend), true);
+    assert.equal(variantMatches({ match: "min", value: "4" }, friend), false);
+    assert.equal(variantMatches({ match: "exact", value: "bestfriend" }, friend), false);
+    assert.equal(variantMatches({ match: "min", value: "-1" }, friend), false);
+  });
+
+  test("map editor sections to alert types", () => {
+    assert.equal(alertTypeForSection("Gift subs"), "gift");
+    assert.equal(alertTypeForSection("Raid"), "raid");
+    assert.equal(alertTypeForSection("General"), "follow");
+    assert.equal(alertTypeForSection(null), "follow");
   });
 
   test("accept only included or uploaded media", () => {
     assert.equal(readMediaReference({ value: "media/my-sound-123.mp3" }, "value", "x"), "media/my-sound-123.mp3");
+    assert.equal(readMediaReference({ value: "media/friend-clip-1.webm" }, "value", "x"), "media/friend-clip-1.webm");
     assert.equal(readMediaReference({ value: "assets/images/star.svg" }, "value", "x"), "assets/images/star.svg");
     assert.equal(readMediaReference({ value: "" }, "value", "x"), "");
     for (const invalid of ["https://evil.example/a.mp3", "media/../config.json", "media/a.svg", "javascript:alert(1)", 5]) {
@@ -104,5 +179,8 @@ describe("alert box settings", () => {
     assert.equal(mediaUrl(""), null);
     assert.equal(mediaUrl("javascript:alert(1)"), null);
     assert.equal(mediaUrl("//evil.example/a.png"), null);
+    assert.equal(isVideoReference("media/clip-1.mp4"), true);
+    assert.equal(isVideoReference("media/clip-1.png"), false);
+    assert.equal(isVideoReference("https://evil.example/a.mp4"), false);
   });
 });

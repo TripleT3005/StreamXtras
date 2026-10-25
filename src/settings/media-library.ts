@@ -58,5 +58,5 @@ function parseMediaFile(data: unknown): MediaFile[] {
     return [];
   }
   const kind = data["kind"];
-  return kind === "sound" || kind === "image" ? [{ file: data["file"], value: data["value"], kind }] : [];
+  return kind === "sound" || kind === "image" || kind === "video" ? [{ file: data["file"], value: data["value"], kind }] : [];
 }

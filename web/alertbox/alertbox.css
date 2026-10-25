@@ -52,12 +52,24 @@ body {
   filter: drop-shadow(0 4px 8px rgb(0 0 0 / 40%));
 }
 
+.alert-image.avatar {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.alert-video {
+  width: var(--video-width);
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 8px;
+}
+
 .alert-text {
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-.alert-name {
+.alert-highlight {
   color: var(--color-highlight);
 }
 

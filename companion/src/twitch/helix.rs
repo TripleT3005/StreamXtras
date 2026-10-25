@@ -108,6 +108,14 @@ impl HelixClient {
         })
     }
 
+    pub fn user_by_login(&self, login: &str) -> Result<Value, HelixError> {
+        let login = validate_login(login)?;
+        self.cached(&format!("login:{login}"), USER_CACHE_DURATION, || {
+            self.get(&format!("/users?login={login}"))
+                .and_then(|body| parse_user(&body))
+        })
+    }
+
     pub fn post(&self, path: &str, body: &str) -> Result<HttpResponse, HelixError> {
         let response = self.request(path, Some(body))?;
         if response.status == 401 {
@@ -190,6 +198,20 @@ fn validate_id(id: &str) -> Result<&str, HelixError> {
     }
 }
 
+fn validate_login(login: &str) -> Result<String, HelixError> {
+    let login = login.trim().to_ascii_lowercase();
+    if !login.is_empty()
+        && login.len() <= 25
+        && login
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+    {
+        Ok(login)
+    } else {
+        Err(HelixError::NotFound)
+    }
+}
+
 fn parse_badges(body: &str) -> Result<Value, HelixError> {
     let response: DataResponse<BadgeSet> =
         serde_json::from_str(body).map_err(|error| HelixError::Failed(error.to_string()))?;
@@ -226,6 +248,7 @@ fn parse_user(body: &str) -> Result<Value, HelixError> {
         "login": user.login,
         "displayName": user.display_name,
         "profileImageUrl": user.profile_image_url.replace("-300x300.", "-70x70."),
+        "largeProfileImageUrl": user.profile_image_url,
     }))
 }
 
@@ -313,7 +336,11 @@ mod tests {
 
     #[test]
     fn loads_channel_badges_and_users() {
-        let fixture = fixture("channel", true, &[(200, GLOBAL_BADGES), (200, USER)]);
+        let fixture = fixture(
+            "channel",
+            true,
+            &[(200, GLOBAL_BADGES), (200, USER), (200, USER)],
+        );
         assert!(fixture.client.channel_badges("1337").unwrap()["moderator"].is_object());
         let user = fixture.client.user("42").unwrap();
         assert_eq!(user["displayName"], "Streamer");
@@ -321,9 +348,14 @@ mod tests {
             user["profileImageUrl"],
             "https://cdn/user-profile_image-70x70.png"
         );
+        assert_eq!(
+            fixture.client.user_by_login(" Streamer ").unwrap()["largeProfileImageUrl"],
+            "https://cdn/user-profile_image-300x300.png"
+        );
         let requests = fixture.http.requests.lock().unwrap();
         assert!(requests[1].contains("/chat/badges?broadcaster_id=1337"));
         assert!(requests[2].contains("/users?id=42"));
+        assert!(requests[3].contains("/users?login=streamer"));
     }
 
     #[test]
@@ -334,6 +366,10 @@ mod tests {
             Err(HelixError::NotFound)
         );
         assert_eq!(fixture.client.user(""), Err(HelixError::NotFound));
+        assert_eq!(
+            fixture.client.user_by_login("a&id=1"),
+            Err(HelixError::NotFound)
+        );
         assert!(fixture.http.requests.lock().unwrap().is_empty());
     }
 
