@@ -103,10 +103,8 @@ mod tests {
     use super::*;
 
     fn temporary_directory(name: &str) -> PathBuf {
-        let directory = std::env::temp_dir().join(format!(
-            "stream-overlays-test-{name}-{}",
-            std::process::id()
-        ));
+        let directory =
+            std::env::temp_dir().join(format!("streamxtras-test-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         directory
     }

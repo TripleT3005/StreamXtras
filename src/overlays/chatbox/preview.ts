@@ -24,7 +24,7 @@ interface DemoMessage {
 export type PreviewMode = "demo" | "live";
 
 // Constants
-export const previewMessageType = "stream-overlays:preview-settings";
+export const previewMessageType = "streamxtras:preview-settings";
 const demoIntervalMs = 2500;
 const liveRestartDelayMs = 700;
 const initialMessageCount = 6;

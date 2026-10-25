@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 // Constants
-const APP_DIRECTORY: &str = "stream-overlays";
+const APP_DIRECTORY: &str = "StreamXtras";
+const UNIX_APP_DIRECTORY: &str = "streamxtras";
 
 // Directories
 pub fn config_dir() -> Option<PathBuf> {
@@ -9,17 +10,23 @@ pub fn config_dir() -> Option<PathBuf> {
 }
 
 fn config_dir_from(lookup: impl Fn(&str) -> Option<PathBuf>) -> Option<PathBuf> {
-    let base = if cfg!(windows) {
-        lookup("APPDATA")
+    let (base, directory) = if cfg!(windows) {
+        (lookup("APPDATA"), APP_DIRECTORY)
     } else if cfg!(target_os = "macos") {
-        lookup("HOME").map(|home| home.join("Library").join("Application Support"))
+        (
+            lookup("HOME").map(|home| home.join("Library").join("Application Support")),
+            APP_DIRECTORY,
+        )
     } else {
-        lookup("XDG_CONFIG_HOME")
-            .filter(|path| path.is_absolute())
-            .or_else(|| lookup("HOME").map(|home| home.join(".config")))
+        (
+            lookup("XDG_CONFIG_HOME")
+                .filter(|path| path.is_absolute())
+                .or_else(|| lookup("HOME").map(|home| home.join(".config"))),
+            UNIX_APP_DIRECTORY,
+        )
     };
     base.filter(|path| !path.as_os_str().is_empty())
-        .map(|path| path.join(APP_DIRECTORY))
+        .map(|path| path.join(directory))
 }
 
 // Tests
@@ -42,9 +49,7 @@ mod tests {
         let path = config_dir_from(lookup(&[("APPDATA", r"C:\Users\test\AppData\Roaming")]));
         assert_eq!(
             path,
-            Some(PathBuf::from(
-                r"C:\Users\test\AppData\Roaming\stream-overlays"
-            ))
+            Some(PathBuf::from(r"C:\Users\test\AppData\Roaming\StreamXtras"))
         );
     }
 
@@ -55,15 +60,12 @@ mod tests {
             ("XDG_CONFIG_HOME", "/custom"),
             ("HOME", "/home/test"),
         ]));
-        assert_eq!(path, Some(PathBuf::from("/custom/stream-overlays")));
+        assert_eq!(path, Some(PathBuf::from("/custom/streamxtras")));
         let path = config_dir_from(lookup(&[
             ("XDG_CONFIG_HOME", "relative"),
             ("HOME", "/home/test"),
         ]));
-        assert_eq!(
-            path,
-            Some(PathBuf::from("/home/test/.config/stream-overlays"))
-        );
+        assert_eq!(path, Some(PathBuf::from("/home/test/.config/streamxtras")));
     }
 
     #[test]
@@ -73,7 +75,7 @@ mod tests {
         assert_eq!(
             path,
             Some(PathBuf::from(
-                "/Users/test/Library/Application Support/stream-overlays"
+                "/Users/test/Library/Application Support/StreamXtras"
             ))
         );
     }

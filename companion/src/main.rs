@@ -28,7 +28,7 @@ fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("stream-overlays: {error}");
+            eprintln!("streamxtras: {error}");
             ExitCode::FAILURE
         }
     }

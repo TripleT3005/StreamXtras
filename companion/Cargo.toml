@@ -1,9 +1,9 @@
 [package]
-name = "stream-overlays"
+name = "streamxtras"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.90"
-description = "Companion app for Stream Overlays: serves the overlays and connects them to Twitch"
+description = "Companion app for StreamXtras: serves the overlays and connects them to Twitch"
 license = "MIT"
 publish = false
 

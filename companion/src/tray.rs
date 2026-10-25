@@ -46,7 +46,7 @@ pub fn create(url: String) -> Result<TrayIcon, Box<dyn Error>> {
     let tray = TrayIconBuilder::new()
         .with_menu(Box::new(menu))
         .with_menu_on_left_click(false)
-        .with_tooltip("Stream Overlays")
+        .with_tooltip("StreamXtras")
         .with_icon(icon)
         .build()?;
     Ok(tray)

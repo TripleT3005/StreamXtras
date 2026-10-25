@@ -13,7 +13,7 @@ use crate::http::{self, Method, ParseError, Request, Response};
 use crate::twitch::account::TwitchAccount;
 
 // Constants
-pub const APP_NAME: &str = "stream-overlays";
+pub const APP_NAME: &str = "streamxtras";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const READ_TIMEOUT: Duration = Duration::from_secs(10);
 const KEEPALIVE_INTERVAL: Duration = Duration::from_secs(15);
@@ -265,10 +265,8 @@ mod tests {
     }
 
     fn test_state(name: &str) -> TestState {
-        let root = std::env::temp_dir().join(format!(
-            "stream-overlays-server-{name}-{}",
-            std::process::id()
-        ));
+        let root =
+            std::env::temp_dir().join(format!("streamxtras-server-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         let web_root = root.join("web");
         fs::create_dir_all(web_root.join("chatbox")).unwrap();
