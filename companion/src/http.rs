@@ -5,7 +5,7 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 // Constants
 const MAX_HEAD_BYTES: usize = 16 * 1024;
 pub const MAX_BODY_BYTES: usize = 64 * 1024;
-pub const MAX_UPLOAD_BYTES: usize = 10 * 1024 * 1024;
+pub const MAX_UPLOAD_BYTES: usize = 50 * 1024 * 1024;
 
 // Types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

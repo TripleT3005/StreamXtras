@@ -19,6 +19,8 @@ const WELCOME_TIMEOUT: Duration = Duration::from_secs(15);
 const KEEPALIVE_GRACE: Duration = Duration::from_secs(10);
 const LOGGED_OUT_POLL_INTERVAL: Duration = Duration::from_secs(10);
 const MAX_RETRY_DELAY_SECONDS: u64 = 120;
+const ANONYMOUS_NAME: &str = "Anonymous";
+pub const ALERT_TYPES: [&str; 5] = ["follow", "sub", "gift", "cheer", "raid"];
 
 // Types
 type Socket = WebSocket<MaybeTlsStream<TcpStream>>;
@@ -69,26 +71,73 @@ pub struct EventSubClient {
 }
 
 // Alerts
-pub fn follow_alert(event: &Value) -> Option<Value> {
-    Some(json!({
-        "type": "follow",
-        "userId": event["user_id"].as_str()?,
-        "userLogin": event["user_login"].as_str()?,
-        "userName": event["user_name"].as_str()?,
-        "test": false,
-    }))
+pub fn alert_from_event(subscription_type: &str, event: &Value) -> Option<Value> {
+    match subscription_type {
+        "channel.follow" => user_alert("follow", event, "user", None),
+        "channel.subscribe" if event["is_gift"].as_bool() != Some(true) => {
+            user_alert("sub", event, "user", Some(1))
+        }
+        "channel.subscription.message" => {
+            user_alert("sub", event, "user", event["cumulative_months"].as_u64())
+        }
+        "channel.subscription.gift" => user_alert("gift", event, "user", event["total"].as_u64()),
+        "channel.cheer" => user_alert("cheer", event, "user", event["bits"].as_u64()),
+        "channel.raid" => user_alert(
+            "raid",
+            event,
+            "from_broadcaster_user",
+            event["viewers"].as_u64(),
+        ),
+        _ => None,
+    }
 }
 
-pub fn test_alert(kind: &str) -> Option<Value> {
-    match kind {
-        "follow" => Some(json!({
-            "type": "follow",
-            "userId": "0",
-            "userLogin": "streamxtras",
-            "userName": "StreamXtras",
-            "test": true,
-        })),
-        _ => None,
+fn user_alert(kind: &str, event: &Value, prefix: &str, amount: Option<u64>) -> Option<Value> {
+    let field = |name: &str| event[format!("{prefix}_{name}")].as_str();
+    let (id, login, name) = if event["is_anonymous"].as_bool() == Some(true) {
+        ("", "", ANONYMOUS_NAME)
+    } else {
+        (field("id")?, field("login")?, field("name")?)
+    };
+    let mut alert = json!({
+        "type": kind,
+        "userId": id,
+        "userLogin": login,
+        "userName": name,
+        "test": false,
+    });
+    if let Some(amount) = amount {
+        alert["amount"] = json!(amount);
+    }
+    Some(alert)
+}
+
+pub fn test_alert(kind: &str, amount: Option<u64>, user: Option<&Value>) -> Option<Value> {
+    if !ALERT_TYPES.contains(&kind) {
+        return None;
+    }
+    let text = |key: &str, fallback: &str| {
+        user.and_then(|user| user[key].as_str())
+            .unwrap_or(fallback)
+            .to_owned()
+    };
+    let mut alert = json!({
+        "type": kind,
+        "userId": text("id", "0"),
+        "userLogin": text("login", "streamxtras"),
+        "userName": text("displayName", "StreamXtras"),
+        "test": true,
+    });
+    if kind != "follow" {
+        alert["amount"] = json!(amount.unwrap_or(if kind == "cheer" { 100 } else { 5 }));
+    }
+    add_avatar(&mut alert, user);
+    Some(alert)
+}
+
+pub fn add_avatar(alert: &mut Value, user: Option<&Value>) {
+    if let Some(url) = user.and_then(|user| user["largeProfileImageUrl"].as_str()) {
+        alert["avatarUrl"] = json!(url);
     }
 }
 
@@ -124,14 +173,35 @@ pub fn parse_message(text: &str) -> Result<EventSubMessage, String> {
     })
 }
 
-fn follow_subscription(session_id: &str, user_id: &str) -> String {
-    json!({
-        "type": "channel.follow",
-        "version": "2",
-        "condition": { "broadcaster_user_id": user_id, "moderator_user_id": user_id },
-        "transport": { "method": "websocket", "session_id": session_id },
+fn subscriptions(session_id: &str, user_id: &str) -> Vec<(&'static str, String)> {
+    let broadcaster = json!({ "broadcaster_user_id": user_id });
+    [
+        (
+            "channel.follow",
+            "2",
+            json!({ "broadcaster_user_id": user_id, "moderator_user_id": user_id }),
+        ),
+        ("channel.subscribe", "1", broadcaster.clone()),
+        ("channel.subscription.message", "1", broadcaster.clone()),
+        ("channel.subscription.gift", "1", broadcaster.clone()),
+        ("channel.cheer", "1", broadcaster),
+        (
+            "channel.raid",
+            "1",
+            json!({ "to_broadcaster_user_id": user_id }),
+        ),
+    ]
+    .into_iter()
+    .map(|(kind, version, condition)| {
+        let body = json!({
+            "type": kind,
+            "version": version,
+            "condition": condition,
+            "transport": { "method": "websocket", "session_id": session_id },
+        });
+        (kind, body.to_string())
     })
-    .to_string()
+    .collect()
 }
 
 // Client
@@ -223,31 +293,46 @@ impl EventSubClient {
     }
 
     fn subscribe(&self, session_id: &str, user_id: &str) -> Result<(), String> {
-        let response = self
-            .helix
-            .post(
-                SUBSCRIPTIONS_PATH,
-                &follow_subscription(session_id, user_id),
+        let all = subscriptions(session_id, user_id);
+        let total = all.len();
+        let failures: Vec<String> = all
+            .into_iter()
+            .filter_map(
+                |(kind, body)| match self.helix.post(SUBSCRIPTIONS_PATH, &body) {
+                    Ok(response) if response.status == 202 => None,
+                    Ok(response) if response.status == 403 => Some(format!(
+                        "{kind}: the login lacks the permission; please log in again"
+                    )),
+                    Ok(response) => Some(format!(
+                        "{kind}: HTTP {} {}",
+                        response.status, response.body
+                    )),
+                    Err(error) => Some(format!("{kind}: {error}")),
+                },
             )
-            .map_err(|error| error.to_string())?;
-        match response.status {
-            202 => Ok(()),
-            403 => Err(
-                "the login lacks the permission to read followers; please log in again".to_owned(),
-            ),
-            status => Err(format!(
-                "creating the follow subscription failed: HTTP {status} {}",
-                response.body
-            )),
+            .collect();
+        if failures.len() == total {
+            return Err(format!(
+                "creating the subscriptions failed: {}",
+                failures.join("; ")
+            ));
         }
+        for failure in failures {
+            eprintln!("EventSub subscription failed: {failure}");
+        }
+        Ok(())
     }
 
     fn handle_notification(&self, subscription_type: &str, event: &Value) {
-        if subscription_type == "channel.follow"
-            && let Some(alert) = follow_alert(event)
-        {
-            self.events.publish("alert", &alert);
-        }
+        let Some(mut alert) = alert_from_event(subscription_type, event) else {
+            return;
+        };
+        let user = alert["userId"]
+            .as_str()
+            .filter(|user_id| !user_id.is_empty())
+            .and_then(|user_id| self.helix.user(user_id).ok());
+        add_avatar(&mut alert, user.as_ref());
+        self.events.publish("alert", &alert);
     }
 }
 
@@ -378,12 +463,103 @@ mod tests {
             panic!("expected a notification");
         };
         assert_eq!(
-            follow_alert(&event).unwrap(),
+            alert_from_event("channel.follow", &event).unwrap(),
             json!({ "type": "follow", "userId": "7", "userLogin": "newfollower", "userName": "NewFollower", "test": false })
         );
-        assert_eq!(follow_alert(&json!({ "user_id": "7" })), None);
-        assert_eq!(test_alert("follow").unwrap()["test"], true);
-        assert_eq!(test_alert("raid"), None);
+        assert_eq!(
+            alert_from_event("channel.follow", &json!({ "user_id": "7" })),
+            None
+        );
+        assert_eq!(alert_from_event("channel.unknown", &event), None);
+    }
+
+    #[test]
+    fn builds_sub_gift_cheer_and_raid_alerts() {
+        let user = json!({ "user_id": "7", "user_login": "viewer", "user_name": "Viewer" });
+        let with = |extra: Value| {
+            let mut event = user.clone();
+            event
+                .as_object_mut()
+                .unwrap()
+                .extend(extra.as_object().unwrap().clone());
+            event
+        };
+        let amount = |kind: &str, event: &Value| {
+            alert_from_event(kind, event).map(|alert| alert["amount"].clone())
+        };
+
+        assert_eq!(
+            amount("channel.subscribe", &with(json!({ "is_gift": false }))),
+            Some(json!(1))
+        );
+        assert_eq!(
+            alert_from_event("channel.subscribe", &with(json!({ "is_gift": true }))),
+            None
+        );
+        assert_eq!(
+            amount(
+                "channel.subscription.message",
+                &with(json!({ "cumulative_months": 14 }))
+            ),
+            Some(json!(14))
+        );
+        assert_eq!(
+            amount("channel.subscription.gift", &with(json!({ "total": 5 }))),
+            Some(json!(5))
+        );
+        assert_eq!(
+            amount("channel.cheer", &with(json!({ "bits": 67 }))),
+            Some(json!(67))
+        );
+
+        let anonymous = alert_from_event(
+            "channel.cheer",
+            &json!({ "is_anonymous": true, "user_id": null, "bits": 500 }),
+        )
+        .unwrap();
+        assert_eq!(
+            (&anonymous["userName"], &anonymous["userId"]),
+            (&json!("Anonymous"), &json!(""))
+        );
+
+        let raid = alert_from_event(
+            "channel.raid",
+            &json!({ "from_broadcaster_user_id": "9", "from_broadcaster_user_login": "friend", "from_broadcaster_user_name": "Friend", "viewers": 12 }),
+        )
+        .unwrap();
+        assert_eq!(
+            raid,
+            json!({ "type": "raid", "userId": "9", "userLogin": "friend", "userName": "Friend", "amount": 12, "test": false })
+        );
+    }
+
+    #[test]
+    fn builds_test_alerts() {
+        assert_eq!(test_alert("follow", None, None).unwrap()["test"], true);
+        assert!(
+            test_alert("follow", Some(3), None)
+                .unwrap()
+                .get("amount")
+                .is_none()
+        );
+        assert_eq!(test_alert("cheer", None, None).unwrap()["amount"], 100);
+        assert_eq!(test_alert("gift", Some(67), None).unwrap()["amount"], 67);
+        assert_eq!(test_alert("host", None, None), None);
+
+        let friend = json!({ "id": "9", "login": "friend", "displayName": "Friend", "largeProfileImageUrl": "https://cdn/friend.png" });
+        let raid = test_alert("raid", None, Some(&friend)).unwrap();
+        assert_eq!(raid["userName"], "Friend");
+        assert_eq!(raid["avatarUrl"], "https://cdn/friend.png");
+        assert_eq!(
+            test_alert("sub", None, Some(&friend)).unwrap()["avatarUrl"],
+            "https://cdn/friend.png"
+        );
+        assert!(
+            test_alert("sub", None, None)
+                .unwrap()
+                .get("avatarUrl")
+                .is_none()
+        );
     }
 
     #[test]
@@ -401,7 +577,13 @@ mod tests {
             reconnect,
         ]);
 
-        let fixture = account_fixture("eventsub", true, &[(202, r#"{"data":[]}"#)]);
+        let accepted = (202, r#"{"data":[]}"#);
+        let forbidden = (403, r#"{"error":"Forbidden"}"#);
+        let fixture = account_fixture(
+            "eventsub",
+            true,
+            &[accepted, forbidden, accepted, accepted, accepted, accepted],
+        );
         let events = Arc::new(EventBroadcaster::default());
         let alerts = events.subscribe();
         let helix = Arc::new(HelixClient::new(
@@ -425,13 +607,18 @@ mod tests {
             .iter()
             .filter(|request| request.contains("eventsub/subscriptions"))
             .collect();
-        assert_eq!(subscriptions.len(), 1);
-        assert!(subscriptions[0].contains(r#""session_id":"session-1""#));
+        assert_eq!(subscriptions.len(), 6);
+        assert!(
+            subscriptions
+                .iter()
+                .all(|request| request.contains(r#""session_id":"session-1""#))
+        );
         assert!(subscriptions[0].contains(r#""moderator_user_id":"42""#));
+        assert!(subscriptions[5].contains(r#""to_broadcaster_user_id":"42""#));
     }
 
     #[test]
-    fn reports_a_missing_follower_permission() {
+    fn fails_only_when_every_subscription_fails() {
         let (url, server) = fake_server(vec![welcome("session")]);
         let fixture = account_fixture(
             "eventsub-forbidden",
@@ -449,7 +636,7 @@ mod tests {
             &url,
         );
         let error = client.run_session("42").unwrap_err();
-        assert!(error.contains("permission to read followers"));
+        assert!(error.contains("channel.follow: the login lacks the permission"));
         server.join().unwrap();
     }
 }

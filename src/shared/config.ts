@@ -88,11 +88,15 @@ export function readMediaReference(source: ConfigSource, key: string, fallback: 
 }
 
 export function isMediaReference(value: string): boolean {
-  return /^assets\/(sounds|images)\/[a-z0-9-]+\.(wav|svg)$/.test(value) || /^media\/[a-z0-9-]+\.(mp3|ogg|wav|png|gif|webp|jpg)$/.test(value);
+  return /^assets\/(sounds|images)\/[a-z0-9-]+\.(wav|svg)$/.test(value) || /^media\/[a-z0-9-]+\.(mp3|ogg|wav|png|gif|webp|jpg|mp4|webm)$/.test(value);
 }
 
 export function mediaUrl(reference: string): string | null {
   return isMediaReference(reference) ? `/${reference}` : null;
+}
+
+export function isVideoReference(reference: string): boolean {
+  return isMediaReference(reference) && /\.(mp4|webm)$/.test(reference);
 }
 
 export function readStringList(source: ConfigSource, key: string, fallback: readonly string[]): readonly string[] {

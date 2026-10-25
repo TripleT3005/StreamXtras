@@ -13,8 +13,10 @@ export interface OverlayEditorOptions<S extends SettingsSchema> {
   readonly previewPath: string;
   readonly overlayPath: string;
   readonly media: MediaLibrary;
+  readonly overlayHint?: string;
   readonly keepOnReset?: readonly (keyof S & string)[];
   readonly prepareSave?: (values: SettingsValues<S>) => SettingsValues<S> | string;
+  readonly onSectionChange?: (section: string) => void;
 }
 
 export interface OverlayEditor {
@@ -24,6 +26,7 @@ export interface OverlayEditor {
   setPreviewPath(path: string): void;
   showStatus(kind: StatusKind, message: string): void;
   refreshPreview(): void;
+  activeSection(): string | null;
 }
 
 export type StatusKind = "" | "ok" | "error";
@@ -37,6 +40,9 @@ interface PreviewSize {
 export async function createOverlayEditor<S extends SettingsSchema>(options: OverlayEditorOptions<S>): Promise<OverlayEditor> {
   const { container, schema, overlayId } = options;
   const sourceUrl = createSourceUrl(options.title, options.overlayPath, `${overlayId}-url`);
+  if (options.overlayHint !== undefined) {
+    sourceUrl.append(element("p", "hint", options.overlayHint));
+  }
   const form = element("form", "editor-form");
   form.noValidate = true;
   const fields = element("div", "");
@@ -88,7 +94,7 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
   const settingsForm = createSettingsForm(schema, overlayId, () => {
     updateDirtyState();
     schedulePreview();
-  }, { media: options.media });
+  }, { media: options.media, onSectionChange: options.onSectionChange });
   fields.replaceChildren(settingsForm.element);
   settingsForm.setValues(readSettings(schema, stored));
 
@@ -164,6 +170,7 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
     setPreviewPath: (path) => (frame.src = path),
     showStatus,
     refreshPreview: schedulePreview,
+    activeSection: () => settingsForm.activeSection(),
   };
 }
 

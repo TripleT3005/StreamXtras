@@ -1,4 +1,5 @@
-import { alertboxOverlayId, alertboxSettings } from "../overlays/alertbox/alertbox-config.ts";
+import type { AlertType } from "../overlays/alertbox/alert.ts";
+import { alertboxOverlayId, alertboxSettings, alertTypeDefinitions, alertTypeForSection } from "../overlays/alertbox/alertbox-config.ts";
 import { chatboxOverlayId, chatboxSettings } from "../overlays/chatbox/chatbox-config.ts";
 import { isRecord } from "../shared/json.ts";
 import { postPreviewMessage, previewAlertMessage } from "../shared/preview-messages.ts";
@@ -109,23 +110,43 @@ async function setupChatboxEditor(media: MediaLibrary): Promise<void> {
 }
 
 async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
-  const editor = await createOverlayEditor({
-    container: getElement("alertbox-editor", HTMLElement),
-    title: "Alert box",
-    overlayId: alertboxOverlayId,
-    schema: alertboxSettings,
-    previewPath: "/alertbox/?preview",
-    overlayPath: "/alertbox/",
-    media,
+  const amount = document.createElement("input");
+  amount.type = "number";
+  amount.min = "0";
+  amount.className = "number";
+  const from = document.createElement("input");
+  from.placeholder = "Twitch name";
+  from.autocomplete = "off";
+  from.spellcheck = false;
+  from.title = "Optional. With a Twitch name the test uses its profile picture and matches its variants.";
+  let type: AlertType = "follow";
+
+  const selectType = (section: string): void => {
+    type = alertTypeForSection(section);
+    const counted = alertTypeDefinitions[type].amount;
+    amount.disabled = counted === null;
+    amount.value = "";
+    amount.placeholder = counted === null ? "" : String(defaultTestAmount(type));
+    amount.title = counted === null ? "" : `Number of ${counted}`;
+    amount.setAttribute("aria-label", amount.title || "Number");
+    sendTest.title = `Plays a ${alertTypeDefinitions[type].label.toLowerCase()} alert in every open alert box, e.g. in OBS`;
+  };
+
+  const testAlert = (): Readonly<Record<string, unknown>> => ({
+    type,
+    ...(amount.disabled ? {} : { amount: Number(amount.value || amount.placeholder) }),
+    ...(from.value.trim() === "" ? {} : { userName: from.value.trim() }),
   });
 
-  editors.set("alertbox", editor);
-  const showInPreview = button("Show in preview", "secondary", () => postPreviewMessage(editor.frame, previewAlertMessage));
-  const sendTest = button("Send test alert", "secondary", () => {
+  const showInPreview = button("Show in preview", "secondary", () => {
+    const alert = testAlert();
+    void lookUpUser(from.value.trim()).then((user) => postPreviewMessage(editor.frame, previewAlertMessage, { alert: { ...alert, ...user } }));
+  });
+  const sendTest = button("Send to OBS", "secondary", () => {
     fetch("/api/alerts/test", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "follow" }),
+      body: JSON.stringify(testAlert()),
     }).then(
       (response) =>
         response.ok
@@ -134,9 +155,48 @@ async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
       (error: unknown) => editor.showStatus("error", `Sending the test alert failed: ${error instanceof Error ? error.message : String(error)}`),
     );
   });
-  sendTest.title = "Plays a follow alert in every open alert box, e.g. in OBS";
-  editor.toolbar.append(showInPreview);
-  editor.actions.insertBefore(sendTest, editor.actions.lastElementChild);
+
+  const editor = await createOverlayEditor({
+    container: getElement("alertbox-editor", HTMLElement),
+    title: "Alert box",
+    overlayId: alertboxOverlayId,
+    schema: alertboxSettings,
+    previewPath: "/alertbox/?preview",
+    overlayPath: "/alertbox/",
+    overlayHint: "To show only some alert types in a browser source, add for example ?types=follow,raid to the URL. Types: follow, sub, gift, cheer, raid.",
+    media,
+    onSectionChange: selectType,
+  });
+  selectType(editor.activeSection() ?? "");
+
+  editors.set("alertbox", editor);
+  const testRow = document.createElement("div");
+  testRow.className = "alert-test";
+  const label = document.createElement("span");
+  label.className = "muted";
+  label.textContent = "Test";
+  testRow.append(label, amount, from, showInPreview, sendTest);
+  editor.toolbar.parentElement?.append(testRow);
+}
+
+function defaultTestAmount(type: AlertType): number {
+  return type === "cheer" ? 100 : 5;
+}
+
+async function lookUpUser(name: string): Promise<Readonly<Record<string, unknown>>> {
+  if (name === "") {
+    return {};
+  }
+  try {
+    const response = await fetch(`/api/twitch/logins/${encodeURIComponent(name.replace(/^@/, ""))}`, { cache: "no-store" });
+    const data: unknown = response.ok ? await response.json() : null;
+    if (isRecord(data)) {
+      return { userName: data["displayName"], userLogin: data["login"], avatarUrl: data["largeProfileImageUrl"] };
+    }
+  } catch {
+    return { userLogin: name.toLowerCase() };
+  }
+  return { userLogin: name.toLowerCase() };
 }
 
 // Startup

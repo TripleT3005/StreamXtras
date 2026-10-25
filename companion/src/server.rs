@@ -260,11 +260,18 @@ fn serve_media(state: &AppState, file: &str) -> Response {
 
 // Alerts
 fn send_test_alert(request: &Request, state: &AppState) -> Response {
-    let kind = serde_json::from_slice::<serde_json::Value>(&request.body)
-        .ok()
-        .and_then(|body| body["type"].as_str().map(str::to_owned))
-        .unwrap_or_default();
-    match eventsub::test_alert(&kind) {
+    let body = serde_json::from_slice::<serde_json::Value>(&request.body).unwrap_or_default();
+    let kind = body["type"].as_str().unwrap_or_default();
+    let user = body["userName"]
+        .as_str()
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map(|name| {
+            state.helix.user_by_login(name).unwrap_or_else(|_| {
+                serde_json::json!({ "id": "0", "login": name.to_lowercase(), "displayName": name })
+            })
+        });
+    match eventsub::test_alert(kind, body["amount"].as_u64(), user.as_ref()) {
         Some(alert) => {
             state.events.publish("alert", &alert);
             Response::json(200, &alert)
@@ -280,6 +287,8 @@ fn twitch_data(state: &AppState, path: &str) -> Response {
         state.helix.global_badges()
     } else if let Some(id) = resource.strip_prefix("badges/channel/") {
         state.helix.channel_badges(id)
+    } else if let Some(login) = resource.strip_prefix("logins/") {
+        state.helix.user_by_login(&percent_decode(login))
     } else if let Some(id) = resource.strip_prefix("users/") {
         state.helix.user(id)
     } else {
@@ -356,6 +365,8 @@ fn content_type(path: &Path) -> &'static str {
         Some("wav") => "audio/wav",
         Some("mp3") => "audio/mpeg",
         Some("ogg") => "audio/ogg",
+        Some("mp4") => "video/mp4",
+        Some("webm") => "video/webm",
         Some("woff2") => "font/woff2",
         _ => "application/octet-stream",
     }
@@ -657,12 +668,30 @@ mod tests {
                     "/api/alerts/test",
                     &origin,
                     "application/json",
-                    r#"{"type":"raid"}"#
+                    r#"{"type":"host"}"#
                 ),
                 &test.state
             )
             .status,
             400
+        );
+        let cheer = reply(
+            &put(
+                "/api/alerts/test",
+                &origin,
+                "application/json",
+                r#"{"type":"cheer","amount":67,"userName":"Friend"}"#,
+            ),
+            &test.state,
+        );
+        let cheer: serde_json::Value = serde_json::from_slice(&cheer.body).unwrap();
+        assert_eq!(
+            (&cheer["amount"], &cheer["userName"], &cheer["userLogin"]),
+            (
+                &serde_json::json!(67),
+                &serde_json::json!("Friend"),
+                &serde_json::json!("friend")
+            )
         );
         assert_eq!(
             reply(

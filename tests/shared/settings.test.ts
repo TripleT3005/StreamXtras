@@ -6,6 +6,7 @@ import {
   colorSetting,
   defaultSettings,
   hasStructuralChange,
+  listSetting,
   multiChoiceSetting,
   numberSetting,
   readSettings,
@@ -76,6 +77,35 @@ describe("readSettings", () => {
     assert.equal(settings.color, "#ffffff");
     assert.equal(settings.align, "bottom");
     assert.equal(settings.size, 18);
+  });
+});
+
+describe("listSetting", () => {
+  const list = {
+    items: listSetting({
+      label: "Items",
+      group: "Items",
+      default: [],
+      itemLabel: "Item",
+      maxItems: 2,
+      itemSchema: {
+        name: textSetting({ label: "Name", group: "", default: "" }),
+        size: numberSetting({ label: "Size", group: "", default: 5, min: 1, max: 9 }),
+      },
+    }),
+  };
+
+  test("reads every item with the item schema and limits the count", () => {
+    const settings = readSettings(list, { items: [{ name: " a ", size: 99 }, "broken", {}, { name: "c" }] });
+    assert.deepEqual(settings.items, [
+      { name: "a", size: 9 },
+      { name: "", size: 5 },
+    ]);
+  });
+
+  test("falls back for values that are not lists", () => {
+    assert.deepEqual(readSettings(list, { items: "a,b" }).items, []);
+    assert.deepEqual(readSettings(list, {}).items, []);
   });
 });
 

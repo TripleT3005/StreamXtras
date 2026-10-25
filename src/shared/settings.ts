@@ -1,9 +1,11 @@
 import { readBoolean, readColor, readInteger, readMediaReference, readString, readStringList, type ConfigSource } from "./config.ts";
+import { isRecord } from "./json.ts";
 
 // Types
 interface SettingBase<T> {
   readonly label: string;
   readonly group: string;
+  readonly section?: string | undefined;
   readonly hint?: string;
   readonly default: T;
   readonly live: boolean;
@@ -31,13 +33,14 @@ export interface NumberSetting extends SettingBase<number> {
 
 export interface BooleanSetting extends SettingBase<boolean> {
   readonly kind: "boolean";
+  readonly sectionToggle: boolean;
 }
 
-export type MediaKind = "sound" | "image";
+export type MediaKind = "sound" | "image" | "video";
 
 export interface MediaSetting extends SettingBase<string> {
   readonly kind: "media";
-  readonly mediaKind: MediaKind;
+  readonly accepts: readonly MediaKind[];
   readonly builtIns: readonly SettingOption<string>[];
 }
 
@@ -60,7 +63,15 @@ export interface MultiChoiceSetting<T extends string = string> extends SettingBa
   readonly options: readonly SettingOption<T>[];
 }
 
+export interface ListSetting<S extends SettingsSchema = SettingsSchema> extends SettingBase<readonly SettingsValues<S>[]> {
+  readonly kind: "list";
+  readonly itemSchema: S;
+  readonly itemLabel: string;
+  readonly maxItems: number;
+}
+
 export type Setting =
+  | ListSetting
   | TextSetting
   | FontSetting
   | NumberSetting
@@ -77,6 +88,7 @@ export type SettingsValues<S extends SettingsSchema> = { readonly [K in keyof S]
 interface CommonOptions<T> {
   readonly label: string;
   readonly group: string;
+  readonly section?: string | undefined;
   readonly hint?: string;
   readonly default: T;
   readonly live?: boolean;
@@ -117,8 +129,14 @@ export function numberSetting(
   };
 }
 
-export function booleanSetting(options: CommonOptions<boolean>): BooleanSetting {
-  return { ...options, kind: "boolean", live: options.live ?? true, read: (source, key) => readBoolean(source, key, options.default) };
+export function booleanSetting(options: CommonOptions<boolean> & { readonly sectionToggle?: boolean }): BooleanSetting {
+  return {
+    ...options,
+    kind: "boolean",
+    live: options.live ?? true,
+    sectionToggle: options.sectionToggle ?? false,
+    read: (source, key) => readBoolean(source, key, options.default),
+  };
 }
 
 export function colorSetting(options: CommonOptions<string>): ColorSetting {
@@ -126,7 +144,7 @@ export function colorSetting(options: CommonOptions<string>): ColorSetting {
 }
 
 export function mediaSetting(
-  options: CommonOptions<string> & { readonly mediaKind: MediaKind; readonly builtIns: readonly SettingOption<string>[] },
+  options: CommonOptions<string> & { readonly accepts: readonly MediaKind[]; readonly builtIns: readonly SettingOption<string>[] },
 ): MediaSetting {
   return { ...options, kind: "media", live: options.live ?? true, read: (source, key) => readMediaReference(source, key, options.default) };
 }
@@ -153,6 +171,26 @@ export function multiChoiceSetting<T extends string>(
     read: (source, key) => {
       const values = readStringList(source, key, options.default);
       return options.options.filter((option) => values.includes(option.value)).map((option) => option.value);
+    },
+  };
+}
+
+export function listSetting<S extends SettingsSchema>(
+  options: CommonOptions<readonly SettingsValues<S>[]> & { readonly itemSchema: S; readonly itemLabel: string; readonly maxItems: number },
+): ListSetting<S> {
+  return {
+    ...options,
+    kind: "list",
+    live: options.live ?? true,
+    read: (source, key) => {
+      const value = source[key];
+      if (!Array.isArray(value)) {
+        return options.default;
+      }
+      return value
+        .filter(isRecord)
+        .slice(0, options.maxItems)
+        .map((item) => readSettings(options.itemSchema, item));
     },
   };
 }

@@ -15,6 +15,7 @@ const MAX_STEM_LENGTH: usize = 40;
 pub enum MediaKind {
     Sound,
     Image,
+    Video,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -41,7 +42,7 @@ impl fmt::Display for MediaError {
     }
 }
 
-const FORMATS: [MediaFormat; 7] = [
+const FORMATS: [MediaFormat; 9] = [
     MediaFormat {
         extension: "mp3",
         content_type: "audio/mpeg",
@@ -77,6 +78,16 @@ const FORMATS: [MediaFormat; 7] = [
         content_type: "image/jpeg",
         kind: MediaKind::Image,
     },
+    MediaFormat {
+        extension: "mp4",
+        content_type: "video/mp4",
+        kind: MediaKind::Video,
+    },
+    MediaFormat {
+        extension: "webm",
+        content_type: "video/webm",
+        kind: MediaKind::Video,
+    },
 ];
 
 // Formats
@@ -99,6 +110,14 @@ pub fn detect_format(bytes: &[u8]) -> Option<MediaFormat> {
         "webp"
     } else if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
         "jpg"
+    } else if bytes.len() >= 12 && &bytes[4..8] == b"ftyp" {
+        "mp4"
+    } else if bytes.starts_with(&[0x1A, 0x45, 0xDF, 0xA3])
+        && bytes[..bytes.len().min(64)]
+            .windows(4)
+            .any(|window| window == b"webm")
+    {
+        "webm"
     } else {
         return None;
     };
@@ -228,6 +247,7 @@ fn describe(file: &str, format: MediaFormat, size: u64) -> Value {
         "kind": match format.kind {
             MediaKind::Sound => "sound",
             MediaKind::Image => "image",
+            MediaKind::Video => "video",
         },
         "size": size,
     })
@@ -267,9 +287,19 @@ mod tests {
         assert_eq!(extension(b"GIF89a.."), Some("gif"));
         assert_eq!(extension(b"RIFF\0\0\0\0WEBPVP8 "), Some("webp"));
         assert_eq!(extension(&[0xFF, 0xD8, 0xFF, 0xE0]), Some("jpg"));
+        assert_eq!(extension(b"\0\0\0\x20ftypisom\0\0"), Some("mp4"));
+        assert_eq!(
+            extension(b"\x1A\x45\xDF\xA3\x9F\x42\x82\x84webm"),
+            Some("webm")
+        );
+        assert_eq!(extension(b"\x1A\x45\xDF\xA3\x9F\x42\x82\x88matroska"), None);
         assert_eq!(extension(b"<svg onload=alert(1)>"), None);
         assert_eq!(extension(b"MZ\x90\0"), None);
         assert_eq!(detect_format(WAV).unwrap().kind, MediaKind::Sound);
+        assert_eq!(
+            detect_format(b"\0\0\0\x18ftypmp42").unwrap().kind,
+            MediaKind::Video
+        );
     }
 
     #[test]
