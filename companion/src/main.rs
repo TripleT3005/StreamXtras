@@ -21,6 +21,7 @@ use std::sync::{Arc, Mutex};
 use events::EventBroadcaster;
 use server::AppState;
 use twitch::account::TwitchAccount;
+use twitch::helix::HelixClient;
 use twitch::http::UreqHttp;
 
 // Entry point
@@ -54,13 +55,10 @@ fn run() -> Result<(), Box<dyn Error>> {
         .clone()
         .or_else(|| option_env!("TWITCH_CLIENT_ID").map(str::to_owned))
         .filter(|client_id| !client_id.trim().is_empty());
-    let twitch = TwitchAccount::new(
-        Arc::new(UreqHttp::new()),
-        client_id,
-        &config_dir,
-        Arc::clone(&events),
-    );
+    let http = Arc::new(UreqHttp::new());
+    let twitch = TwitchAccount::new(http.clone(), client_id, &config_dir, Arc::clone(&events));
     twitch.start_maintenance();
+    let helix = Arc::new(HelixClient::new(http, Arc::clone(&twitch)));
     let state = Arc::new(AppState {
         port,
         web_root: web_root(),
@@ -68,6 +66,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         config: Mutex::new(config),
         events,
         twitch,
+        helix,
     });
     server::start(listener, state)?;
 

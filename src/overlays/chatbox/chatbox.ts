@@ -4,11 +4,13 @@ import { EmoteLibrary } from "../../shared/emotes/emote-library.ts";
 import { ffzProvider } from "../../shared/emotes/ffz.ts";
 import { buildFragments } from "../../shared/emotes/fragments.ts";
 import { sevenTvProvider } from "../../shared/emotes/seven-tv.ts";
-import type { OverlayEvent } from "../../shared/events.ts";
+import type { ChatMessageEvent, OverlayEvent } from "../../shared/events.ts";
+import { BadgeLibrary } from "../../shared/twitch/badge-library.ts";
 import { TwitchChatSource } from "../../shared/twitch/twitch-chat-source.ts";
+import { UserLibrary } from "../../shared/twitch/user-library.ts";
 import type { ChatboxConfig } from "./chatbox-config.ts";
 import { ChatList } from "./chat-list.ts";
-import { renderMessage } from "./message-view.ts";
+import { renderMessage, type MessageContext } from "./message-view.ts";
 
 // Constants
 const emoteRefreshIntervalMs = 10 * 60_000;
@@ -20,6 +22,8 @@ export class Chatbox {
   readonly #chatList: ChatList;
   readonly #emotes: EmoteLibrary;
   readonly #source: TwitchChatSource;
+  readonly #badges = new BadgeLibrary();
+  readonly #context: MessageContext = { badges: this.#badges, avatars: new UserLibrary() };
   #channelId: string | null = null;
   #refreshTimer: ReturnType<typeof setInterval> | undefined;
 
@@ -49,7 +53,7 @@ export class Chatbox {
   #handleEvent(event: OverlayEvent): void {
     switch (event.type) {
       case "chat.message":
-        this.#chatList.add(renderMessage(event, buildFragments(event.text, event.emotes, this.#emotes), this.#config));
+        this.#addMessage(event);
         break;
       case "chat.delete":
         this.#chatList.remove(event.messageId);
@@ -61,12 +65,26 @@ export class Chatbox {
         if (this.#channelId !== event.channelId) {
           this.#channelId = event.channelId;
           this.#refreshEmotes();
+          void this.#badges.loadGlobal();
+          void this.#badges.loadChannel(event.channelId);
         }
         break;
       case "connection.state":
         console.info(`Chat connection: ${event.state}`);
         break;
     }
+  }
+
+  #addMessage(message: ChatMessageEvent): void {
+    const isPartnerMessage = message.sourceChannelId !== null && message.sourceChannelId !== message.channelId;
+    if (isPartnerMessage && !this.#config.showPartnerMessages) {
+      return;
+    }
+    if (message.sourceChannelId !== null) {
+      void this.#badges.loadChannel(message.sourceChannelId);
+    }
+    const fragments = buildFragments(message.text, message.emotes, this.#emotes);
+    this.#chatList.add(renderMessage(message, fragments, this.#config, this.#context));
   }
 
   #refreshEmotes(): void {

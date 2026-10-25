@@ -53,6 +53,7 @@ function mapChatMessage(message: IrcMessage, login: string | null, announcement:
     platform: "twitch",
     id,
     channelId: tags.get("room-id") ?? "",
+    sourceChannelId: tags.get("source-room-id") || null,
     user: {
       id: userId,
       login,

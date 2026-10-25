@@ -8,7 +8,8 @@ import { Chatbox } from "./chatbox.ts";
 import { chatboxSettings, missingChannelMessage, readChatboxConfig, type ChatboxConfig } from "./chatbox-config.ts";
 import { applyChatboxStyle } from "./chatbox-style.ts";
 import { ChatList } from "./chat-list.ts";
-import { renderMessage } from "./message-view.ts";
+import { BadgeLibrary } from "../../shared/twitch/badge-library.ts";
+import { renderMessage, type MessageContext } from "./message-view.ts";
 
 // Types
 interface DemoMessage {
@@ -29,6 +30,8 @@ const demoIntervalMs = 2500;
 const liveRestartDelayMs = 700;
 const initialMessageCount = 6;
 const noEmotes: EmoteLookup = { get: () => undefined };
+const demoBadges = new BadgeLibrary();
+const demoContext: MessageContext = { badges: demoBadges, avatars: null };
 
 const demoMessages: readonly DemoMessage[] = [
   { name: "StreamerName", color: "#9146FF", badges: ["broadcaster/1"], text: "Welcome to the stream Kappa", emotes: [{ id: "25", start: 22, end: 26 }] },
@@ -88,6 +91,7 @@ function createLivePreview(root: HTMLElement, container: HTMLElement, status: HT
 }
 
 function createDemoPreview(root: HTMLElement, container: HTMLElement): (config: ChatboxConfig) => void {
+  void demoBadges.loadGlobal();
   let config = readChatboxConfig({});
   let nextIndex = 0;
   const chatList = new ChatList(container, config.maxMessages, config.hideAfterSeconds);
@@ -97,7 +101,7 @@ function createDemoPreview(root: HTMLElement, container: HTMLElement): (config: 
     nextIndex += 1;
     if (demo !== undefined) {
       const message = toChatMessage(demo, nextIndex);
-      chatList.add(renderMessage(message, buildFragments(message.text, message.emotes, noEmotes), config));
+      chatList.add(renderMessage(message, buildFragments(message.text, message.emotes, noEmotes), config, demoContext));
     }
   };
 
@@ -126,6 +130,7 @@ function toChatMessage(demo: DemoMessage, sequence: number): ChatMessageEvent {
     platform: "twitch",
     id: `preview-${sequence}`,
     channelId: "preview",
+    sourceChannelId: null,
     user: {
       id: `preview-${demo.name}`,
       login: demo.name.toLowerCase(),

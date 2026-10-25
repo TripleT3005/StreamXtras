@@ -200,6 +200,8 @@ fn reason(status: u16) -> &'static str {
         413 => "Content Too Large",
         415 => "Unsupported Media Type",
         421 => "Misdirected Request",
+        502 => "Bad Gateway",
+        503 => "Service Unavailable",
         _ => "Internal Server Error",
     }
 }

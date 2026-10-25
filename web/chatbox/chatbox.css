@@ -150,6 +150,14 @@ body {
   vertical-align: middle;
 }
 
+.source-avatar {
+  width: 1.25em;
+  height: 1.25em;
+  margin-right: 5px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
 .badge {
   width: 1.1em;
   height: 1.1em;

@@ -96,6 +96,18 @@ export const chatboxSettings = {
     ],
   }),
 
+  showSharedChatIcons: booleanSetting({
+    label: "Show streamer icons",
+    group: "Shared chat",
+    hint: "During a shared chat, each message shows the profile picture of the channel it comes from. Needs the Twitch login.",
+    default: true,
+  }),
+  showPartnerMessages: booleanSetting({
+    label: "Show messages from partner channels",
+    group: "Shared chat",
+    default: true,
+  }),
+
   width: numberSetting({
     label: "Width",
     group: "Browser source size",

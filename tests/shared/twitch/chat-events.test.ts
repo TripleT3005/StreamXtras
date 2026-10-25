@@ -21,6 +21,7 @@ describe("mapChatEvent", () => {
       platform: "twitch",
       id: "msg-1",
       channelId: "1337",
+      sourceChannelId: null,
       user: {
         id: "42",
         login: "tester",
@@ -92,10 +93,11 @@ describe("mapChatEvent", () => {
     );
   });
 
-  test("prefers the source badges of shared chat messages", () => {
-    const event = map("@badges=;source-badges=vip/1;id=m;user-id=3 :fan!fan@fan.tmi.twitch.tv PRIVMSG #channel :hi");
+  test("prefers the source badges of shared chat messages and keeps the source channel", () => {
+    const event = map("@badges=;source-badges=vip/1;source-room-id=99;room-id=1;id=m;user-id=3 :fan!fan@fan.tmi.twitch.tv PRIVMSG #channel :hi");
     assert.ok(event?.type === "chat.message");
     assert.deepEqual(event.user.badges, [{ set: "vip", version: "1" }]);
+    assert.equal(event.sourceChannelId, "99");
   });
 
   test("ignores chat messages without id", () => {
