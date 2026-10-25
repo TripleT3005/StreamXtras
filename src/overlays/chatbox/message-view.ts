@@ -2,10 +2,12 @@ import type { Emote } from "../../shared/emotes/emote.ts";
 import type { MessageFragment } from "../../shared/emotes/fragments.ts";
 import type { ChatMessageEvent } from "../../shared/events.ts";
 import { getGlobalBadgeUrl } from "../../shared/twitch/badges.ts";
+import { getDefaultUserColor, toReadableColor } from "../../shared/twitch/user-colors.ts";
 
 // Types
 export interface MessageViewOptions {
   readonly showBadges: boolean;
+  readonly readableColors: boolean;
 }
 
 // Rendering
@@ -25,9 +27,7 @@ export function renderMessage(message: ChatMessageEvent, fragments: readonly Mes
   const name = document.createElement("span");
   name.className = "name";
   name.textContent = message.user.displayName;
-  if (message.user.color !== null) {
-    name.style.color = message.user.color;
-  }
+  name.style.color = getNameColor(message, options);
 
   const text = document.createElement("span");
   text.className = "text";
@@ -35,6 +35,11 @@ export function renderMessage(message: ChatMessageEvent, fragments: readonly Mes
 
   item.append(name, text);
   return item;
+}
+
+function getNameColor(message: ChatMessageEvent, options: MessageViewOptions): string {
+  const color = message.user.color ?? getDefaultUserColor(message.user.id);
+  return options.readableColors ? toReadableColor(color) : color;
 }
 
 function renderBadges(message: ChatMessageEvent): HTMLElement | null {
