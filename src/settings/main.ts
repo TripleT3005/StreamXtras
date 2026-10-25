@@ -1,16 +1,19 @@
-import { fetchOverlaySettings, saveOverlaySettings } from "../shared/config.ts";
+import { chatboxOverlayId, chatboxSettings, readChatboxConfig } from "../overlays/chatbox/chatbox-config.ts";
+import { previewMessageType } from "../overlays/chatbox/preview.ts";
+import { fetchOverlaySettings, saveOverlaySettings, type ConfigSource } from "../shared/config.ts";
 import { isRecord } from "../shared/json.ts";
+import { defaultSettings } from "../shared/settings.ts";
 import { normalizeChannel } from "../shared/twitch/twitch-chat-source.ts";
+import { createSettingsForm, type FormValues } from "./settings-form.ts";
 
 // Types
 interface OverlayLink {
-  readonly id: string;
   readonly name: string;
   readonly path: string;
 }
 
 // Constants
-const overlayLinks: readonly OverlayLink[] = [{ id: "chatbox", name: "Chat box", path: "/chatbox/" }];
+const overlayLinks: readonly OverlayLink[] = [{ name: "Chat box", path: "/chatbox/" }];
 
 // Elements
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -36,8 +39,7 @@ async function showVersion(): Promise<void> {
 
 // Overlay links
 function renderOverlayLinks(): void {
-  const list = getElement("overlay-links", HTMLUListElement);
-  list.replaceChildren(...overlayLinks.map(renderOverlayLink));
+  getElement("overlay-links", HTMLUListElement).replaceChildren(...overlayLinks.map(renderOverlayLink));
 }
 
 function renderOverlayLink(overlay: OverlayLink): HTMLLIElement {
@@ -52,6 +54,7 @@ function renderOverlayLink(overlay: OverlayLink): HTMLLIElement {
   url.setAttribute("aria-label", `${overlay.name} URL`);
   url.addEventListener("focus", () => url.select());
   copy.type = "button";
+  copy.className = "secondary";
   copy.textContent = "Copy";
   copy.addEventListener("click", () => {
     void navigator.clipboard.writeText(url.value).then(() => {
@@ -65,39 +68,102 @@ function renderOverlayLink(overlay: OverlayLink): HTMLLIElement {
 }
 
 // Chat box settings
-async function setupChatboxForm(): Promise<void> {
-  const form = getElement("chatbox-form", HTMLFormElement);
-  const channelInput = getElement("chatbox-channel", HTMLInputElement);
+async function setupChatboxSettings(): Promise<void> {
+  const formContainer = getElement("chatbox-form", HTMLFormElement);
+  const fieldsContainer = getElement("chatbox-fields", HTMLDivElement);
+  const saveButton = getElement("chatbox-save", HTMLButtonElement);
+  const resetButton = getElement("chatbox-reset", HTMLButtonElement);
   const status = getElement("chatbox-status", HTMLParagraphElement);
+  const frame = getElement("chatbox-preview", HTMLIFrameElement);
+  const stage = getElement("chatbox-stage", HTMLDivElement);
 
-  let settings = await fetchOverlaySettings("chatbox");
-  channelInput.value = typeof settings["channel"] === "string" ? settings["channel"] : "";
+  let stored: ConfigSource = await fetchOverlaySettings(chatboxOverlayId);
+  let savedValues = JSON.stringify(readChatboxConfig(stored));
+  let previewScheduled = false;
 
-  form.addEventListener("submit", (event) => {
+  const form = createSettingsForm(chatboxSettings, "chatbox", () => {
+    updateDirtyState();
+    schedulePreview();
+  });
+  fieldsContainer.replaceChildren(form.element);
+  form.setValues(readChatboxConfig(stored));
+
+  const currentConfig = (): ReturnType<typeof readChatboxConfig> => readChatboxConfig(form.values());
+
+  const updateDirtyState = (): void => {
+    const isDirty = JSON.stringify(currentConfig()) !== savedValues;
+    saveButton.disabled = !isDirty;
+    if (isDirty) {
+      showStatus(status, "", "Unsaved changes. The preview already shows them.");
+    }
+  };
+
+  const updatePreview = (): void => {
+    previewScheduled = false;
+    const config = currentConfig();
+    const scale = Math.min(1, stage.clientWidth / config.width);
+    frame.style.width = `${config.width}px`;
+    frame.style.height = `${config.height}px`;
+    frame.style.transform = `scale(${scale})`;
+    stage.style.height = `${Math.ceil(config.height * scale)}px`;
+    frame.contentWindow?.postMessage({ type: previewMessageType, settings: config }, location.origin);
+  };
+
+  const schedulePreview = (): void => {
+    if (!previewScheduled) {
+      previewScheduled = true;
+      requestAnimationFrame(updatePreview);
+    }
+  };
+
+  formContainer.addEventListener("submit", (event) => {
     event.preventDefault();
-    const channel = normalizeChannel(channelInput.value);
+    const values: FormValues = form.values();
+    const channel = normalizeChannel(typeof values["channel"] === "string" ? values["channel"] : "");
     if (channel === null) {
       showStatus(status, "error", "Please enter a valid Twitch channel name.");
       return;
     }
-    const updated = { ...settings, channel };
-    saveOverlaySettings("chatbox", updated).then(
+    const updated = { ...stored, ...currentConfig(), channel };
+    saveOverlaySettings(chatboxOverlayId, updated).then(
       () => {
-        settings = updated;
-        channelInput.value = channel;
-        showStatus(status, "ok", "Saved. Open chat boxes update automatically.");
+        stored = updated;
+        savedValues = JSON.stringify(readChatboxConfig(stored));
+        form.setValues(readChatboxConfig(stored));
+        saveButton.disabled = true;
+        showStatus(status, "ok", "Saved. Open chat boxes in OBS update automatically.");
       },
       (error: unknown) => showStatus(status, "error", `Saving failed: ${error instanceof Error ? error.message : String(error)}`),
     );
   });
+
+  resetButton.addEventListener("click", () => {
+    form.setValues({ ...defaultSettings(chatboxSettings), channel: currentConfig().channel });
+    updateDirtyState();
+    schedulePreview();
+  });
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-preview-background]")) {
+    button.addEventListener("click", () => {
+      stage.dataset["background"] = button.dataset["previewBackground"] ?? "checkered";
+      for (const other of document.querySelectorAll("[data-preview-background]")) {
+        other.setAttribute("aria-pressed", String(other === button));
+      }
+    });
+  }
+
+  frame.addEventListener("load", schedulePreview);
+  new ResizeObserver(schedulePreview).observe(stage);
+  frame.src = "/chatbox/?preview";
+  saveButton.disabled = true;
 }
 
-function showStatus(target: HTMLElement, kind: "ok" | "error", message: string): void {
-  target.className = `status ${kind}`;
+function showStatus(target: HTMLElement, kind: "" | "ok" | "error", message: string): void {
+  target.className = `status ${kind}`.trim();
   target.textContent = message;
 }
 
 // Startup
 renderOverlayLinks();
 void showVersion();
-void setupChatboxForm();
+void setupChatboxSettings();

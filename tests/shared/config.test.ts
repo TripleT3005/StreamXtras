@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { readBoolean, readInteger, readString, readStringList } from "../../src/shared/config.ts";
+import { readBoolean, readColor, readInteger, readString, readStringList } from "../../src/shared/config.ts";
 
 describe("config readers", () => {
   test("reads strings and falls back for other types", () => {
@@ -28,5 +28,12 @@ describe("config readers", () => {
     assert.deepEqual(readStringList({ value: ["a", " b ", 3, ""] }, "value", []), ["a", "b"]);
     assert.deepEqual(readStringList({ value: "a, b,,c" }, "value", []), ["a", "b", "c"]);
     assert.deepEqual(readStringList({}, "value", ["x"]), ["x"]);
+  });
+
+  test("reads hex colors with optional alpha", () => {
+    assert.equal(readColor({ value: "#AbCdEf" }, "value", "#000000"), "#abcdef");
+    assert.equal(readColor({ value: "#11223344" }, "value", "#000000"), "#11223344");
+    assert.equal(readColor({ value: "#123" }, "value", "#000000"), "#000000");
+    assert.equal(readColor({ value: 5 }, "value", "#000000"), "#000000");
   });
 });

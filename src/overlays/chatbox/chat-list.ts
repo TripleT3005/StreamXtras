@@ -1,16 +1,30 @@
+// Constants
+const leaveDurationMs = 400;
+
 // Chat list
 export class ChatList {
   readonly #container: HTMLElement;
-  readonly #maxMessages: number;
+  #maxMessages: number;
+  #hideAfterMs: number;
 
-  constructor(container: HTMLElement, maxMessages: number) {
+  constructor(container: HTMLElement, maxMessages: number, hideAfterSeconds: number) {
     this.#container = container;
     this.#maxMessages = maxMessages;
+    this.#hideAfterMs = hideAfterSeconds * 1000;
+  }
+
+  configure(maxMessages: number, hideAfterSeconds: number): void {
+    this.#maxMessages = maxMessages;
+    this.#hideAfterMs = hideAfterSeconds * 1000;
+    this.#trim();
   }
 
   add(item: HTMLElement): void {
     this.#container.append(item);
     this.#trim();
+    if (this.#hideAfterMs > 0) {
+      setTimeout(() => this.#leave(item), this.#hideAfterMs);
+    }
   }
 
   remove(messageId: string): void {
@@ -31,6 +45,14 @@ export class ChatList {
         item.remove();
       }
     }
+  }
+
+  #leave(item: HTMLElement): void {
+    if (!item.isConnected) {
+      return;
+    }
+    item.classList.add("leaving");
+    setTimeout(() => item.remove(), leaveDurationMs);
   }
 
   #items(): HTMLElement[] {
