@@ -13,6 +13,14 @@ Overlays are plain web pages used as OBS browser sources with a transparent back
 - **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ, highlights announcements and removes messages deleted by moderators
 - **Alerts and more** – later, via a small optional local companion app
 
+### Companion app (in development)
+The companion app in `companion/` (Rust) will serve the overlays and a settings page on `http://127.0.0.1:47820/`, sit in the system tray and connect to the Twitch API for badges and later alerts. Its configuration lives outside the repository (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
+
+```
+cd companion
+cargo run
+```
+
 ### Usage in OBS
 1. Build the overlays once (see [Development](#development))
 2. Copy `web/chatbox/chatbox.config.example.json` to `web/chatbox/chatbox.config.json` and set your channel
@@ -59,6 +67,14 @@ Die Overlays sind einfache Webseiten, die als OBS-Browserquelle mit transparente
 ### Geplant
 - **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ, hebt Ankündigungen hervor und entfernt von Moderatoren gelöschte Nachrichten
 - **Alerts und mehr** – später, über eine kleine optionale lokale Begleit-Anwendung
+
+### Begleit-Anwendung (in Entwicklung)
+Die Begleit-Anwendung in `companion/` (Rust) wird die Overlays und eine Einstellungsseite unter `http://127.0.0.1:47820/` ausliefern, im Infobereich (Tray) laufen und sich für Badges und später Alerts mit der Twitch-API verbinden. Ihre Konfiguration liegt außerhalb des Repos (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
+
+```
+cd companion
+cargo run
+```
 
 ### Verwendung in OBS
 1. Overlays einmal bauen (siehe [Entwicklung](#entwicklung))
