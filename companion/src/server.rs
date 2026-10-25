@@ -10,6 +10,7 @@ use std::time::Duration;
 use crate::config::{self, Config};
 use crate::events::EventBroadcaster;
 use crate::http::{self, Method, ParseError, Request, Response};
+use crate::twitch::account::TwitchAccount;
 
 // Constants
 pub const APP_NAME: &str = "stream-overlays";
@@ -24,7 +25,8 @@ pub struct AppState {
     pub web_root: PathBuf,
     pub config_dir: PathBuf,
     pub config: Mutex<Config>,
-    pub events: EventBroadcaster,
+    pub events: Arc<EventBroadcaster>,
+    pub twitch: Arc<TwitchAccount>,
 }
 
 enum Outcome {
@@ -77,6 +79,11 @@ fn route(request: &Request, state: &AppState) -> Outcome {
             &serde_json::json!({ "name": APP_NAME, "version": VERSION }),
         ),
         (Method::Get, "/api/events", _) => return Outcome::EventStream,
+        (Method::Get, "/api/twitch", _) => twitch_status(&state.twitch.status()),
+        (Method::Put, "/api/twitch/login", _) => check_write_request(request, state)
+            .unwrap_or_else(|| twitch_status(&state.twitch.login())),
+        (Method::Put, "/api/twitch/logout", _) => check_write_request(request, state)
+            .unwrap_or_else(|| twitch_status(&state.twitch.logout())),
         (Method::Get, _, Some(id)) => get_overlay_settings(state, id),
         (Method::Put, _, Some(id)) => put_overlay_settings(request, state, id),
         (Method::Get, _, None) if path.starts_with("/api/") => Response::text(404, "Not found"),
@@ -112,15 +119,22 @@ fn get_overlay_settings(state: &AppState, id: &str) -> Response {
     Response::json(200, &serde_json::Value::Object(settings))
 }
 
-fn put_overlay_settings(request: &Request, state: &AppState, id: &str) -> Response {
+fn check_write_request(request: &Request, state: &AppState) -> Option<Response> {
     if !is_local_origin(request.header("origin"), state.port, "http://") {
-        return Response::text(403, "Forbidden");
+        return Some(Response::text(403, "Forbidden"));
     }
     if !request
         .header("content-type")
         .is_some_and(|value| value.starts_with("application/json"))
     {
-        return Response::text(415, "Expected application/json");
+        return Some(Response::text(415, "Expected application/json"));
+    }
+    None
+}
+
+fn put_overlay_settings(request: &Request, state: &AppState, id: &str) -> Response {
+    if let Some(rejection) = check_write_request(request, state) {
+        return rejection;
     }
     let Ok(serde_json::Value::Object(settings)) = serde_json::from_slice(&request.body) else {
         return Response::text(400, "Expected a JSON object");
@@ -144,6 +158,11 @@ fn put_overlay_settings(request: &Request, state: &AppState, id: &str) -> Respon
         &serde_json::json!({ "overlay": id, "settings": settings }),
     );
     Response::json(200, &settings)
+}
+
+// Twitch
+fn twitch_status(status: &crate::twitch::account::AuthStatus) -> Response {
+    Response::json(200, &serde_json::to_value(status).unwrap_or_default())
 }
 
 fn lock(config: &Mutex<Config>) -> std::sync::MutexGuard<'_, Config> {
@@ -230,6 +249,7 @@ fn stream_events(mut stream: &TcpStream, state: &AppState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::twitch::auth::tests::FakeHttp;
 
     const PORT: u16 = 47_820;
 
@@ -261,7 +281,13 @@ mod tests {
                 web_root,
                 config_dir: root.join("config"),
                 config: Mutex::new(Config::default()),
-                events: EventBroadcaster::default(),
+                events: Arc::new(EventBroadcaster::default()),
+                twitch: TwitchAccount::new(
+                    Arc::new(FakeHttp::default()),
+                    None,
+                    &root,
+                    Arc::new(EventBroadcaster::default()),
+                ),
             },
             root,
         }
@@ -409,6 +435,43 @@ mod tests {
         assert_eq!(overlay_settings_id("/api/overlays//settings"), None);
         assert_eq!(overlay_settings_id("/api/overlays/Chat/settings"), None);
         assert_eq!(overlay_settings_id("/api/overlays/a/b/settings"), None);
+    }
+
+    #[test]
+    fn exposes_the_twitch_status_and_protects_login() {
+        let test = test_state("twitch");
+        let status = reply(&get("/api/twitch"), &test.state);
+        assert_eq!(status.body, br#"{"state":"notConfigured"}"#);
+        let origin = format!("http://127.0.0.1:{PORT}");
+        assert_eq!(
+            reply(
+                &put(
+                    "/api/twitch/login",
+                    "https://evil.example",
+                    "application/json",
+                    "{}"
+                ),
+                &test.state
+            )
+            .status,
+            403
+        );
+        let login = reply(
+            &put("/api/twitch/login", &origin, "application/json", "{}"),
+            &test.state,
+        );
+        assert_eq!(
+            (login.status, login.body.as_slice()),
+            (200, &br#"{"state":"notConfigured"}"#[..])
+        );
+        assert_eq!(
+            reply(
+                &put("/api/twitch/logout", &origin, "text/plain", "{}"),
+                &test.state
+            )
+            .status,
+            415
+        );
     }
 
     #[test]

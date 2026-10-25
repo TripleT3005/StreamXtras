@@ -12,6 +12,7 @@ A small companion app runs in the system tray, serves the overlays and a setting
 ### Features
 - **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ, highlights announcements and removes messages deleted by moderators
 - **Companion app** – tray icon, local settings page with live preview, overlay settings that apply live without reloading the OBS source
+- **Twitch login** – device code login with automatic renewal, as the basis for the Twitch API
 - **Planned** – all Twitch badges and streamer icons in shared chat via the Twitch API, alerts
 
 ### Usage
@@ -20,6 +21,15 @@ A small companion app runs in the system tray, serves the overlays and a setting
 3. Copy the URL of the overlay (e.g. `http://127.0.0.1:47820/chatbox/`) and add it to OBS as a browser source with **Local file** unchecked.
 
 The companion app only listens on `127.0.0.1`. Its configuration lives outside the repository (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
+
+### Twitch login
+For all Twitch badges, streamer icons in shared chat and later alerts, the companion app connects to the Twitch API. Log in on the settings page: Twitch opens with a code already filled in, you confirm, done. The login only grants read access (bits, channel point redemptions, subscriptions, followers), is renewed automatically and stays valid as long as the app runs at least once every 30 days. The token is stored only in `twitch-token.json` in the configuration folder and never leaves the companion app.
+
+Release builds will contain the Client ID of this project (once releases are published). To use your own Twitch application (or when building yourself), register one at [dev.twitch.tv](https://dev.twitch.tv/console) with client type **Public** and redirect URL `http://localhost`, and add its Client ID to `config.json`:
+
+```json
+{ "twitchClientId": "your-client-id" }
+```
 
 ### Chat box settings
 All settings are edited on the settings page with a live preview: channel, number of messages, hiding after a time, animation, position, font, size, colors, message background, spacing, emote size, badges, readable name colors, third-party emote providers and the browser source size. Saved changes apply to open chat boxes immediately; only a new channel or other emote providers reload them.
@@ -61,6 +71,7 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 ### Funktionen
 - **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ, hebt Ankündigungen hervor und entfernt von Moderatoren gelöschte Nachrichten
 - **Begleit-Anwendung** – Tray-Icon, lokale Einstellungsseite mit Live-Vorschau, Overlay-Einstellungen wirken sofort, ohne die OBS-Quelle neu zu laden
+- **Twitch-Login** – Anmeldung per Gerätecode mit automatischer Erneuerung, als Grundlage für die Twitch-API
 - **Geplant** – alle Twitch-Badges und Streamer-Icons im geteilten Chat über die Twitch-API, Alerts
 
 ### Verwendung
@@ -69,6 +80,15 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 3. Die URL des Overlays kopieren (z. B. `http://127.0.0.1:47820/chatbox/`) und in OBS als Browserquelle hinzufügen, **Lokale Datei** nicht anhaken.
 
 Die Begleit-Anwendung lauscht nur auf `127.0.0.1`. Ihre Konfiguration liegt außerhalb des Repos (Windows: `%APPDATA%\stream-overlays`, macOS: `~/Library/Application Support/stream-overlays`, Linux: `~/.config/stream-overlays`).
+
+### Twitch-Login
+Für alle Twitch-Badges, Streamer-Icons im geteilten Chat und später Alerts verbindet sich die Begleit-Anwendung mit der Twitch-API. Die Anmeldung erfolgt auf der Einstellungsseite: Twitch öffnet sich mit bereits eingetragenem Code, du bestätigst, fertig. Der Login gewährt nur Lesezugriff (Bits, Kanalpunkte-Einlösungen, Abos, Follower), wird automatisch erneuert und bleibt gültig, solange die Anwendung mindestens alle 30 Tage einmal läuft. Das Token liegt nur in `twitch-token.json` im Konfigurationsordner und verlässt die Begleit-Anwendung nie.
+
+Release-Builds werden die Client-ID dieses Projekts enthalten (sobald es Releases gibt). Um eine eigene Twitch-Anwendung zu nutzen (oder beim Selbstbauen), unter [dev.twitch.tv](https://dev.twitch.tv/console) eine Anwendung mit Client-Typ **Öffentlich** und Weiterleitungs-URL `http://localhost` registrieren und ihre Client-ID in die `config.json` eintragen:
+
+```json
+{ "twitchClientId": "deine-client-id" }
+```
 
 ### Chatbox-Einstellungen
 Alle Einstellungen werden auf der Einstellungsseite mit Live-Vorschau bearbeitet: Kanal, Anzahl der Nachrichten, Ausblenden nach Zeit, Animation, Position, Schrift, Größe, Farben, Hintergrund der Nachrichten, Abstand, Emote-Größe, Badges, lesbare Namensfarben, Emote-Anbieter und die Größe der Browserquelle. Gespeicherte Änderungen wirken sofort in geöffneten Chatboxen; nur ein neuer Kanal oder andere Emote-Anbieter laden sie neu.

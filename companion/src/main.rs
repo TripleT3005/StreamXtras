@@ -9,6 +9,7 @@ mod instance;
 mod paths;
 mod server;
 mod tray;
+mod twitch;
 
 use std::error::Error;
 use std::io;
@@ -19,6 +20,8 @@ use std::sync::{Arc, Mutex};
 
 use events::EventBroadcaster;
 use server::AppState;
+use twitch::account::TwitchAccount;
+use twitch::http::UreqHttp;
 
 // Entry point
 fn main() -> ExitCode {
@@ -45,12 +48,26 @@ fn run() -> Result<(), Box<dyn Error>> {
         }
         Err(error) => return Err(format!("port {port} is not available: {error}").into()),
     };
+    let events = Arc::new(EventBroadcaster::default());
+    let client_id = config
+        .twitch_client_id
+        .clone()
+        .or_else(|| option_env!("TWITCH_CLIENT_ID").map(str::to_owned))
+        .filter(|client_id| !client_id.trim().is_empty());
+    let twitch = TwitchAccount::new(
+        Arc::new(UreqHttp::new()),
+        client_id,
+        &config_dir,
+        Arc::clone(&events),
+    );
+    twitch.start_maintenance();
     let state = Arc::new(AppState {
         port,
         web_root: web_root(),
         config_dir,
         config: Mutex::new(config),
-        events: EventBroadcaster::default(),
+        events,
+        twitch,
     });
     server::start(listener, state)?;
 
