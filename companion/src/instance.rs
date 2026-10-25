@@ -38,23 +38,29 @@ mod tests {
     use crate::server::{self, AppState};
     use crate::twitch::account::TwitchAccount;
     use crate::twitch::auth::tests::FakeHttp;
+    use crate::twitch::helix::HelixClient;
 
     #[test]
     fn detects_a_running_instance() {
         let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
         let port = listener.local_addr().unwrap().port();
+        let twitch = TwitchAccount::new(
+            Arc::new(FakeHttp::default()),
+            None,
+            &std::env::temp_dir(),
+            Arc::new(EventBroadcaster::default()),
+        );
         let state = AppState {
             port,
             web_root: PathBuf::new(),
             config_dir: PathBuf::new(),
             config: Mutex::new(Config::default()),
             events: Arc::new(EventBroadcaster::default()),
-            twitch: TwitchAccount::new(
+            helix: Arc::new(HelixClient::new(
                 Arc::new(FakeHttp::default()),
-                None,
-                &std::env::temp_dir(),
-                Arc::new(EventBroadcaster::default()),
-            ),
+                twitch.clone(),
+            )),
+            twitch,
         };
         server::start(listener, Arc::new(state)).unwrap();
         assert!(is_running(port));

@@ -12,8 +12,8 @@ A small companion app runs in the system tray, serves the overlays and a setting
 ### Features
 - **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ, highlights announcements and removes messages deleted by moderators
 - **Companion app** – tray icon, local settings page with live preview, overlay settings that apply live without reloading the OBS source
-- **Twitch login** – device code login with automatic renewal, as the basis for the Twitch API
-- **Planned** – all Twitch badges and streamer icons in shared chat via the Twitch API, alerts
+- **Twitch login** – device code login with automatic renewal; with it, the chat box shows all global and channel badges and, during a shared chat, the icon of the channel each message comes from
+- **Planned** – alerts
 
 ### Usage
 1. Start the companion app (see [Development](#development) until releases are available). On the first start the settings page opens in your browser; later you open it with a click on the tray icon.
@@ -32,7 +32,7 @@ Release builds will contain the Client ID of this project (once releases are pub
 ```
 
 ### Chat box settings
-All settings are edited on the settings page with a live preview: channel, number of messages, hiding after a time, animation, position, font, size, colors, message background, spacing, emote size, badges, readable name colors, third-party emote providers and the browser source size. Saved changes apply to open chat boxes immediately; only a new channel or other emote providers reload them.
+All settings are edited on the settings page with a live preview: channel, number of messages, hiding after a time, animation, position, font, size, colors, message background, spacing, emote size, badges, readable name colors, third-party emote providers, shared chat (streamer icons, messages from partner channels) and the browser source size. Saved changes apply to open chat boxes immediately; only a new channel or other emote providers reload them.
 
 URL parameters override the stored settings for a single browser source, e.g. `?channel=othername&fontSize=24`. The parameter names are the keys in the `chatbox` section of `config.json`.
 
@@ -71,8 +71,8 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 ### Funktionen
 - **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ, hebt Ankündigungen hervor und entfernt von Moderatoren gelöschte Nachrichten
 - **Begleit-Anwendung** – Tray-Icon, lokale Einstellungsseite mit Live-Vorschau, Overlay-Einstellungen wirken sofort, ohne die OBS-Quelle neu zu laden
-- **Twitch-Login** – Anmeldung per Gerätecode mit automatischer Erneuerung, als Grundlage für die Twitch-API
-- **Geplant** – alle Twitch-Badges und Streamer-Icons im geteilten Chat über die Twitch-API, Alerts
+- **Twitch-Login** – Anmeldung per Gerätecode mit automatischer Erneuerung; damit zeigt die Chatbox alle globalen und kanaleigenen Badges und im geteilten Chat das Icon des Kanals, aus dem eine Nachricht kommt
+- **Geplant** – Alerts
 
 ### Verwendung
 1. Begleit-Anwendung starten (bis es Releases gibt, siehe [Entwicklung](#entwicklung)). Beim ersten Start öffnet sich die Einstellungsseite im Browser, danach per Klick auf das Tray-Icon.
@@ -91,7 +91,7 @@ Release-Builds werden die Client-ID dieses Projekts enthalten (sobald es Release
 ```
 
 ### Chatbox-Einstellungen
-Alle Einstellungen werden auf der Einstellungsseite mit Live-Vorschau bearbeitet: Kanal, Anzahl der Nachrichten, Ausblenden nach Zeit, Animation, Position, Schrift, Größe, Farben, Hintergrund der Nachrichten, Abstand, Emote-Größe, Badges, lesbare Namensfarben, Emote-Anbieter und die Größe der Browserquelle. Gespeicherte Änderungen wirken sofort in geöffneten Chatboxen; nur ein neuer Kanal oder andere Emote-Anbieter laden sie neu.
+Alle Einstellungen werden auf der Einstellungsseite mit Live-Vorschau bearbeitet: Kanal, Anzahl der Nachrichten, Ausblenden nach Zeit, Animation, Position, Schrift, Größe, Farben, Hintergrund der Nachrichten, Abstand, Emote-Größe, Badges, lesbare Namensfarben, Emote-Anbieter, geteilter Chat (Streamer-Icons, Nachrichten aus Partnerkanälen) und die Größe der Browserquelle. Gespeicherte Änderungen wirken sofort in geöffneten Chatboxen; nur ein neuer Kanal oder andere Emote-Anbieter laden sie neu.
 
 URL-Parameter überschreiben die gespeicherten Einstellungen für eine einzelne Browserquelle, z. B. `?channel=andererkanal&fontSize=24`. Die Parameternamen sind die Schlüssel im Abschnitt `chatbox` der `config.json`.
 

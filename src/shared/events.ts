@@ -27,6 +27,7 @@ export interface ChatMessageEvent {
   readonly platform: Platform;
   readonly id: string;
   readonly channelId: string;
+  readonly sourceChannelId: string | null;
   readonly user: ChatUser;
   readonly text: string;
   readonly isAction: boolean;

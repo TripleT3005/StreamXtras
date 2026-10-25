@@ -1,17 +1,29 @@
 import type { Emote } from "../../shared/emotes/emote.ts";
 import type { MessageFragment } from "../../shared/emotes/fragments.ts";
 import type { ChatMessageEvent } from "../../shared/events.ts";
-import { getGlobalBadgeUrl } from "../../shared/twitch/badges.ts";
+import type { BadgeResolver } from "../../shared/twitch/badge-library.ts";
+import type { AvatarResolver } from "../../shared/twitch/user-library.ts";
 import { getDefaultUserColor, toReadableColor } from "../../shared/twitch/user-colors.ts";
 
 // Types
 export interface MessageViewOptions {
   readonly showBadges: boolean;
   readonly readableColors: boolean;
+  readonly showSharedChatIcons: boolean;
+}
+
+export interface MessageContext {
+  readonly badges: BadgeResolver;
+  readonly avatars: AvatarResolver | null;
 }
 
 // Rendering
-export function renderMessage(message: ChatMessageEvent, fragments: readonly MessageFragment[], options: MessageViewOptions): HTMLElement {
+export function renderMessage(
+  message: ChatMessageEvent,
+  fragments: readonly MessageFragment[],
+  options: MessageViewOptions,
+  context: MessageContext,
+): HTMLElement {
   const item = document.createElement("li");
   item.className = message.isAction ? "message action" : "message";
   if (message.announcement !== null) {
@@ -20,8 +32,12 @@ export function renderMessage(message: ChatMessageEvent, fragments: readonly Mes
   item.dataset["messageId"] = message.id;
   item.dataset["userId"] = message.user.id;
 
+  if (options.showSharedChatIcons && message.sourceChannelId !== null && context.avatars !== null) {
+    item.append(renderSourceAvatar(message.sourceChannelId, context.avatars));
+  }
+
   if (options.showBadges) {
-    const badges = renderBadges(message);
+    const badges = renderBadges(message, context.badges);
     if (badges !== null) {
       item.append(badges);
     }
@@ -45,10 +61,29 @@ function getNameColor(message: ChatMessageEvent, options: MessageViewOptions): s
   return options.readableColors ? toReadableColor(color) : color;
 }
 
-function renderBadges(message: ChatMessageEvent): HTMLElement | null {
+function renderSourceAvatar(channelId: string, avatars: AvatarResolver): HTMLImageElement {
+  const image = document.createElement("img");
+  image.className = "source-avatar";
+  image.alt = "";
+  image.hidden = true;
+  image.decoding = "async";
+  image.referrerPolicy = "no-referrer";
+  void avatars.avatar(channelId).then((url) => {
+    if (url === null) {
+      image.remove();
+    } else {
+      image.src = url;
+      image.hidden = false;
+    }
+  });
+  return image;
+}
+
+function renderBadges(message: ChatMessageEvent, resolver: BadgeResolver): HTMLElement | null {
+  const channelId = message.sourceChannelId ?? message.channelId;
   const images = message.user.badges.flatMap((badge) => {
-    const url = getGlobalBadgeUrl(badge);
-    return url === null ? [] : [createImage("badge", url, badge.set)];
+    const resolved = resolver.resolve(badge, channelId);
+    return resolved === null ? [] : [createImage("badge", resolved.url, resolved.title)];
   });
   if (images.length === 0) {
     return null;

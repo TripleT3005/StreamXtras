@@ -190,6 +190,25 @@ impl TwitchAccount {
         self.status()
     }
 
+    pub fn access_token(&self) -> Option<(String, String)> {
+        self.maintain();
+        let inner = self.lock();
+        inner
+            .token
+            .as_ref()
+            .map(|token| (token.client_id.clone(), token.access_token.clone()))
+    }
+
+    pub fn refresh_after_rejection(&self) {
+        let current = {
+            let inner = self.lock();
+            inner.token.clone().map(|token| (inner.attempt, token))
+        };
+        if let Some((attempt, token)) = current {
+            self.refresh(attempt, &token);
+        }
+    }
+
     // Login polling
     fn poll(
         &self,

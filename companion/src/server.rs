@@ -11,6 +11,7 @@ use crate::config::{self, Config};
 use crate::events::EventBroadcaster;
 use crate::http::{self, Method, ParseError, Request, Response};
 use crate::twitch::account::TwitchAccount;
+use crate::twitch::helix::{HelixClient, HelixError};
 
 // Constants
 pub const APP_NAME: &str = "streamxtras";
@@ -27,6 +28,7 @@ pub struct AppState {
     pub config: Mutex<Config>,
     pub events: Arc<EventBroadcaster>,
     pub twitch: Arc<TwitchAccount>,
+    pub helix: Arc<HelixClient>,
 }
 
 enum Outcome {
@@ -86,6 +88,7 @@ fn route(request: &Request, state: &AppState) -> Outcome {
             .unwrap_or_else(|| twitch_status(&state.twitch.logout())),
         (Method::Get, _, Some(id)) => get_overlay_settings(state, id),
         (Method::Put, _, Some(id)) => put_overlay_settings(request, state, id),
+        (Method::Get, _, None) if path.starts_with("/api/twitch/") => twitch_data(state, path),
         (Method::Get, _, None) if path.starts_with("/api/") => Response::text(404, "Not found"),
         (Method::Get, _, None) => serve_static(&state.web_root, path),
         _ => Response::text(405, "Method not allowed"),
@@ -161,6 +164,32 @@ fn put_overlay_settings(request: &Request, state: &AppState, id: &str) -> Respon
 }
 
 // Twitch
+fn twitch_data(state: &AppState, path: &str) -> Response {
+    let resource = path.strip_prefix("/api/twitch/").unwrap_or_default();
+    let result = if resource == "badges/global" {
+        state.helix.global_badges()
+    } else if let Some(id) = resource.strip_prefix("badges/channel/") {
+        state.helix.channel_badges(id)
+    } else if let Some(id) = resource.strip_prefix("users/") {
+        state.helix.user(id)
+    } else {
+        return Response::text(404, "Not found");
+    };
+    match result {
+        Ok(value) => Response::json(200, &value),
+        Err(HelixError::NotLoggedIn) => {
+            Response::json(503, &serde_json::json!({ "error": "notLoggedIn" }))
+        }
+        Err(HelixError::NotFound) => {
+            Response::json(404, &serde_json::json!({ "error": "notFound" }))
+        }
+        Err(error) => {
+            eprintln!("{error}");
+            Response::json(502, &serde_json::json!({ "error": "failed" }))
+        }
+    }
+}
+
 fn twitch_status(status: &crate::twitch::account::AuthStatus) -> Response {
     Response::json(200, &serde_json::to_value(status).unwrap_or_default())
 }
@@ -273,6 +302,12 @@ mod tests {
         fs::write(web_root.join("chatbox").join("index.html"), "<p>chat</p>").unwrap();
         fs::write(web_root.join("chatbox").join("chatbox.css"), "p{}").unwrap();
         fs::write(root.join("secret.txt"), "secret").unwrap();
+        let twitch = TwitchAccount::new(
+            Arc::new(FakeHttp::default()),
+            None,
+            &root,
+            Arc::new(EventBroadcaster::default()),
+        );
         TestState {
             state: AppState {
                 port: PORT,
@@ -280,12 +315,8 @@ mod tests {
                 config_dir: root.join("config"),
                 config: Mutex::new(Config::default()),
                 events: Arc::new(EventBroadcaster::default()),
-                twitch: TwitchAccount::new(
-                    Arc::new(FakeHttp::default()),
-                    None,
-                    &root,
-                    Arc::new(EventBroadcaster::default()),
-                ),
+                twitch: twitch.clone(),
+                helix: Arc::new(HelixClient::new(Arc::new(FakeHttp::default()), twitch)),
             },
             root,
         }
@@ -470,6 +501,21 @@ mod tests {
             .status,
             415
         );
+    }
+
+    #[test]
+    fn serves_twitch_data_only_when_logged_in() {
+        let test = test_state("twitch-data");
+        let badges = reply(&get("/api/twitch/badges/global"), &test.state);
+        assert_eq!(
+            (badges.status, badges.body.as_slice()),
+            (503, &br#"{"error":"notLoggedIn"}"#[..])
+        );
+        assert_eq!(
+            reply(&get("/api/twitch/users/abc"), &test.state).status,
+            404
+        );
+        assert_eq!(reply(&get("/api/twitch/unknown"), &test.state).status, 404);
     }
 
     #[test]
