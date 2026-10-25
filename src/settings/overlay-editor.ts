@@ -11,6 +11,7 @@ export interface OverlayEditorOptions<S extends SettingsSchema> {
   readonly overlayId: string;
   readonly schema: S;
   readonly previewPath: string;
+  readonly overlayPath: string;
   readonly media: MediaLibrary;
   readonly keepOnReset?: readonly (keyof S & string)[];
   readonly prepareSave?: (values: SettingsValues<S>) => SettingsValues<S> | string;
@@ -22,6 +23,7 @@ export interface OverlayEditor {
   readonly actions: HTMLElement;
   setPreviewPath(path: string): void;
   showStatus(kind: StatusKind, message: string): void;
+  refreshPreview(): void;
 }
 
 export type StatusKind = "" | "ok" | "error";
@@ -34,7 +36,7 @@ interface PreviewSize {
 // Editor
 export async function createOverlayEditor<S extends SettingsSchema>(options: OverlayEditorOptions<S>): Promise<OverlayEditor> {
   const { container, schema, overlayId } = options;
-  const title = element("h2", "", options.title);
+  const sourceUrl = createSourceUrl(options.title, options.overlayPath, `${overlayId}-url`);
   const form = element("form", "editor-form");
   form.noValidate = true;
   const fields = element("div", "");
@@ -72,7 +74,7 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
   previewColumn.append(toolbar, stage);
   const layout = element("div", "editor");
   layout.append(form, previewColumn);
-  container.replaceChildren(title, layout);
+  container.replaceChildren(sourceUrl, layout);
 
   let stored: ConfigSource = await fetchOverlaySettings(overlayId);
   let savedValues = JSON.stringify(readSettings(schema, stored));
@@ -104,6 +106,10 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
     previewScheduled = false;
     const values = currentValues();
     const size = previewSize(values);
+    if (stage.clientWidth === 0) {
+      postPreviewMessage(frame, previewSettingsMessage, { settings: values });
+      return;
+    }
     const scale = Math.min(1, stage.clientWidth / size.width);
     frame.style.width = `${size.width}px`;
     frame.style.height = `${size.height}px`;
@@ -157,7 +163,30 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
     actions,
     setPreviewPath: (path) => (frame.src = path),
     showStatus,
+    refreshPreview: schedulePreview,
   };
+}
+
+function createSourceUrl(title: string, path: string, id: string): HTMLElement {
+  const row = element("div", "source-url");
+  const label = element("label", "", "OBS browser source URL");
+  label.htmlFor = id;
+  const url = element("input", "");
+  url.id = id;
+  url.readOnly = true;
+  url.value = new URL(path, location.origin).href;
+  url.title = `Add the ${title.toLowerCase()} to OBS as a browser source with this URL. Leave "Local file" unchecked.`;
+  url.addEventListener("focus", () => url.select());
+  const copy = element("button", "secondary", "Copy");
+  copy.type = "button";
+  copy.addEventListener("click", () => {
+    void navigator.clipboard.writeText(url.value).then(() => {
+      copy.textContent = "Copied";
+      setTimeout(() => (copy.textContent = "Copy"), 1500);
+    });
+  });
+  row.append(label, url, copy);
+  return row;
 }
 
 function previewSize(values: Readonly<Record<string, unknown>>): PreviewSize {
