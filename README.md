@@ -10,7 +10,7 @@ Overlays are plain web pages used as OBS browser sources with a transparent back
 > Work in progress. Not affiliated with or endorsed by Twitch, 7TV, BetterTTV or FrankerFaceZ. Twitch is a trademark of Twitch Interactive, Inc.
 
 ### Planned
-- **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ and removes messages deleted by moderators
+- **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ, highlights announcements and removes messages deleted by moderators
 - **Alerts and more** – later, via a small optional local companion app
 
 ### Usage in OBS
@@ -57,7 +57,7 @@ Die Overlays sind einfache Webseiten, die als OBS-Browserquelle mit transparente
 > In Arbeit. Keine Verbindung zu Twitch, 7TV, BetterTTV oder FrankerFaceZ und nicht von ihnen unterstützt. Twitch ist eine Marke von Twitch Interactive, Inc.
 
 ### Geplant
-- **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ und entfernt von Moderatoren gelöschte Nachrichten
+- **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ, hebt Ankündigungen hervor und entfernt von Moderatoren gelöschte Nachrichten
 - **Alerts und mehr** – später, über eine kleine optionale lokale Begleit-Anwendung
 
 ### Verwendung in OBS

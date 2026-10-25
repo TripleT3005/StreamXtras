@@ -14,6 +14,9 @@ export interface MessageViewOptions {
 export function renderMessage(message: ChatMessageEvent, fragments: readonly MessageFragment[], options: MessageViewOptions): HTMLElement {
   const item = document.createElement("li");
   item.className = message.isAction ? "message action" : "message";
+  if (message.announcement !== null) {
+    item.classList.add("announcement", `announcement-${message.announcement}`);
+  }
   item.dataset["messageId"] = message.id;
   item.dataset["userId"] = message.user.id;
 

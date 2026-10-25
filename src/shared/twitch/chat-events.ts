@@ -1,15 +1,18 @@
-import type { ChatBadge, EmotePlacement, OverlayEvent } from "../events.ts";
+import type { AnnouncementColor, ChatBadge, EmotePlacement, OverlayEvent } from "../events.ts";
 import { getNick, type IrcMessage } from "./irc-message.ts";
 
 // Constants
 const actionPrefix = "\u0001ACTION ";
 const actionSuffix = "\u0001";
+const announcementColors: readonly AnnouncementColor[] = ["primary", "blue", "green", "orange", "purple"];
 
 // Mapping
 export function mapChatEvent(message: IrcMessage, now: number = Date.now()): OverlayEvent | null {
   switch (message.command) {
     case "PRIVMSG":
-      return mapPrivateMessage(message, now);
+      return mapChatMessage(message, getNick(message.prefix), null, now);
+    case "USERNOTICE":
+      return mapUserNotice(message, now);
     case "CLEARMSG":
       return mapClearMessage(message);
     case "CLEARCHAT":
@@ -21,13 +24,23 @@ export function mapChatEvent(message: IrcMessage, now: number = Date.now()): Ove
   }
 }
 
-function mapPrivateMessage(message: IrcMessage, now: number): OverlayEvent | null {
+function mapUserNotice(message: IrcMessage, now: number): OverlayEvent | null {
+  const noticeType = message.tags.get("msg-id");
+  const sourceNoticeType = noticeType === "sharedchatnotice" ? message.tags.get("source-msg-id") : noticeType;
+  if (sourceNoticeType !== "announcement") {
+    return null;
+  }
+  const color = (message.tags.get("msg-param-color") ?? "").toLowerCase();
+  const announcement = announcementColors.find((candidate) => candidate === color) ?? "primary";
+  return mapChatMessage(message, message.tags.get("login") ?? null, announcement, now);
+}
+
+function mapChatMessage(message: IrcMessage, login: string | null, announcement: AnnouncementColor | null, now: number): OverlayEvent | null {
   const { tags } = message;
   const id = tags.get("id");
   const userId = tags.get("user-id");
-  const login = getNick(message.prefix);
   const rawText = message.params[1];
-  if (id === undefined || userId === undefined || login === null || rawText === undefined) {
+  if (id === undefined || userId === undefined || login === null || login === "" || rawText === undefined) {
     return null;
   }
 
@@ -45,10 +58,11 @@ function mapPrivateMessage(message: IrcMessage, now: number): OverlayEvent | nul
       login,
       displayName: tags.get("display-name") || login,
       color: tags.get("color") || null,
-      badges: parseBadges(tags.get("badges") ?? ""),
+      badges: parseBadges(tags.get("source-badges") ?? tags.get("badges") ?? ""),
     },
     text,
     isAction,
+    announcement,
     emotes: parseEmotes(tags.get("emotes") ?? ""),
     timestamp: Number.isFinite(sentAt) && sentAt > 0 ? sentAt : now,
   };
