@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
+    "test": "tsc -p tests && node --test \"tests/**/*.test.ts\"",
     "serve": "node tools/serve.js"
   },
   "devDependencies": {
