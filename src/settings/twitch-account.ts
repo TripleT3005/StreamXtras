@@ -65,13 +65,12 @@ export function setupTwitchAccount(container: HTMLElement): void {
     switch (status.state) {
       case "notConfigured":
         container.replaceChildren(
-          paragraph("No Twitch app is configured for this build.", "status"),
-          paragraph('Register an application at dev.twitch.tv (client type "Public") and add its Client ID as "twitchClientId" to config.json, then restart the companion app.', "hint"),
+          paragraph('Twitch login unavailable: no Client ID configured (see "twitchClientId" in the README).', "hint"),
         );
         break;
       case "loggedOut":
         container.replaceChildren(
-          paragraph("Log in to show all Twitch badges and, later, alerts. The login only grants read access.", "hint"),
+          paragraph("Log in for all badges and follow alerts (read access only).", "hint"),
           button("Log in with Twitch", () => run("login")),
         );
         break;
@@ -87,27 +86,28 @@ export function setupTwitchAccount(container: HTMLElement): void {
         open.href = status.verificationUri;
         open.target = "_blank";
         open.rel = "noopener noreferrer";
-        open.textContent = "Open Twitch to confirm";
+        open.textContent = "Open Twitch";
         const remaining = paragraph("", "hint");
         const updateRemaining = (): void => {
           const seconds = Math.max(0, status.expiresAt - Math.floor(Date.now() / 1000));
-          remaining.textContent = `Waiting for confirmation on Twitch. The code is valid for ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} minutes.`;
+          remaining.textContent = `valid for ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
         };
         updateRemaining();
         countdown = setInterval(updateRemaining, 1000);
         container.replaceChildren(
-          paragraph("Confirm the login on Twitch. The code is already filled in there; check that it matches:", "hint"),
+          paragraph("Confirm on Twitch, the code must match:", "hint"),
           code,
-          actions(open, button("Cancel", () => run("logout"), "secondary")),
+          open,
+          button("Cancel", () => run("logout"), "secondary"),
           remaining,
         );
         break;
       }
       case "loggedIn": {
-        const elements: HTMLElement[] = [paragraph(`Logged in as ${status.login}.`, "status ok")];
+        const elements: HTMLElement[] = [paragraph(`Twitch: ${status.login}`, "status ok")];
         if (status.missingScopes) {
           elements.push(
-            paragraph("New features need additional permissions. Please log in again.", "hint"),
+            paragraph("New permissions needed.", "hint"),
             button("Log in again", () => run("login")),
           );
         }
@@ -160,12 +160,5 @@ function button(label: string, onClick: () => void, className = ""): HTMLButtonE
     element.className = className;
   }
   element.addEventListener("click", onClick);
-  return element;
-}
-
-function actions(...children: HTMLElement[]): HTMLDivElement {
-  const element = document.createElement("div");
-  element.className = "row";
-  element.append(...children);
   return element;
 }
