@@ -58,6 +58,13 @@ pub enum AuthStatus {
     },
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Credentials {
+    pub client_id: String,
+    pub access_token: String,
+    pub user_id: String,
+}
+
 struct Inner {
     status: AuthStatus,
     token: Option<StoredToken>,
@@ -191,12 +198,18 @@ impl TwitchAccount {
     }
 
     pub fn access_token(&self) -> Option<(String, String)> {
+        self.credentials()
+            .map(|credentials| (credentials.client_id, credentials.access_token))
+    }
+
+    pub fn credentials(&self) -> Option<Credentials> {
         self.maintain();
         let inner = self.lock();
-        inner
-            .token
-            .as_ref()
-            .map(|token| (token.client_id.clone(), token.access_token.clone()))
+        inner.token.as_ref().map(|token| Credentials {
+            client_id: token.client_id.clone(),
+            access_token: token.access_token.clone(),
+            user_id: token.user_id.clone(),
+        })
     }
 
     pub fn refresh_after_rejection(&self) {

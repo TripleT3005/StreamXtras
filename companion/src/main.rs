@@ -21,6 +21,7 @@ use std::sync::{Arc, Mutex};
 use events::EventBroadcaster;
 use server::AppState;
 use twitch::account::TwitchAccount;
+use twitch::eventsub::{EVENTSUB_URL, EventSubClient};
 use twitch::helix::HelixClient;
 use twitch::http::UreqHttp;
 
@@ -59,6 +60,13 @@ fn run() -> Result<(), Box<dyn Error>> {
     let twitch = TwitchAccount::new(http.clone(), client_id, &config_dir, Arc::clone(&events));
     twitch.start_maintenance();
     let helix = Arc::new(HelixClient::new(http, Arc::clone(&twitch)));
+    EventSubClient::new(
+        Arc::clone(&twitch),
+        Arc::clone(&helix),
+        Arc::clone(&events),
+        EVENTSUB_URL,
+    )
+    .start();
     let state = Arc::new(AppState {
         port,
         web_root: web_root(),

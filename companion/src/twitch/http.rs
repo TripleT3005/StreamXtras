@@ -13,6 +13,12 @@ pub struct HttpResponse {
 pub trait TwitchHttp: Send + Sync {
     fn post_form(&self, url: &str, form: &[(&str, &str)]) -> Result<HttpResponse, String>;
     fn get(&self, url: &str, headers: &[(&str, &str)]) -> Result<HttpResponse, String>;
+    fn post_json(
+        &self,
+        url: &str,
+        headers: &[(&str, &str)],
+        body: &str,
+    ) -> Result<HttpResponse, String>;
 }
 
 // Client
@@ -49,6 +55,21 @@ impl TwitchHttp for UreqHttp {
                 request.header(*name, *value)
             });
         read_response(request.call().map_err(|error| error.to_string())?)
+    }
+
+    fn post_json(
+        &self,
+        url: &str,
+        headers: &[(&str, &str)],
+        body: &str,
+    ) -> Result<HttpResponse, String> {
+        let request = headers
+            .iter()
+            .fold(self.agent.post(url), |request, (name, value)| {
+                request.header(*name, *value)
+            })
+            .header("Content-Type", "application/json");
+        read_response(request.send(body).map_err(|error| error.to_string())?)
     }
 }
 

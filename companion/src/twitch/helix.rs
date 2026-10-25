@@ -7,7 +7,7 @@ use serde::Deserialize;
 use serde_json::{Map, Value, json};
 
 use super::account::TwitchAccount;
-use super::http::TwitchHttp;
+use super::http::{HttpResponse, TwitchHttp};
 
 // Constants
 const API_URL: &str = "https://api.twitch.tv/helix";
@@ -108,12 +108,21 @@ impl HelixClient {
         })
     }
 
+    pub fn post(&self, path: &str, body: &str) -> Result<HttpResponse, HelixError> {
+        let response = self.request(path, Some(body))?;
+        if response.status == 401 {
+            self.account.refresh_after_rejection();
+            return self.request(path, Some(body));
+        }
+        Ok(response)
+    }
+
     // Requests
     fn get(&self, path: &str) -> Result<String, HelixError> {
-        let response = self.request(path)?;
+        let response = self.request(path, None)?;
         let response = if response.status == 401 {
             self.account.refresh_after_rejection();
-            self.request(path)?
+            self.request(path, None)?
         } else {
             response
         };
@@ -124,16 +133,20 @@ impl HelixClient {
         }
     }
 
-    fn request(&self, path: &str) -> Result<super::http::HttpResponse, HelixError> {
+    fn request(&self, path: &str, body: Option<&str>) -> Result<HttpResponse, HelixError> {
         let (client_id, access_token) =
             self.account.access_token().ok_or(HelixError::NotLoggedIn)?;
         let authorization = format!("Bearer {access_token}");
-        self.http
-            .get(
-                &format!("{API_URL}{path}"),
-                &[("Authorization", &authorization), ("Client-Id", &client_id)],
-            )
-            .map_err(HelixError::Failed)
+        let url = format!("{API_URL}{path}");
+        let headers = [
+            ("Authorization", authorization.as_str()),
+            ("Client-Id", client_id.as_str()),
+        ];
+        match body {
+            Some(body) => self.http.post_json(&url, &headers, body),
+            None => self.http.get(&url, &headers),
+        }
+        .map_err(HelixError::Failed)
     }
 
     // Cache
