@@ -1,6 +1,6 @@
 [package]
 name = "streamxtras"
-version = "0.6.0"
+version = "1.0.0"
 edition = "2024"
 rust-version = "1.90"
 description = "Companion app for StreamXtras: serves the overlays and connects them to Twitch"

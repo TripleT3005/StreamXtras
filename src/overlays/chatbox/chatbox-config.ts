@@ -105,6 +105,8 @@ export const chatboxSettings = {
       { value: "wizebot", label: "WizeBot" },
       { value: "sery_bot", label: "Sery_Bot" },
       { value: "soundalerts", label: "SoundAlerts" },
+      { value: "kofistreambot", label: "KofiStreamBot" },
+      { value: "streamstickers", label: "StreamStickers" },
     ],
   }),
   hiddenUsers: textSetting({

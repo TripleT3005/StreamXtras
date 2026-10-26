@@ -43,12 +43,26 @@ const soundBuiltIns: readonly SettingOption<string>[] = [
   { value: "assets/sounds/chime.wav", label: "Chime" },
   { value: "assets/sounds/pop.wav", label: "Pop" },
   { value: "assets/sounds/bell.wav", label: "Bell" },
+  { value: "assets/sounds/coin.wav", label: "Coin" },
+  { value: "assets/sounds/level-up.wav", label: "Level up" },
+  { value: "assets/sounds/fanfare.wav", label: "Fanfare" },
+  { value: "assets/sounds/sparkle.wav", label: "Sparkle" },
+  { value: "assets/sounds/whoosh.wav", label: "Whoosh" },
+  { value: "assets/sounds/bubble.wav", label: "Bubble" },
+  { value: "assets/sounds/drum-hit.wav", label: "Drum hit" },
 ];
 
 const imageBuiltIns: readonly SettingOption<string>[] = [
   { value: "assets/images/heart.svg", label: "Heart" },
   { value: "assets/images/star.svg", label: "Star" },
   { value: "assets/images/sparkles.svg", label: "Sparkles" },
+  { value: "assets/images/x.svg", label: "StreamXtras X" },
+  { value: "assets/images/crown.svg", label: "Crown" },
+  { value: "assets/images/gift.svg", label: "Gift" },
+  { value: "assets/images/explosion.svg", label: "Explosion" },
+  { value: "assets/images/rocket.svg", label: "Rocket" },
+  { value: "assets/images/trophy.svg", label: "Trophy" },
+  { value: "assets/images/confetti.svg", label: "Confetti" },
 ];
 
 
@@ -71,8 +85,8 @@ export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinitio
     tiers: true,
     message: true,
     match: "min",
-    image: "assets/images/star.svg",
-    sound: "assets/sounds/bell.wav",
+    image: "assets/images/crown.svg",
+    sound: "assets/sounds/level-up.wav",
     avatar: false,
   },
   gift: {
@@ -82,8 +96,8 @@ export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinitio
     tiers: true,
     message: false,
     match: "min",
-    image: "assets/images/sparkles.svg",
-    sound: "assets/sounds/bell.wav",
+    image: "assets/images/gift.svg",
+    sound: "assets/sounds/sparkle.wav",
     avatar: false,
   },
   cheer: {
@@ -93,8 +107,8 @@ export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinitio
     tiers: false,
     message: true,
     match: "min",
-    image: "assets/images/sparkles.svg",
-    sound: "assets/sounds/pop.wav",
+    image: "assets/images/explosion.svg",
+    sound: "assets/sounds/coin.wav",
     avatar: false,
   },
   raid: {
@@ -104,8 +118,8 @@ export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinitio
     tiers: false,
     message: false,
     match: "user",
-    image: "assets/images/star.svg",
-    sound: "assets/sounds/bell.wav",
+    image: "assets/images/rocket.svg",
+    sound: "assets/sounds/fanfare.wav",
     avatar: true,
   },
 };
