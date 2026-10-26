@@ -1,7 +1,7 @@
 import { appearanceSettings, sizeSettings } from "../../shared/appearance.ts";
 import type { ConfigSource } from "../../shared/config.ts";
 import { choiceSetting, colorSetting, numberSetting, readSettings, textSetting, type SettingsSchema, type SettingsValues } from "../../shared/settings.ts";
-import type { StreamStats } from "../../shared/stats.ts";
+import type { StreamStats, TwitchGoal } from "../../shared/stats.ts";
 
 // Types
 export type GoalKind = "followers" | "subs";
@@ -16,6 +16,24 @@ export interface GoalState {
 export const goalOverlayId = "goals";
 export const goalSections: Readonly<Record<GoalKind, string>> = { followers: "Follower goal", subs: "Sub goal" };
 const generalSection = "General";
+const twitchGoalTypes: Readonly<Record<GoalKind, readonly string[]>> = {
+  followers: ["follower"],
+  subs: ["subscription", "subscription_count", "new_subscription", "new_subscription_count"],
+};
+
+function sourceSetting(section: string, kind: string) {
+  return choiceSetting({
+    label: "Goal from",
+    group: "Goal",
+    section,
+    hint: `"Twitch" uses the active ${kind} goal from your Twitch dashboard (also set by moderators) and updates live. Without an active goal the overlay stays empty. Needs the Twitch login.`,
+    default: "here",
+    options: [
+      { value: "here", label: "The target set here" },
+      { value: "twitch", label: "Twitch" },
+    ],
+  });
+}
 
 // Schema
 export const goalSettings = {
@@ -25,9 +43,11 @@ export const goalSettings = {
   barHeight: numberSetting({ label: "Bar height", group: "Bar", section: generalSection, default: 28, min: 4, max: 200, unit: "px" }),
   ...sizeSettings(generalSection, 600, 120),
 
+  followersSource: sourceSetting(goalSections.followers, "follower"),
   followersTitle: textSetting({ label: "Title", group: "Goal", section: goalSections.followers, default: "Follower goal", placeholder: "Follower goal" }),
   followersTarget: numberSetting({ label: "Target", group: "Goal", section: goalSections.followers, default: 100, min: 1, max: 100_000_000 }),
 
+  subsSource: sourceSetting(goalSections.subs, "sub"),
   subsTitle: textSetting({ label: "Title", group: "Goal", section: goalSections.subs, default: "Sub goal", placeholder: "Sub goal" }),
   subsTarget: numberSetting({ label: "Target", group: "Goal", section: goalSections.subs, default: 10, min: 1, max: 10_000_000 }),
   subsCount: choiceSetting({
@@ -58,7 +78,11 @@ export function goalKindForSection(section: string | null): GoalKind {
   return section === goalSections.subs ? "subs" : "followers";
 }
 
-export function goalState(config: GoalConfig, kind: GoalKind, stats: StreamStats): GoalState {
+export function goalState(config: GoalConfig, kind: GoalKind, stats: StreamStats): GoalState | null {
+  if (config[`${kind}Source`] === "twitch") {
+    const goal = activeTwitchGoal(kind, stats.goals);
+    return goal === undefined ? null : { title: goal.description || config[`${kind}Title`], current: goal.current, target: goal.target };
+  }
   if (kind === "subs") {
     return {
       title: config.subsTitle,
@@ -67,6 +91,10 @@ export function goalState(config: GoalConfig, kind: GoalKind, stats: StreamStats
     };
   }
   return { title: config.followersTitle, current: stats.followers, target: config.followersTarget };
+}
+
+export function activeTwitchGoal(kind: GoalKind, goals: readonly TwitchGoal[]): TwitchGoal | undefined {
+  return goals.find((goal) => twitchGoalTypes[kind].includes(goal.type));
 }
 
 export function goalProgress(state: GoalState): number {

@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use crate::alert_control::{AlertAction, AlertControl};
 use crate::config::{self, Config};
 use crate::events::EventBroadcaster;
 use crate::http::{self, Method, ParseError, Request, Response};
@@ -16,6 +17,7 @@ use crate::tts;
 use crate::twitch::account::TwitchAccount;
 use crate::twitch::eventsub;
 use crate::twitch::helix::{HelixClient, HelixError};
+use crate::update::UpdateChecker;
 
 // Constants
 pub const APP_NAME: &str = "streamxtras";
@@ -34,6 +36,8 @@ pub struct AppState {
     pub twitch: Arc<TwitchAccount>,
     pub helix: Arc<HelixClient>,
     pub stats: Arc<Stats>,
+    pub alert_control: Arc<AlertControl>,
+    pub update: Arc<UpdateChecker>,
 }
 
 enum Outcome {
@@ -87,46 +91,52 @@ fn route(request: &Request, state: &AppState) -> Outcome {
     }
     let path = request.path.as_str();
     let overlay_id = overlay_settings_id(path);
-    let response = match (request.method, path, overlay_id) {
-        (Method::Get, "/", _) => Response::redirect("/settings/"),
-        (Method::Get, "/api/health", _) => Response::json(
-            200,
-            &serde_json::json!({ "name": APP_NAME, "version": VERSION }),
-        ),
-        (Method::Get, "/api/events", _) => return Outcome::EventStream,
-        (Method::Get, "/api/twitch", _) => twitch_status(&state.twitch.status()),
-        (Method::Put, "/api/twitch/login", _) => check_write_request(request, state)
-            .unwrap_or_else(|| twitch_status(&state.twitch.login())),
-        (Method::Put, "/api/twitch/logout", _) => check_write_request(request, state)
-            .unwrap_or_else(|| twitch_status(&state.twitch.logout())),
-        (Method::Put, "/api/alerts/test", _) => {
-            check_write_request(request, state).unwrap_or_else(|| send_test_alert(request, state))
-        }
-        (Method::Get, "/api/stats", _) => Response::json(200, &state.stats.snapshot()),
-        (Method::Get, "/api/tts/voices", _) => {
-            Response::json(200, &serde_json::json!(tts::voices()))
-        }
-        (Method::Put, "/api/tts", _) => {
-            check_write_request(request, state).unwrap_or_else(|| speak(request))
-        }
-        (Method::Get, "/api/media", _) => Response::json(
-            200,
-            &serde_json::Value::Array(media::list(&state.config_dir)),
-        ),
-        (Method::Put, "/api/media", _) => upload_media(request, state),
-        (Method::Delete, _, _) if path.starts_with("/api/media/") => {
-            delete_media(request, state, &path["/api/media/".len()..])
-        }
-        (Method::Get, _, None) if path.starts_with("/media/") => {
-            serve_media(state, &path["/media/".len()..])
-        }
-        (Method::Get, _, Some(id)) => get_overlay_settings(state, id),
-        (Method::Put, _, Some(id)) => put_overlay_settings(request, state, id),
-        (Method::Get, _, None) if path.starts_with("/api/twitch/") => twitch_data(state, path),
-        (Method::Get, _, None) if path.starts_with("/api/") => Response::text(404, "Not found"),
-        (Method::Get, _, None) => serve_static(&state.web_root, path),
-        _ => Response::text(405, "Method not allowed"),
-    };
+    let response =
+        match (request.method, path, overlay_id) {
+            (Method::Get, "/", _) => Response::redirect("/settings/"),
+            (Method::Get, "/api/health", _) => Response::json(
+                200,
+                &serde_json::json!({ "name": APP_NAME, "version": VERSION }),
+            ),
+            (Method::Get, "/api/events", _) => return Outcome::EventStream,
+            (Method::Get, "/api/twitch", _) => twitch_status(&state.twitch.status()),
+            (Method::Put, "/api/twitch/login", _) => check_write_request(request, state)
+                .unwrap_or_else(|| twitch_status(&state.twitch.login())),
+            (Method::Put, "/api/twitch/logout", _) => check_write_request(request, state)
+                .unwrap_or_else(|| twitch_status(&state.twitch.logout())),
+            (Method::Put, "/api/alerts/test", _) => check_write_request(request, state)
+                .unwrap_or_else(|| send_test_alert(request, state)),
+            (Method::Get, "/api/update", _) => Response::json(200, &state.update.status()),
+            (Method::Get, "/api/alerts/control", _) => {
+                Response::json(200, &state.alert_control.status())
+            }
+            (Method::Put, "/api/alerts/control", _) => check_write_request(request, state)
+                .unwrap_or_else(|| control_alerts(request, state)),
+            (Method::Get, "/api/stats", _) => Response::json(200, &state.stats.snapshot()),
+            (Method::Get, "/api/tts/voices", _) => {
+                Response::json(200, &serde_json::json!(tts::voices()))
+            }
+            (Method::Put, "/api/tts", _) => {
+                check_write_request(request, state).unwrap_or_else(|| speak(request))
+            }
+            (Method::Get, "/api/media", _) => Response::json(
+                200,
+                &serde_json::Value::Array(media::list(&state.config_dir)),
+            ),
+            (Method::Put, "/api/media", _) => upload_media(request, state),
+            (Method::Delete, _, _) if path.starts_with("/api/media/") => {
+                delete_media(request, state, &path["/api/media/".len()..])
+            }
+            (Method::Get, _, None) if path.starts_with("/media/") => {
+                serve_media(state, &path["/media/".len()..])
+            }
+            (Method::Get, _, Some(id)) => get_overlay_settings(state, id),
+            (Method::Put, _, Some(id)) => put_overlay_settings(request, state, id),
+            (Method::Get, _, None) if path.starts_with("/api/twitch/") => twitch_data(state, path),
+            (Method::Get, _, None) if path.starts_with("/api/") => Response::text(404, "Not found"),
+            (Method::Get, _, None) => serve_static(&state.web_root, path),
+            _ => Response::text(405, "Method not allowed"),
+        };
     Outcome::Reply(response)
 }
 
@@ -287,6 +297,17 @@ fn send_test_alert(request: &Request, state: &AppState) -> Response {
             Response::json(200, &alert)
         }
         None => Response::text(400, "Unknown alert type"),
+    }
+}
+
+fn control_alerts(request: &Request, state: &AppState) -> Response {
+    let body = serde_json::from_slice::<serde_json::Value>(&request.body).unwrap_or_default();
+    let Some(action) = body["action"].as_str().and_then(AlertAction::parse) else {
+        return Response::text(400, "Unknown action");
+    };
+    match state.alert_control.apply(action) {
+        Ok(status) => Response::json(200, &status),
+        Err(message) => Response::text(409, message),
     }
 }
 
@@ -478,6 +499,12 @@ mod tests {
                     twitch.clone(),
                     Arc::new(HelixClient::new(Arc::new(FakeHttp::default()), twitch)),
                 ),
+                alert_control: AlertControl::new(Arc::new(EventBroadcaster::default())),
+                update: Arc::new(UpdateChecker::new(
+                    Arc::new(FakeHttp::default()),
+                    &std::env::temp_dir(),
+                    "0.0.0",
+                )),
             },
             root,
         }
@@ -677,6 +704,31 @@ mod tests {
             404
         );
         assert_eq!(reply(&get("/api/twitch/unknown"), &test.state).status, 404);
+    }
+
+    #[test]
+    fn controls_alerts_from_the_settings_page_only() {
+        let test = test_state("control");
+        let origin = format!("http://127.0.0.1:{PORT}");
+        let control = |origin: &str, body: &str| {
+            reply(
+                &put("/api/alerts/control", origin, "application/json", body),
+                &test.state,
+            )
+        };
+        assert_eq!(
+            control("https://evil.example", r#"{"action":"pause"}"#).status,
+            403
+        );
+        assert_eq!(control(&origin, r#"{"action":"stop"}"#).status, 400);
+        assert_eq!(control(&origin, r#"{"action":"replay"}"#).status, 409);
+        let paused = control(&origin, r#"{"action":"pause"}"#);
+        assert_eq!(paused.status, 200);
+        assert!(
+            reply(&get("/api/alerts/control"), &test.state)
+                .body
+                .starts_with(br#"{"hasLastAlert":false,"paused":true}"#)
+        );
     }
 
     #[test]

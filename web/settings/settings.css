@@ -49,6 +49,48 @@ a {
   color: var(--color-muted);
 }
 
+/* Alert control */
+.pause-banner {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 16px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #b45309;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.pause-banner[hidden] {
+  display: none;
+}
+
+.pause-banner button {
+  background: #ffffff;
+  color: #78350f;
+}
+
+.alert-control .active {
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.alert-control .hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.update-link {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 /* Layout */
 .page-header {
   display: flex;

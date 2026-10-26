@@ -33,6 +33,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use super::*;
+    use crate::alert_control::AlertControl;
     use crate::config::Config;
     use crate::events::EventBroadcaster;
     use crate::server::{self, AppState};
@@ -40,6 +41,7 @@ mod tests {
     use crate::twitch::account::TwitchAccount;
     use crate::twitch::auth::tests::FakeHttp;
     use crate::twitch::helix::HelixClient;
+    use crate::update::UpdateChecker;
 
     #[test]
     fn detects_a_running_instance() {
@@ -70,6 +72,12 @@ mod tests {
                     twitch.clone(),
                 )),
             ),
+            alert_control: AlertControl::new(Arc::new(EventBroadcaster::default())),
+            update: Arc::new(UpdateChecker::new(
+                Arc::new(FakeHttp::default()),
+                &std::env::temp_dir(),
+                "0.0.0",
+            )),
             twitch,
         };
         server::start(listener, Arc::new(state)).unwrap();

@@ -102,6 +102,34 @@ describe("AlertQueue", () => {
     assert.equal(maxRunning, 1);
   });
 
+  test("pauses, resumes and skips", async () => {
+    const shown: string[] = [];
+    const skipped: string[] = [];
+    const queue = new AlertQueue<string>(
+      (item, signal) =>
+        new Promise<void>((resolve) => {
+          shown.push(item);
+          signal.addEventListener("abort", () => {
+            skipped.push(item);
+            resolve();
+          });
+          setTimeout(resolve, 50);
+        }),
+    );
+    queue.pause();
+    queue.enqueue("a");
+    await new Promise((wait) => setTimeout(wait, 10));
+    assert.deepEqual(shown, []);
+    queue.resume();
+    queue.enqueue("b");
+    await new Promise((wait) => setTimeout(wait, 10));
+    queue.skip();
+    await new Promise((wait) => setTimeout(wait, 10));
+    assert.deepEqual(skipped, ["a"]);
+    assert.deepEqual(shown, ["a", "b"]);
+    assert.equal(queue.isPaused, false);
+  });
+
   test("keeps going after a failing alert and limits the queue", async () => {
     const shown: number[] = [];
     let release: () => void = () => {};

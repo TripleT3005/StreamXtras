@@ -12,10 +12,19 @@ export interface RecentEntry {
   readonly message: string;
 }
 
+export interface TwitchGoal {
+  readonly id: string;
+  readonly type: string;
+  readonly description: string;
+  readonly current: number;
+  readonly target: number;
+}
+
 export interface StreamStats {
   readonly followers: number | null;
   readonly subscribers: number | null;
   readonly subPoints: number | null;
+  readonly goals: readonly TwitchGoal[];
   readonly recent: ReadonlyMap<AlertType, readonly RecentEntry[]>;
 }
 
@@ -34,8 +43,22 @@ export function parseStats(data: unknown): StreamStats {
     followers: count(source["followers"]),
     subscribers: count(source["subscribers"]),
     subPoints: count(source["subPoints"]),
+    goals: asArray(source["goals"]).flatMap(parseGoal),
     recent,
   };
+}
+
+function parseGoal(goal: unknown): TwitchGoal[] {
+  if (!isRecord(goal) || typeof goal["id"] !== "string" || typeof goal["type"] !== "string") {
+    return [];
+  }
+  const current = count(goal["current"]);
+  const target = count(goal["target"]);
+  if (current === null || target === null || target === 0) {
+    return [];
+  }
+  const description = typeof goal["description"] === "string" ? goal["description"] : "";
+  return [{ id: goal["id"], type: goal["type"], description, current, target }];
 }
 
 function parseEntry(type: AlertType, entry: unknown): RecentEntry[] {

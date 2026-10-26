@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod alert_control;
 mod browser;
 mod config;
 mod event_loop;
@@ -14,6 +15,7 @@ mod stats;
 mod tray;
 mod tts;
 mod twitch;
+mod update;
 
 use std::error::Error;
 use std::io;
@@ -63,6 +65,11 @@ fn run() -> Result<(), Box<dyn Error>> {
     let http = Arc::new(UreqHttp::new());
     let twitch = TwitchAccount::new(http.clone(), client_id, &config_dir, Arc::clone(&events));
     twitch.start_maintenance();
+    let update = Arc::new(update::UpdateChecker::new(
+        http.clone(),
+        &config_dir,
+        env!("CARGO_PKG_VERSION"),
+    ));
     let helix = Arc::new(HelixClient::new(http, Arc::clone(&twitch)));
     EventSubClient::new(
         Arc::clone(&twitch),
@@ -78,6 +85,8 @@ fn run() -> Result<(), Box<dyn Error>> {
         Arc::clone(&helix),
     );
     history.start();
+    let alert_control = alert_control::AlertControl::new(Arc::clone(&events));
+    alert_control.start();
     let state = Arc::new(AppState {
         port,
         web_root: web_root(),
@@ -87,6 +96,8 @@ fn run() -> Result<(), Box<dyn Error>> {
         twitch,
         helix,
         stats: history,
+        alert_control,
+        update,
     });
     server::start(listener, state)?;
 

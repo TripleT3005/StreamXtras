@@ -45,12 +45,31 @@ describe("goals", () => {
     const config = readGoalConfig({ followersTarget: 100, subsTarget: 10, subsCount: "points" });
     const followers = goalState(config, "followers", stats);
     assert.deepEqual(followers, { title: "Follower goal", current: 150, target: 100 });
-    assert.equal(goalProgress(followers), 1);
-    assert.equal(goalProgress(goalState(config, "subs", stats)), 0.8);
-    assert.equal(goalProgress(goalState(config, "subs", parseStats(null))), 0);
+    assert.equal(followers === null ? null : goalProgress(followers), 1);
+    const subs = goalState(config, "subs", stats);
+    assert.equal(subs === null ? null : goalProgress(subs), 0.8);
+    const empty = goalState(config, "subs", parseStats(null));
+    assert.equal(empty === null ? null : goalProgress(empty), 0);
     assert.equal(readGoalKind("subs"), "subs");
     assert.equal(readGoalKind("anything"), "followers");
     assert.equal(goalKindForSection("Sub goal"), "subs");
+  });
+
+  test("use the active Twitch goal of the matching type", () => {
+    const stats = parseStats({
+      followers: 150,
+      goals: [
+        { id: "a", type: "new_subscription_count", description: "", current: 3, target: 10 },
+        { id: "b", type: "follower", description: "Road to 500", current: 420, target: 500 },
+        { id: "c", type: "follower", current: 1, target: 0 },
+      ],
+    });
+    assert.equal(stats.goals.length, 2);
+    const config = readGoalConfig({ followersSource: "twitch", subsSource: "twitch", subsTitle: "Subs" });
+    assert.deepEqual(goalState(config, "followers", stats), { title: "Road to 500", current: 420, target: 500 });
+    assert.deepEqual(goalState(config, "subs", stats), { title: "Subs", current: 3, target: 10 });
+    assert.equal(goalState(config, "subs", parseStats({ goals: [] })), null);
+    assert.deepEqual(goalState(readGoalConfig({}), "followers", stats)?.current, 150);
   });
 });
 

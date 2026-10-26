@@ -9,7 +9,7 @@ use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{Message, WebSocket};
 
 use super::account::TwitchAccount;
-use super::helix::HelixClient;
+use super::helix::{HelixClient, parse_goal};
 use crate::events::EventBroadcaster;
 
 // Constants
@@ -88,6 +88,11 @@ pub fn alert_from_event(subscription_type: &str, event: &Value) -> Option<Value>
         ),
         _ => None,
     }
+}
+
+pub fn goal_event(subscription_type: &str, event: &Value) -> Option<Value> {
+    let action = subscription_type.strip_prefix("channel.goal.")?;
+    Some(json!({ "action": action, "goal": parse_goal(event)? }))
 }
 
 fn notification_alert(event: &Value) -> Option<Value> {
@@ -250,7 +255,10 @@ fn subscriptions(session_id: &str, user_id: &str) -> Vec<(&'static str, String)>
             "1",
             json!({ "broadcaster_user_id": user_id, "user_id": user_id }),
         ),
-        ("channel.cheer", "1", broadcaster),
+        ("channel.cheer", "1", broadcaster.clone()),
+        ("channel.goal.begin", "1", broadcaster.clone()),
+        ("channel.goal.progress", "1", broadcaster.clone()),
+        ("channel.goal.end", "1", broadcaster),
         (
             "channel.raid",
             "1",
@@ -390,6 +398,10 @@ impl EventSubClient {
     }
 
     fn handle_notification(&self, subscription_type: &str, event: &Value) {
+        if let Some(goal_event) = goal_event(subscription_type, event) {
+            self.events.publish("twitch-goal", &goal_event);
+            return;
+        }
         let Some(mut alert) = alert_from_event(subscription_type, event) else {
             return;
         };
@@ -679,6 +691,19 @@ mod tests {
     }
 
     #[test]
+    fn builds_twitch_goal_events() {
+        let event = json!({ "id": "g1", "type": "follower", "description": "Road to 500", "current_amount": 420, "target_amount": 500 });
+        assert_eq!(
+            goal_event("channel.goal.progress", &event),
+            Some(
+                json!({ "action": "progress", "goal": { "id": "g1", "type": "follower", "description": "Road to 500", "current": 420, "target": 500 } })
+            )
+        );
+        assert_eq!(goal_event("channel.follow", &event), None);
+        assert_eq!(goal_event("channel.goal.end", &json!({ "id": "g1" })), None);
+    }
+
+    #[test]
     fn builds_test_alerts() {
         let none = json!({});
         assert_eq!(test_alert("follow", &none, None).unwrap()["test"], true);
@@ -740,7 +765,13 @@ mod tests {
 
         let accepted = (202, r#"{"data":[]}"#);
         let forbidden = (403, r#"{"error":"Forbidden"}"#);
-        let fixture = account_fixture("eventsub", true, &[accepted, forbidden, accepted, accepted]);
+        let fixture = account_fixture(
+            "eventsub",
+            true,
+            &[
+                accepted, forbidden, accepted, accepted, accepted, accepted, accepted,
+            ],
+        );
         let events = Arc::new(EventBroadcaster::default());
         let alerts = events.subscribe();
         let helix = Arc::new(HelixClient::new(
@@ -764,7 +795,7 @@ mod tests {
             .iter()
             .filter(|request| request.contains("eventsub/subscriptions"))
             .collect();
-        assert_eq!(subscriptions.len(), 4);
+        assert_eq!(subscriptions.len(), 7);
         assert!(
             subscriptions
                 .iter()
@@ -773,7 +804,8 @@ mod tests {
         assert!(subscriptions[0].contains(r#""moderator_user_id":"42""#));
         assert!(subscriptions[1].contains(r#""type":"channel.chat.notification""#));
         assert!(subscriptions[1].contains(r#""user_id":"42""#));
-        assert!(subscriptions[3].contains(r#""to_broadcaster_user_id":"42""#));
+        assert!(subscriptions[6].contains(r#""to_broadcaster_user_id":"42""#));
+        assert!(subscriptions[4].contains(r#""type":"channel.goal.progress""#));
     }
 
     #[test]

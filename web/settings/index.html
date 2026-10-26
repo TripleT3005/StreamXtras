@@ -14,9 +14,15 @@
     <div class="brand">
       <h1>StreamXtras</h1>
       <p id="version" class="muted"></p>
+      <a id="update-link" class="update-link" target="_blank" rel="noopener noreferrer" hidden></a>
     </div>
     <div id="twitch-account" class="account" role="region" aria-label="Twitch account"></div>
   </header>
+
+  <div id="pause-banner" class="pause-banner" role="status" hidden>
+    <span>Alerts are paused. New alerts wait until you resume them.</span>
+    <button type="button" id="resume-alerts">Resume alerts</button>
+  </div>
 
   <nav class="tabs" role="tablist" aria-label="Overlays">
     <button type="button" role="tab" id="tab-chatbox" aria-controls="chatbox-editor" data-tab="chatbox">Chat box</button>

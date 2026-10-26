@@ -38,6 +38,10 @@ body {
   width: 100%;
 }
 
+[data-empty="true"] .goal {
+  visibility: hidden;
+}
+
 .goal-header {
   display: flex;
   gap: 16px;

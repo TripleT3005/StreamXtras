@@ -12,6 +12,10 @@ function render(root: HTMLElement, config: GoalConfig, kind: GoalKind, stats: St
   root.style.setProperty("--bar-background", config.barBackground);
   root.style.setProperty("--bar-height", `${config.barHeight}px`);
   const state = goalState(config, kind, stats);
+  root.dataset["empty"] = String(state === null);
+  if (state === null) {
+    return;
+  }
   const progress = goalProgress(state);
   setText("goal-title", state.title);
   setText("goal-count", `${state.current ?? "–"} / ${state.target}`);
@@ -31,6 +35,10 @@ function demoStats(config: GoalConfig): StreamStats {
     followers: Math.round(config.followersTarget * 0.62),
     subscribers: Math.round(config.subsTarget * 0.4),
     subPoints: Math.round(config.subsTarget * 0.5),
+    goals: [
+      { id: "demo-followers", type: "follower", description: "Twitch follower goal", current: 420, target: 500 },
+      { id: "demo-subs", type: "subscription_count", description: "Twitch sub goal", current: 7, target: 20 },
+    ],
     recent: new Map(),
   };
 }
