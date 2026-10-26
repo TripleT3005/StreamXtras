@@ -31,7 +31,7 @@ const liveRestartDelayMs = 700;
 const initialMessageCount = 6;
 const noEmotes: EmoteLookup = { get: () => undefined };
 const demoBadges = new BadgeLibrary();
-const demoContext: MessageContext = { badges: demoBadges, avatars: null };
+const demoContext: MessageContext = { badges: demoBadges, thirdPartyBadges: null, avatars: null };
 
 const demoMessages: readonly DemoMessage[] = [
   { name: "StreamerName", color: "#9146FF", badges: ["broadcaster/1"], text: "Welcome to the stream Kappa", emotes: [{ id: "25", start: 22, end: 26 }] },

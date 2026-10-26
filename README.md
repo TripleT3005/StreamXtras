@@ -44,7 +44,9 @@ Release builds contain the Client ID of this project. To use your own Twitch app
 ```
 
 ### Chat box settings
-All settings are edited on the settings page with a live preview: channel, number of messages, hiding after a time, animation, position, font, size, colors, message background, spacing, emote size, badges, readable name colors, third-party emote providers, shared chat (streamer icons, messages from partner channels) and the browser source size. Saved changes apply to open chat boxes immediately; only a new channel or other emote providers reload them.
+All settings are edited on the settings page with a live preview: channel, number of messages, hiding after a time, animation, position, font, size, colors, message background, spacing, emote size, badges, third-party badges, readable name colors, third-party emote providers, shared chat (streamer icons, messages from partner channels) and the browser source size. Saved changes apply to open chat boxes immediately; only a new channel, other third-party badges or other emote providers reload them.
+
+Third-party badges from 7TV, BetterTTV, FrankerFaceZ and Chatterino are off by default and can be turned on one by one. BetterTTV, FrankerFaceZ and Chatterino publish one list for all users; 7TV is asked once per chatter, so in very busy chats this causes many requests.
 
 URL parameters override the stored settings for a single browser source, e.g. `?channel=othername&fontSize=24`. The parameter names are the keys in the `chatbox` section of `config.json`.
 
@@ -128,7 +130,9 @@ Release-Builds enthalten die Client-ID dieses Projekts. Um eine eigene Twitch-An
 ```
 
 ### Chatbox-Einstellungen
-Alle Einstellungen werden auf der Einstellungsseite mit Live-Vorschau bearbeitet: Kanal, Anzahl der Nachrichten, Ausblenden nach Zeit, Animation, Position, Schrift, Größe, Farben, Hintergrund der Nachrichten, Abstand, Emote-Größe, Badges, lesbare Namensfarben, Emote-Anbieter, geteilter Chat (Streamer-Icons, Nachrichten aus Partnerkanälen) und die Größe der Browserquelle. Gespeicherte Änderungen wirken sofort in geöffneten Chatboxen; nur ein neuer Kanal oder andere Emote-Anbieter laden sie neu.
+Alle Einstellungen werden auf der Einstellungsseite mit Live-Vorschau bearbeitet: Kanal, Anzahl der Nachrichten, Ausblenden nach Zeit, Animation, Position, Schrift, Größe, Farben, Hintergrund der Nachrichten, Abstand, Emote-Größe, Badges, Drittanbieter-Badges, lesbare Namensfarben, Emote-Anbieter, geteilter Chat (Streamer-Icons, Nachrichten aus Partnerkanälen) und die Größe der Browserquelle. Gespeicherte Änderungen wirken sofort in geöffneten Chatboxen; nur ein neuer Kanal, andere Drittanbieter-Badges oder andere Emote-Anbieter laden sie neu.
+
+Drittanbieter-Badges von 7TV, BetterTTV, FrankerFaceZ und Chatterino sind standardmäßig aus und lassen sich einzeln einschalten. BetterTTV, FrankerFaceZ und Chatterino veröffentlichen eine Liste für alle Nutzer; bei 7TV wird je Chatter einmal nachgefragt, in sehr vollen Chats sind das also viele Anfragen.
 
 URL-Parameter überschreiben die gespeicherten Einstellungen für eine einzelne Browserquelle, z. B. `?channel=andererkanal&fontSize=24`. Die Parameternamen sind die Schlüssel im Abschnitt `chatbox` der `config.json`.
 

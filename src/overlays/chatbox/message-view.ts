@@ -1,7 +1,8 @@
 import type { Emote } from "../../shared/emotes/emote.ts";
 import type { MessageFragment } from "../../shared/emotes/fragments.ts";
 import type { ChatMessageEvent } from "../../shared/events.ts";
-import type { BadgeResolver } from "../../shared/twitch/badge-library.ts";
+import type { BadgeResolver, ResolvedBadge } from "../../shared/twitch/badge-library.ts";
+import type { ThirdPartyBadgeResolver } from "../../shared/twitch/third-party-badges.ts";
 import type { AvatarResolver } from "../../shared/twitch/user-library.ts";
 import { getDefaultUserColor, toReadableColor } from "../../shared/twitch/user-colors.ts";
 
@@ -14,6 +15,7 @@ export interface MessageViewOptions {
 
 export interface MessageContext {
   readonly badges: BadgeResolver;
+  readonly thirdPartyBadges: ThirdPartyBadgeResolver | null;
   readonly avatars: AvatarResolver | null;
 }
 
@@ -37,7 +39,7 @@ export function renderMessage(
   }
 
   if (options.showBadges) {
-    const badges = renderBadges(message, context.badges);
+    const badges = renderBadges(message, context);
     if (badges !== null) {
       item.append(badges);
     }
@@ -79,12 +81,14 @@ function renderSourceAvatar(channelId: string, avatars: AvatarResolver): HTMLIma
   return image;
 }
 
-function renderBadges(message: ChatMessageEvent, resolver: BadgeResolver): HTMLElement | null {
+function renderBadges(message: ChatMessageEvent, context: MessageContext): HTMLElement | null {
   const channelId = message.sourceChannelId ?? message.channelId;
   const images = message.user.badges.flatMap((badge) => {
-    const resolved = resolver.resolve(badge, channelId);
+    const resolved = context.badges.resolve(badge, channelId);
     return resolved === null ? [] : [createImage("badge", resolved.url, resolved.title)];
   });
+  const thirdParty = context.thirdPartyBadges?.badgesFor(message.user.id) ?? [];
+  images.push(...thirdParty.map(createThirdPartyBadge));
   if (images.length === 0) {
     return null;
   }
@@ -92,6 +96,23 @@ function renderBadges(message: ChatMessageEvent, resolver: BadgeResolver): HTMLE
   container.className = "badges";
   container.append(...images);
   return container;
+}
+
+export function replaceThirdPartyBadges(item: HTMLElement, badges: readonly ResolvedBadge[]): void {
+  for (const image of item.querySelectorAll(".third-party")) {
+    image.remove();
+  }
+  let container = item.querySelector(".badges");
+  if (container === null) {
+    container = document.createElement("span");
+    container.className = "badges";
+    item.querySelector(".name")?.before(container);
+  }
+  container.append(...badges.map(createThirdPartyBadge));
+}
+
+function createThirdPartyBadge(badge: ResolvedBadge): HTMLImageElement {
+  return createImage("badge third-party", badge.url, badge.title);
 }
 
 function renderFragment(fragment: MessageFragment): Node {
