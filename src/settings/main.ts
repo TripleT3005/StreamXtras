@@ -1,4 +1,4 @@
-import type { AlertType } from "../overlays/alertbox/alert.ts";
+import { subTiers, tierLabel, type AlertType } from "../overlays/alertbox/alert.ts";
 import { alertboxOverlayId, alertboxSettings, alertTypeDefinitions, alertTypeForSection } from "../overlays/alertbox/alertbox-config.ts";
 import { chatboxOverlayId, chatboxSettings } from "../overlays/chatbox/chatbox-config.ts";
 import { isRecord } from "../shared/json.ts";
@@ -119,23 +119,36 @@ async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
   from.autocomplete = "off";
   from.spellcheck = false;
   from.title = "Optional. With a Twitch name the test uses its profile picture and matches its variants.";
+  const tier = document.createElement("select");
+  tier.setAttribute("aria-label", "Tier");
+  tier.append(...subTiers.map((value) => new Option(tierLabel(value), value)));
+  tier.value = "1";
+  const message = document.createElement("input");
+  message.placeholder = "Message";
+  message.autocomplete = "off";
+  message.setAttribute("aria-label", "Message of the viewer");
   let type: AlertType = "follow";
 
   const selectType = (section: string): void => {
     type = alertTypeForSection(section);
-    const counted = alertTypeDefinitions[type].amount;
+    const definition = alertTypeDefinitions[type];
+    const counted = definition.amount;
     amount.disabled = counted === null;
     amount.value = "";
     amount.placeholder = counted === null ? "" : String(defaultTestAmount(type));
     amount.title = counted === null ? "" : `Number of ${counted}`;
     amount.setAttribute("aria-label", amount.title || "Number");
-    sendTest.title = `Plays a ${alertTypeDefinitions[type].label.toLowerCase()} alert in every open alert box, e.g. in OBS`;
+    tier.hidden = !definition.tiers;
+    message.hidden = !definition.message;
+    sendTest.title = `Plays a ${definition.label.toLowerCase()} alert in every open alert box, e.g. in OBS`;
   };
 
   const testAlert = (): Readonly<Record<string, unknown>> => ({
     type,
     ...(amount.disabled ? {} : { amount: Number(amount.value || amount.placeholder) }),
     ...(from.value.trim() === "" ? {} : { userName: from.value.trim() }),
+    ...(tier.hidden ? {} : { tier: tier.value }),
+    ...(message.hidden || message.value.trim() === "" ? {} : { message: message.value.trim() }),
   });
 
   const showInPreview = button("Show in preview", "secondary", () => {
@@ -175,7 +188,7 @@ async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
   const label = document.createElement("span");
   label.className = "muted";
   label.textContent = "Test";
-  testRow.append(label, amount, from, showInPreview, sendTest);
+  testRow.append(label, amount, tier, from, message, showInPreview, sendTest);
   editor.toolbar.parentElement?.append(testRow);
 }
 

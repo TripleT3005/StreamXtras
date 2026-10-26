@@ -286,6 +286,12 @@ button.secondary:hover {
   flex-basis: 100%;
 }
 
+.field.choices {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
 .field.choices .choice {
   display: inline-flex;
   gap: 6px;

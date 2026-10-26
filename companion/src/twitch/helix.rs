@@ -60,6 +60,11 @@ struct User {
     profile_image_url: String,
 }
 
+#[derive(Deserialize)]
+struct Cheermote {
+    prefix: String,
+}
+
 struct CacheEntry {
     fetched_at: Instant,
     value: Value,
@@ -106,6 +111,27 @@ impl HelixClient {
             self.get(&format!("/users?id={user_id}"))
                 .and_then(|body| parse_user(&body))
         })
+    }
+
+    pub fn cheermote_prefixes(&self, broadcaster_id: &str) -> Result<Vec<String>, HelixError> {
+        let broadcaster_id = validate_id(broadcaster_id)?;
+        let value = self.cached(
+            &format!("cheermotes:{broadcaster_id}"),
+            BADGE_CACHE_DURATION,
+            || {
+                self.get(&format!("/bits/cheermotes?broadcaster_id={broadcaster_id}"))
+                    .and_then(|body| parse_cheermote_prefixes(&body))
+            },
+        )?;
+        Ok(value
+            .as_array()
+            .map(|prefixes| {
+                prefixes
+                    .iter()
+                    .filter_map(|prefix| prefix.as_str().map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default())
     }
 
     pub fn user_by_login(&self, login: &str) -> Result<Value, HelixError> {
@@ -233,6 +259,16 @@ fn parse_badges(body: &str) -> Result<Value, HelixError> {
         })
         .collect();
     Ok(Value::Object(sets))
+}
+
+fn parse_cheermote_prefixes(body: &str) -> Result<Value, HelixError> {
+    let response: DataResponse<Cheermote> =
+        serde_json::from_str(body).map_err(|error| HelixError::Failed(error.to_string()))?;
+    Ok(response
+        .data
+        .into_iter()
+        .map(|cheermote| Value::String(cheermote.prefix.to_lowercase()))
+        .collect())
 }
 
 fn parse_user(body: &str) -> Result<Value, HelixError> {
