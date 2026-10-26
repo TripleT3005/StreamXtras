@@ -10,6 +10,7 @@ import { chatboxSettings, missingChannelMessage, readChatboxConfig, type Chatbox
 import { applyChatboxStyle } from "./chatbox-style.ts";
 import { ChatList } from "./chat-list.ts";
 import { BadgeLibrary } from "../../shared/twitch/badge-library.ts";
+import { createChatFilter } from "./chat-filter.ts";
 import { renderMessage, type MessageContext } from "./message-view.ts";
 
 // Types
@@ -42,6 +43,7 @@ const demoMessages: readonly DemoMessage[] = [
   { name: "ModeratorName", color: "#1E90FF", badges: ["moderator/1"], text: "Giveaway starts in five minutes!", announcement: "purple" },
   { name: "LongMessageWriter", color: "#00FF7F", badges: ["turbo/1"], text: "This is a longer message to show how text wraps inside the chat box when it does not fit into a single line Kappa Kappa", emotes: [{ id: "25", start: 108, end: 112 }, { id: "25", start: 114, end: 118 }] },
   { name: "GoldenViewer", color: "#DAA520", badges: ["founder/0"], text: "GG that was close" },
+  { name: "Nightbot", color: "#7C7CE1", badges: ["moderator/1"], text: "Join the community Discord with !discord" },
 ];
 
 // Preview
@@ -101,6 +103,9 @@ function createDemoPreview(root: HTMLElement, container: HTMLElement): (config: 
     nextIndex += 1;
     if (demo !== undefined) {
       const message = toChatMessage(demo, nextIndex);
+      if (createChatFilter(config)(message)) {
+        return;
+      }
       chatList.add(renderMessage(message, buildFragments(message.text, message.emotes, noEmotes), config, demoContext));
     }
   };
@@ -129,7 +134,7 @@ function toChatMessage(demo: DemoMessage, sequence: number): ChatMessageEvent {
     type: "chat.message",
     platform: "twitch",
     id: `preview-${sequence}`,
-    channelId: "preview",
+    channelId: "preview-StreamerName",
     sourceChannelId: null,
     user: {
       id: `preview-${demo.name}`,

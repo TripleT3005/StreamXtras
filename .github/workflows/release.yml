@@ -58,12 +58,15 @@ jobs:
           - os: windows-latest
             platform: windows-x64
             binary: streamxtras.exe
+            packaged: StreamXtras.exe
           - os: ubuntu-latest
             platform: linux-x64
             binary: streamxtras
+            packaged: streamxtras
           - os: macos-latest
             platform: macos-arm64
             binary: streamxtras
+            packaged: StreamXtras
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -96,9 +99,9 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          name="streamxtras-${{ needs.version.outputs.version }}-${{ matrix.platform }}"
+          name="StreamXtras-${{ needs.version.outputs.version }}-${{ matrix.platform }}"
           mkdir -p "dist/$name"
-          cp "companion/target/release/${{ matrix.binary }}" "dist/$name/"
+          cp "companion/target/release/${{ matrix.binary }}" "dist/$name/${{ matrix.packaged }}"
           cp -R web "dist/$name/web"
           cp LICENSE README.md "dist/$name/"
           cd dist

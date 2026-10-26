@@ -141,9 +141,9 @@ fn version_info() -> Vec<u8> {
         ("CompanyName", "TripleT3005"),
         ("FileDescription", "StreamXtras"),
         ("FileVersion", version.as_str()),
-        ("InternalName", "streamxtras"),
+        ("InternalName", "StreamXtras"),
         ("LegalCopyright", "Copyright (c) TripleT3005"),
-        ("OriginalFilename", "streamxtras.exe"),
+        ("OriginalFilename", "StreamXtras.exe"),
         ("ProductName", "StreamXtras"),
         ("ProductVersion", version.as_str()),
     ];

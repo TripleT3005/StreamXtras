@@ -9,6 +9,7 @@ import { BadgeLibrary } from "../../shared/twitch/badge-library.ts";
 import { ThirdPartyBadgeLibrary } from "../../shared/twitch/third-party-badges.ts";
 import { TwitchChatSource } from "../../shared/twitch/twitch-chat-source.ts";
 import { UserLibrary } from "../../shared/twitch/user-library.ts";
+import { createChatFilter, type ChatFilter } from "./chat-filter.ts";
 import type { ChatboxConfig } from "./chatbox-config.ts";
 import { ChatList } from "./chat-list.ts";
 import { renderMessage, replaceThirdPartyBadges, type MessageContext } from "./message-view.ts";
@@ -20,6 +21,7 @@ const emoteProviders: readonly EmoteProvider[] = [sevenTvProvider, bttvProvider,
 // Chat box
 export class Chatbox {
   #config: ChatboxConfig;
+  #hides: ChatFilter;
   readonly #chatList: ChatList;
   readonly #emotes: EmoteLibrary;
   readonly #source: TwitchChatSource;
@@ -32,6 +34,7 @@ export class Chatbox {
 
   constructor(config: ChatboxConfig, container: HTMLElement) {
     this.#config = config;
+    this.#hides = createChatFilter(config);
     this.#container = container;
     this.#thirdPartyBadges = config.thirdPartyBadges.length === 0 ? null : new ThirdPartyBadgeLibrary(config.thirdPartyBadges);
     this.#thirdPartyBadges?.onChange((userId) => this.#updateThirdPartyBadges(userId));
@@ -55,6 +58,7 @@ export class Chatbox {
 
   configure(config: ChatboxConfig): void {
     this.#config = config;
+    this.#hides = createChatFilter(config);
     this.#chatList.configure(config.maxMessages, config.hideAfterSeconds);
   }
 
@@ -85,7 +89,7 @@ export class Chatbox {
 
   #addMessage(message: ChatMessageEvent): void {
     const isPartnerMessage = message.sourceChannelId !== null && message.sourceChannelId !== message.channelId;
-    if (isPartnerMessage && !this.#config.showPartnerMessages) {
+    if ((isPartnerMessage && !this.#config.showPartnerMessages) || this.#hides(message)) {
       return;
     }
     if (message.sourceChannelId !== null) {
