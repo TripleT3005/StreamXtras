@@ -21,9 +21,9 @@ export function applyAlertboxStyle(root: HTMLElement, config: AlertboxConfig): v
 }
 
 // Rendering
-export async function showAlert(container: HTMLElement, alert: OverlayAlert, config: AlertboxConfig): Promise<void> {
+export async function showAlert(container: HTMLElement, alert: OverlayAlert, config: AlertboxConfig, signal: AbortSignal): Promise<void> {
   const style = alertStyle(config, alert);
-  if (!style.enabled) {
+  if (!style.enabled || signal.aborted) {
     return;
   }
 
@@ -52,9 +52,16 @@ export async function showAlert(container: HTMLElement, alert: OverlayAlert, con
   const startedAt = performance.now();
   const sound = playSound(style.sound, config.volume);
   const speech = alertSpeech(config, alert, style.text);
-  const spoken = speech === "" ? Promise.resolve() : speak(speech, config, sound);
-  const visibleMs = await visibleDuration(style.durationMs, visual instanceof HTMLVideoElement ? visual : null);
-  await Promise.all([wait(visibleMs - (performance.now() - startedAt)), spoken]);
+  const spoken = speech === "" ? Promise.resolve() : speak(speech, config, sound, signal);
+  const video = visual instanceof HTMLVideoElement ? visual : null;
+  const shown = visibleDuration(style.durationMs, video).then((visibleMs) =>
+    Promise.all([wait(visibleMs - (performance.now() - startedAt)), spoken]),
+  );
+  await Promise.race([shown, aborted(signal)]);
+  if (signal.aborted) {
+    sound?.pause();
+    video?.pause();
+  }
   element.classList.add("leaving");
   await wait(leaveDurationMs);
   element.remove();
@@ -115,6 +122,10 @@ function wait(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, milliseconds)));
 }
 
+function aborted(signal: AbortSignal): Promise<void> {
+  return signal.aborted ? Promise.resolve() : new Promise((resolve) => signal.addEventListener("abort", () => resolve(), { once: true }));
+}
+
 function playSound(reference: string, volume: number): HTMLAudioElement | null {
   const url = mediaUrl(reference);
   if (url === null || volume === 0) {
@@ -127,7 +138,7 @@ function playSound(reference: string, volume: number): HTMLAudioElement | null {
 }
 
 // Speech
-async function speak(text: string, config: AlertboxConfig, sound: HTMLAudioElement | null): Promise<void> {
+async function speak(text: string, config: AlertboxConfig, sound: HTMLAudioElement | null, signal: AbortSignal): Promise<void> {
   if (config.ttsVolume === 0) {
     return;
   }
@@ -136,20 +147,28 @@ async function speak(text: string, config: AlertboxConfig, sound: HTMLAudioEleme
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, voice: config.ttsVoice }),
+      signal,
     });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const url = URL.createObjectURL(await response.blob());
     await finished(sound, maxSoundWaitMs);
+    if (signal.aborted) {
+      URL.revokeObjectURL(url);
+      return;
+    }
     const audio = new Audio(url);
     audio.volume = config.ttsVolume / 100;
+    signal.addEventListener("abort", () => audio.pause(), { once: true });
     const ended = finished(audio, maxSpeechMs);
     await audio.play();
-    await ended;
+    await Promise.race([ended, aborted(signal)]);
     URL.revokeObjectURL(url);
   } catch (error: unknown) {
-    console.warn("Reading the alert aloud failed", error);
+    if (!signal.aborted) {
+      console.warn("Reading the alert aloud failed", error);
+    }
   }
 }
 

@@ -4,6 +4,7 @@ import { chatboxOverlayId, chatboxSettings } from "../overlays/chatbox/chatbox-c
 import { goalKindForSection, goalOverlayId, goalSettings } from "../overlays/goal/goal-config.ts";
 import { recentOverlayId, recentSettings, recentTypeForSection } from "../overlays/recent/recent-config.ts";
 import { topEmotesOverlayId, topEmotesSettings } from "../overlays/topemotes/topemotes-config.ts";
+import { fetchAlertControl, sendAlertAction, subscribeToAlertControl, type AlertAction, type AlertControlStatus } from "../shared/alert-control.ts";
 import { isRecord } from "../shared/json.ts";
 import { postPreviewMessage, previewAlertMessage } from "../shared/preview-messages.ts";
 import { normalizeChannel } from "../shared/twitch/twitch-chat-source.ts";
@@ -48,6 +49,55 @@ async function showVersion(): Promise<void> {
   } catch {
     target.textContent = "The companion app is not reachable.";
   }
+}
+
+async function showUpdate(): Promise<void> {
+  const link = getElement("update-link", HTMLAnchorElement);
+  try {
+    const data: unknown = await (await fetch("/api/update", { cache: "no-store" })).json();
+    if (isRecord(data) && data["available"] === true && typeof data["version"] === "string" && typeof data["url"] === "string") {
+      link.href = data["url"];
+      link.textContent = `Version ${data["version"]} available`;
+      link.hidden = false;
+    }
+  } catch {
+    link.hidden = true;
+  }
+}
+
+// Alert control
+function setupAlertControl(): HTMLElement {
+  const banner = getElement("pause-banner", HTMLDivElement);
+  const row = document.createElement("div");
+  row.className = "alert-test alert-control";
+  const label = document.createElement("span");
+  label.className = "muted";
+  label.textContent = "Live";
+  const status = document.createElement("p");
+  status.className = "hint";
+  status.setAttribute("role", "status");
+  const run = (action: AlertAction): void => {
+    status.textContent = "";
+    sendAlertAction(action).then(render, (error: unknown) => (status.textContent = error instanceof Error ? error.message : String(error)));
+  };
+  const replay = button("Replay last alert", "secondary", () => run("replay"));
+  replay.title = "Shows the last real alert again in every open alert box, e.g. in OBS";
+  const skip = button("Skip current alert", "secondary", () => run("skip"));
+  skip.title = "Ends the alert that is shown right now in every open alert box";
+  let paused = false;
+  const pause = button("Pause alerts", "secondary", () => run(paused ? "resume" : "pause"));
+  pause.title = "New alerts wait in the queue until you resume them, e.g. while recording";
+  const render = (control: AlertControlStatus): void => {
+    paused = control.paused;
+    banner.hidden = !paused;
+    pause.textContent = paused ? "Resume alerts" : "Pause alerts";
+    pause.classList.toggle("active", paused);
+  };
+  getElement("resume-alerts", HTMLButtonElement).addEventListener("click", () => run("resume"));
+  subscribeToAlertControl(render);
+  void fetchAlertControl().then(render);
+  row.append(label, replay, skip, pause, status);
+  return row;
 }
 
 // Tabs
@@ -192,7 +242,7 @@ async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
   label.className = "muted";
   label.textContent = "Test";
   testRow.append(label, amount, tier, from, message, showInPreview, sendTest);
-  editor.toolbar.parentElement?.append(testRow);
+  editor.toolbar.parentElement?.append(testRow, setupAlertControl());
 }
 
 async function setupGoalsEditor(media: MediaLibrary): Promise<void> {
@@ -290,6 +340,7 @@ async function start(): Promise<void> {
     diagnostics.href = login === null ? "../diagnostics/" : `../diagnostics/?channel=${encodeURIComponent(login)}`;
   });
   void showVersion();
+  void showUpdate();
   const media = new MediaLibrary();
   await media.refresh().catch(() => undefined);
   await Promise.all([

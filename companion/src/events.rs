@@ -1,6 +1,8 @@
 use std::sync::Mutex;
 use std::sync::mpsc::{self, Receiver, Sender};
 
+use serde_json::Value;
+
 // Broadcaster
 #[derive(Default)]
 pub struct EventBroadcaster {
@@ -25,6 +27,19 @@ impl EventBroadcaster {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
+}
+
+// Messages
+pub fn event_data(message: &str, event: &str) -> Option<Value> {
+    let data = message
+        .strip_prefix("event: ")?
+        .strip_prefix(event)?
+        .strip_prefix("\ndata: ")?;
+    serde_json::from_str(data.trim_end()).ok()
+}
+
+pub fn is_real_alert(alert: &Value) -> bool {
+    alert["type"].is_string() && alert["test"] != true && alert["replay"] != true
 }
 
 // Tests

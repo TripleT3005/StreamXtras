@@ -8,7 +8,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Map, Value, json};
 
-use crate::events::EventBroadcaster;
+use crate::events::{EventBroadcaster, event_data, is_real_alert};
 use crate::twitch::account::TwitchAccount;
 use crate::twitch::helix::HelixClient;
 
@@ -27,6 +27,7 @@ struct StatsData {
     followers: Option<u64>,
     subscribers: Option<u64>,
     sub_points: Option<u64>,
+    goals: Vec<Value>,
     recent: BTreeMap<String, Vec<Value>>,
 }
 
@@ -63,8 +64,11 @@ impl Stats {
         let listener = Arc::clone(self);
         thread::spawn(move || {
             for message in alerts {
-                if let Some(alert) = alert_from_message(&message) {
+                if let Some(alert) = event_data(&message, "alert").filter(is_real_alert) {
                     listener.record(&alert, &refresh);
+                } else if let Some(goal_event) = event_data(&message, "twitch-goal") {
+                    apply_goal_event(&mut listener.lock().goals, &goal_event);
+                    listener.publish();
                 }
             }
         });
@@ -78,6 +82,7 @@ impl Stats {
             "followers": data.followers,
             "subscribers": data.subscribers,
             "subPoints": data.sub_points,
+            "goals": data.goals,
             "recent": data.recent,
         })
     }
@@ -131,6 +136,7 @@ impl Stats {
     fn refresh(&self, user_id: &str) {
         let followers = self.helix.followers(user_id);
         let subscriptions = self.helix.subscriptions(user_id);
+        let goals = self.helix.goals(user_id);
         {
             let mut data = self.lock();
             if data.user_id.as_deref() != Some(user_id) {
@@ -159,6 +165,10 @@ impl Stats {
                     data.sub_points = subscriptions["points"].as_u64();
                 }
                 Err(error) => eprintln!("Loading the subscriptions failed: {error}"),
+            }
+            match goals {
+                Ok(goals) => data.goals = goals.as_array().cloned().unwrap_or_default(),
+                Err(error) => eprintln!("Loading the Twitch goals failed: {error}"),
             }
         }
         self.save();
@@ -215,10 +225,16 @@ fn load_history(path: &Path) -> StatsData {
     }
 }
 
-fn alert_from_message(message: &str) -> Option<Value> {
-    let data = message.strip_prefix("event: alert\ndata: ")?.trim_end();
-    let alert: Value = serde_json::from_str(data).ok()?;
-    (alert["test"] != true && alert["type"].is_string()).then_some(alert)
+fn apply_goal_event(goals: &mut Vec<Value>, goal_event: &Value) {
+    let goal = &goal_event["goal"];
+    let Some(id) = goal["id"].as_str() else {
+        return;
+    };
+    goals.retain(|existing| existing["id"] != id);
+    if goal_event["action"] != "end" {
+        goals.push(goal.clone());
+    }
+    goals.sort_by(|first, second| first["id"].as_str().cmp(&second["id"].as_str()));
 }
 
 fn recent_entry(alert: &Value, at: u64) -> Value {
@@ -246,19 +262,57 @@ mod tests {
 
     #[test]
     fn reads_only_real_alerts_from_the_event_stream() {
-        let alert = alert_from_message(
-            "event: alert\ndata: {\"type\":\"follow\",\"userName\":\"Fan\",\"test\":false}\n\n",
-        )
-        .unwrap();
-        assert_eq!(alert["userName"], "Fan");
+        let real = |message: &str| event_data(message, "alert").filter(is_real_alert);
         assert_eq!(
-            alert_from_message("event: alert\ndata: {\"type\":\"follow\",\"test\":true}\n\n"),
+            real(
+                "event: alert\ndata: {\"type\":\"follow\",\"userName\":\"Fan\",\"test\":false}\n\n"
+            )
+            .unwrap()["userName"],
+            "Fan"
+        );
+        assert_eq!(
+            real("event: alert\ndata: {\"type\":\"follow\",\"test\":true}\n\n"),
             None
         );
         assert_eq!(
-            alert_from_message("event: settings\ndata: {\"type\":\"follow\"}\n\n"),
+            real("event: alert\ndata: {\"type\":\"follow\",\"replay\":true}\n\n"),
             None
         );
+        assert_eq!(real("event: alerts\ndata: {\"type\":\"follow\"}\n\n"), None);
+        assert_eq!(
+            real("event: settings\ndata: {\"type\":\"follow\"}\n\n"),
+            None
+        );
+    }
+
+    #[test]
+    fn keeps_twitch_goals_up_to_date() {
+        let mut goals = Vec::new();
+        let goal = |id: &str, current: u64| json!({ "id": id, "type": "follower", "description": "", "current": current, "target": 100 });
+        apply_goal_event(
+            &mut goals,
+            &json!({ "action": "begin", "goal": goal("a", 10) }),
+        );
+        apply_goal_event(
+            &mut goals,
+            &json!({ "action": "begin", "goal": goal("b", 1) }),
+        );
+        apply_goal_event(
+            &mut goals,
+            &json!({ "action": "progress", "goal": goal("a", 11) }),
+        );
+        assert_eq!(goals.len(), 2);
+        assert_eq!(goals[0]["current"], 11);
+        apply_goal_event(
+            &mut goals,
+            &json!({ "action": "end", "goal": goal("a", 12) }),
+        );
+        assert_eq!(goals.len(), 1);
+        apply_goal_event(
+            &mut goals,
+            &json!({ "action": "progress", "goal": { "type": "follower" } }),
+        );
+        assert_eq!(goals.len(), 1);
     }
 
     #[test]

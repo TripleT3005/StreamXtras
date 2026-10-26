@@ -55,7 +55,7 @@ function demoStats(type: AlertType): StreamStats {
     tier: index % 3 === 0 ? "prime" : "1",
     message: "",
   }));
-  return { followers: null, subscribers: null, subPoints: null, recent: new Map([[type, entries]]) };
+  return { followers: null, subscribers: null, subPoints: null, goals: [], recent: new Map([[type, entries]]) };
 }
 
 // Startup

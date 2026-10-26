@@ -158,6 +158,21 @@ impl HelixClient {
         .and_then(|body| parse_subscriptions(&body))
     }
 
+    pub fn goals(&self, broadcaster_id: &str) -> Result<Value, HelixError> {
+        let broadcaster_id = validate_id(broadcaster_id)?;
+        self.get(&format!("/goals?broadcaster_id={broadcaster_id}"))
+            .and_then(|body| {
+                let response: Value = serde_json::from_str(&body)
+                    .map_err(|error| HelixError::Failed(error.to_string()))?;
+                Ok(Value::Array(
+                    response["data"]
+                        .as_array()
+                        .map(|goals| goals.iter().filter_map(parse_goal).collect())
+                        .unwrap_or_default(),
+                ))
+            })
+    }
+
     pub fn post(&self, path: &str, body: &str) -> Result<HttpResponse, HelixError> {
         let response = self.request(path, Some(body))?;
         if response.status == 401 {
@@ -296,6 +311,16 @@ fn parse_followers(body: &str) -> Result<Value, HelixError> {
         })
         .unwrap_or_default();
     Ok(json!({ "total": response["total"].as_u64(), "latest": latest }))
+}
+
+pub fn parse_goal(goal: &Value) -> Option<Value> {
+    Some(json!({
+        "id": goal["id"].as_str()?,
+        "type": goal["type"].as_str()?,
+        "description": goal["description"].as_str().unwrap_or_default(),
+        "current": goal["current_amount"].as_u64()?,
+        "target": goal["target_amount"].as_u64()?,
+    }))
 }
 
 fn parse_subscriptions(body: &str) -> Result<Value, HelixError> {

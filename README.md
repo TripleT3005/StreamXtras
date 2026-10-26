@@ -38,7 +38,7 @@ Each archive has a `.sha256` file to verify the download.
 The companion app only listens on `127.0.0.1`. Its configuration lives outside the repository (Windows: `%APPDATA%\StreamXtras`, macOS: `~/Library/Application Support/StreamXtras`, Linux: `~/.config/streamxtras`).
 
 ### Twitch login
-For all Twitch badges, streamer icons in shared chat and later alerts, the companion app connects to the Twitch API. Log in on the settings page: Twitch opens with a code already filled in, you confirm, done. The login only grants read access (bits, channel point redemptions, subscriptions, followers, chat notifications for subscription tiers and messages), is renewed automatically and stays valid as long as the app runs at least once every 30 days. The token is stored only in `twitch-token.json` in the configuration folder and never leaves the companion app.
+For all Twitch badges, streamer icons in shared chat and later alerts, the companion app connects to the Twitch API. Log in on the settings page: Twitch opens with a code already filled in, you confirm, done. The login only grants read access (bits, channel point redemptions, subscriptions, followers, chat notifications for subscription tiers and messages, creator goals), is renewed automatically and stays valid as long as the app runs at least once every 30 days. The token is stored only in `twitch-token.json` in the configuration folder and never leaves the companion app.
 
 Release builds contain the Client ID of this project. To use your own Twitch application (or when building yourself), register one at [dev.twitch.tv](https://dev.twitch.tv/console) with client type **Public** and redirect URL `http://localhost`, and add its Client ID to `config.json`:
 
@@ -60,6 +60,8 @@ The alert box shows one alert at a time; further alerts wait in a queue. Alerts 
 
 Variants replace these options for single alerts, e.g. for exactly 67 bits, from 500 bits on or for a raid by a certain streamer. The first matching variant wins. In the test row below the preview you can enter a number and a Twitch name: "Show in preview" plays the alert in the preview, "Send to OBS" in every open alert box. To mix the sound in OBS, enable "Control audio via OBS" in the browser source.
 
+Below the preview, the "Live" row controls all open alert boxes, also in OBS: replay the last real alert, skip the alert shown right now (e.g. during a raid) or pause alerts, e.g. while recording. While paused, new alerts wait in the queue and a banner on every tab of the settings page shows it. The pause ends when the companion app restarts.
+
 To show only some alert types in a browser source, add them to the URL, e.g. `http://127.0.0.1:47820/alertbox/?types=follow,raid`. Available types: `follow`, `sub`, `gift`, `cheer`, `raid`.
 
 Text-to-speech reads the alert text and/or the message of the viewer aloud. It is off by default and is turned on per alert type, with a minimum for gift subs and cheers and a choice of tiers for subscriptions. It uses the voices of the operating system, no AI model and no online service: on Windows the installed voices, on macOS `say`, on Linux `espeak-ng` (install it with your package manager). Voice, volume and maximum length are set under General. Cheer emotes like `Cheer100` are removed before reading. If you logged in before version 0.3, log in again once so that subscription tiers and messages arrive.
@@ -69,9 +71,12 @@ Uploaded files (MP3, OGG, WAV, PNG, GIF, WebP, JPEG, MP4, WebM, up to 50 MB) are
 ### Goals, recent events and top emotes
 These overlays have their own tabs on the settings page. Goals and recent events need the Twitch login: the companion app reads the follower and subscriber counts every five minutes and keeps the latest 20 events per type in `history.json` in the configuration folder, so the list survives a restart. Test alerts are not listed. The follower list starts with the latest followers from Twitch; subs, cheers and raids are collected from the moment the companion app runs.
 
-- Goals: `http://127.0.0.1:47820/goal/?goal=followers` or `?goal=subs`
+- Goals: `http://127.0.0.1:47820/goal/?goal=followers` or `?goal=subs`. Each goal uses either the target set on the settings page or the active goal from your Twitch creator dashboard, which moderators can set as well and which updates live.
 - Recent events: `http://127.0.0.1:47820/recent/?type=follow` (also `sub`, `gift`, `cheer`, `raid`)
 - Top emotes: `http://127.0.0.1:47820/topemotes/` reads the chat anonymously and counts every emote once per message. The count starts when the browser source is loaded.
+
+### Updates
+When the settings page is opened, the companion app asks GitHub at most once a day whether a newer release exists and then shows a link to it next to the version. Nothing is downloaded or installed automatically.
 
 ### Development
 Requires [Node.js](https://nodejs.org/) (LTS) for the overlays and [Rust](https://www.rust-lang.org/) (stable) for the companion app. The only Node dependency is the TypeScript compiler.
@@ -134,7 +139,7 @@ Zu jedem Archiv gibt es eine `.sha256`-Datei, um den Download zu prüfen.
 Die Begleit-Anwendung lauscht nur auf `127.0.0.1`. Ihre Konfiguration liegt außerhalb des Repos (Windows: `%APPDATA%\StreamXtras`, macOS: `~/Library/Application Support/StreamXtras`, Linux: `~/.config/streamxtras`).
 
 ### Twitch-Login
-Für alle Twitch-Badges, Streamer-Icons im geteilten Chat und später Alerts verbindet sich die Begleit-Anwendung mit der Twitch-API. Die Anmeldung erfolgt auf der Einstellungsseite: Twitch öffnet sich mit bereits eingetragenem Code, du bestätigst, fertig. Der Login gewährt nur Lesezugriff (Bits, Kanalpunkte-Einlösungen, Abos, Follower, Chat-Benachrichtigungen für Abo-Stufen und Nachrichten), wird automatisch erneuert und bleibt gültig, solange die Anwendung mindestens alle 30 Tage einmal läuft. Das Token liegt nur in `twitch-token.json` im Konfigurationsordner und verlässt die Begleit-Anwendung nie.
+Für alle Twitch-Badges, Streamer-Icons im geteilten Chat und später Alerts verbindet sich die Begleit-Anwendung mit der Twitch-API. Die Anmeldung erfolgt auf der Einstellungsseite: Twitch öffnet sich mit bereits eingetragenem Code, du bestätigst, fertig. Der Login gewährt nur Lesezugriff (Bits, Kanalpunkte-Einlösungen, Abos, Follower, Chat-Benachrichtigungen für Abo-Stufen und Nachrichten, Creator-Ziele), wird automatisch erneuert und bleibt gültig, solange die Anwendung mindestens alle 30 Tage einmal läuft. Das Token liegt nur in `twitch-token.json` im Konfigurationsordner und verlässt die Begleit-Anwendung nie.
 
 Release-Builds enthalten die Client-ID dieses Projekts. Um eine eigene Twitch-Anwendung zu nutzen (oder beim Selbstbauen), unter [dev.twitch.tv](https://dev.twitch.tv/console) eine Anwendung mit Client-Typ **Öffentlich** und Weiterleitungs-URL `http://localhost` registrieren und ihre Client-ID in die `config.json` eintragen:
 
@@ -156,6 +161,8 @@ Die Alertbox zeigt immer einen Alert an, weitere warten in einer Warteschlange. 
 
 Varianten ersetzen diese Optionen für einzelne Alerts, z. B. für genau 67 Bits, ab 500 Bits oder für den Raid eines bestimmten Streamers. Es gilt die erste passende Variante. In der Testzeile unter der Vorschau kannst du eine Anzahl und einen Twitch-Namen eintragen: „Show in preview“ spielt den Alert in der Vorschau ab, „Send to OBS“ in jeder geöffneten Alertbox. Wer den Sound in OBS mischen möchte, aktiviert in der Browserquelle „Audio über OBS steuern“.
 
+Die Zeile „Live“ unter der Vorschau steuert alle geöffneten Alertboxen, auch in OBS: den letzten echten Alert wiederholen, den gerade gezeigten Alert überspringen (z. B. bei einem Raid) oder Alerts pausieren, z. B. für Aufnahmen. Während der Pause warten neue Alerts in der Warteschlange, und ein Banner auf jedem Tab der Einstellungsseite zeigt das an. Ein Neustart der Begleit-Anwendung beendet die Pause.
+
 Sollen in einer Browserquelle nur bestimmte Alert-Typen erscheinen, hängst du sie an die Adresse an, z. B. `http://127.0.0.1:47820/alertbox/?types=follow,raid`. Verfügbare Typen: `follow`, `sub`, `gift`, `cheer`, `raid`.
 
 Die Sprachausgabe liest den Alert-Text und/oder die Nachricht des Zuschauers vor. Sie ist standardmäßig aus und wird je Alert-Typ eingeschaltet, mit einem Mindestwert für Geschenkabos und Cheers und einer Auswahl der Stufen bei Abos. Sie nutzt die Stimmen des Betriebssystems, kein KI-Modell und keinen Online-Dienst: unter Windows die installierten Stimmen, unter macOS `say`, unter Linux `espeak-ng` (über die Paketverwaltung installieren). Stimme, Lautstärke und maximale Länge stellst du unter General ein. Cheer-Emotes wie `Cheer100` werden vor dem Vorlesen entfernt. Wer sich vor Version 0.3 angemeldet hat, meldet sich einmal neu an, damit Abo-Stufen und Nachrichten ankommen.
@@ -165,9 +172,12 @@ Hochgeladene Dateien (MP3, OGG, WAV, PNG, GIF, WebP, JPEG, MP4, WebM, bis 50 MB)
 ### Ziele, letzte Ereignisse und Top-Emotes
 Diese Overlays haben eigene Tabs auf der Einstellungsseite. Ziele und letzte Ereignisse brauchen den Twitch-Login: Die Begleit-Anwendung liest alle fünf Minuten die Zahl der Follower und Abonnenten und speichert die letzten 20 Ereignisse je Typ in `history.json` im Konfigurationsordner, damit die Liste einen Neustart übersteht. Test-Alerts werden nicht aufgenommen. Die Follower-Liste beginnt mit den letzten Followern von Twitch; Abos, Cheers und Raids werden ab dem Start der Begleit-Anwendung gesammelt.
 
-- Ziele: `http://127.0.0.1:47820/goal/?goal=followers` oder `?goal=subs`
+- Ziele: `http://127.0.0.1:47820/goal/?goal=followers` oder `?goal=subs`. Jedes Ziel nutzt entweder das auf der Einstellungsseite eingetragene Ziel oder das aktive Ziel aus deinem Twitch-Dashboard, das auch Moderatoren setzen können und das sich live aktualisiert.
 - Letzte Ereignisse: `http://127.0.0.1:47820/recent/?type=follow` (auch `sub`, `gift`, `cheer`, `raid`)
 - Top-Emotes: `http://127.0.0.1:47820/topemotes/` liest den Chat anonym und zählt jedes Emote einmal pro Nachricht. Die Zählung beginnt, wenn die Browserquelle geladen wird.
+
+### Updates
+Beim Öffnen der Einstellungsseite fragt die Begleit-Anwendung höchstens einmal am Tag bei GitHub nach, ob es ein neueres Release gibt, und zeigt dann neben der Version einen Link dorthin. Es wird nichts automatisch heruntergeladen oder installiert.
 
 ### Entwicklung
 Voraussetzung sind [Node.js](https://nodejs.org/) (LTS) für die Overlays und [Rust](https://www.rust-lang.org/) (stable) für die Begleit-Anwendung. Einzige Node-Abhängigkeit ist der TypeScript-Compiler.

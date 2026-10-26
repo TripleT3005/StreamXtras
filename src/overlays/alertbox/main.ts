@@ -1,3 +1,4 @@
+import { fetchAlertControl, subscribeToAlertControl, type AlertControlStatus } from "../../shared/alert-control.ts";
 import { subscribeToCompanionEvent } from "../../shared/companion-events.ts";
 import { fetchOverlaySettings, readStringList, subscribeToSettings } from "../../shared/config.ts";
 import { isRecord } from "../../shared/json.ts";
@@ -24,7 +25,7 @@ async function start(): Promise<void> {
 
   let config: AlertboxConfig = readAlertboxConfig(isPreview ? {} : { ...(await fetchOverlaySettings(alertboxOverlayId)), ...urlValues });
   applyAlertboxStyle(root, config);
-  const queue = new AlertQueue<OverlayAlert>((alert) => showAlert(container, alert, config));
+  const queue = new AlertQueue<OverlayAlert>((alert, signal) => showAlert(container, alert, config, signal));
 
   const apply = (next: AlertboxConfig): void => {
     config = next;
@@ -47,6 +48,18 @@ async function start(): Promise<void> {
   }
 
   subscribeToSettings(alertboxOverlayId, (stored) => apply(readAlertboxConfig({ ...stored, ...urlValues })));
+  const control = (status: AlertControlStatus): void => {
+    if (status.paused) {
+      queue.pause();
+    } else {
+      queue.resume();
+    }
+    if (status.skip) {
+      queue.skip();
+    }
+  };
+  subscribeToAlertControl(control);
+  control(await fetchAlertControl());
   subscribeToCompanionEvent("alert", (data) => {
     const alert = parseAlert(data);
     if (alert !== null && (shownTypes.size === 0 || shownTypes.has(alert.type))) {
