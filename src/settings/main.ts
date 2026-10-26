@@ -14,9 +14,11 @@ import { setupTwitchAccount } from "./twitch-account.ts";
 
 // Constants
 const tabNames = ["chatbox", "alertbox", "goals", "recent", "topemotes"] as const;
+const channelFieldIds = ["chatbox-channel", "topemotes-channel"];
 
 // State
 const editors = new Map<string, OverlayEditor>();
+let ownChannel: string | null = null;
 
 // Elements
 function getElement<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -332,12 +334,27 @@ async function lookUpUser(name: string): Promise<Readonly<Record<string, unknown
   return { userLogin: name.toLowerCase() };
 }
 
+function fillOwnChannel(): void {
+  if (ownChannel === null) {
+    return;
+  }
+  for (const id of channelFieldIds) {
+    const input = document.getElementById(id);
+    if (input instanceof HTMLInputElement && input.value.trim() === "") {
+      input.value = ownChannel;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  }
+}
+
 // Startup
 async function start(): Promise<void> {
   setupTabs();
   const diagnostics = getElement("diagnostics-link", HTMLAnchorElement);
   setupTwitchAccount(getElement("twitch-account", HTMLDivElement), (login) => {
     diagnostics.href = login === null ? "../diagnostics/" : `../diagnostics/?channel=${encodeURIComponent(login)}`;
+    ownChannel = login;
+    fillOwnChannel();
   });
   void showVersion();
   void showUpdate();
@@ -350,6 +367,7 @@ async function start(): Promise<void> {
     setupRecentEditor(media),
     setupTopEmotesEditor(media),
   ]);
+  fillOwnChannel();
 }
 
 void start();

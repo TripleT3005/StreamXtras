@@ -165,6 +165,9 @@ describe("alert box settings", () => {
     });
     assert.equal(alertStyle(config, alert({ type: "cheer", amount: 100 })).text, "{name} cheered {amount} bits!");
     assert.equal(alertStyle(config, alert({ type: "raid" })).avatar, true);
+    assert.equal(alertStyle(config, alert({ type: "raid" })).sound, "assets/sounds/fanfare.wav");
+    assert.equal(alertStyle(config, alert({ type: "cheer" })).image, "assets/images/explosion.svg");
+    assert.equal(readMediaReference({ value: "assets/sounds/level-up.wav" }, "value", "x"), "assets/sounds/level-up.wav");
   });
 
   test("keep settings saved by earlier versions", () => {
