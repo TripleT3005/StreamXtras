@@ -74,14 +74,12 @@ pub struct EventSubClient {
 pub fn alert_from_event(subscription_type: &str, event: &Value) -> Option<Value> {
     match subscription_type {
         "channel.follow" => user_alert("follow", event, "user", None),
-        "channel.subscribe" if event["is_gift"].as_bool() != Some(true) => {
-            user_alert("sub", event, "user", Some(1))
+        "channel.chat.notification" => notification_alert(event),
+        "channel.cheer" => {
+            let mut alert = user_alert("cheer", event, "user", event["bits"].as_u64())?;
+            alert["message"] = json!(event["message"].as_str().unwrap_or_default());
+            Some(alert)
         }
-        "channel.subscription.message" => {
-            user_alert("sub", event, "user", event["cumulative_months"].as_u64())
-        }
-        "channel.subscription.gift" => user_alert("gift", event, "user", event["total"].as_u64()),
-        "channel.cheer" => user_alert("cheer", event, "user", event["bits"].as_u64()),
         "channel.raid" => user_alert(
             "raid",
             event,
@@ -92,9 +90,60 @@ pub fn alert_from_event(subscription_type: &str, event: &Value) -> Option<Value>
     }
 }
 
+fn notification_alert(event: &Value) -> Option<Value> {
+    let (kind, details, amount) = match event["notice_type"].as_str()? {
+        "sub" => ("sub", &event["sub"], Some(1)),
+        "resub" => (
+            "sub",
+            &event["resub"],
+            event["resub"]["cumulative_months"].as_u64(),
+        ),
+        "sub_gift" if event["sub_gift"]["community_gift_id"].is_null() => {
+            ("gift", &event["sub_gift"], Some(1))
+        }
+        "community_sub_gift" => (
+            "gift",
+            &event["community_sub_gift"],
+            event["community_sub_gift"]["total"].as_u64(),
+        ),
+        _ => return None,
+    };
+    let mut alert = user_alert(kind, event, "chatter_user", amount)?;
+    alert["tier"] = json!(tier(details));
+    alert["message"] = json!(event["message"]["text"].as_str().unwrap_or_default());
+    Some(alert)
+}
+
+fn tier(details: &Value) -> &'static str {
+    if details["is_prime"].as_bool() == Some(true) {
+        return "prime";
+    }
+    match details["sub_tier"].as_str() {
+        Some("2000") => "2",
+        Some("3000") => "3",
+        _ => "1",
+    }
+}
+
+pub fn strip_cheermotes(text: &str, prefixes: &[String]) -> String {
+    text.split_whitespace()
+        .filter(|word| {
+            let word = word.to_lowercase();
+            !prefixes.iter().any(|prefix| {
+                word.strip_prefix(prefix.as_str()).is_some_and(|rest| {
+                    !rest.is_empty() && rest.bytes().all(|byte| byte.is_ascii_digit())
+                })
+            })
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 fn user_alert(kind: &str, event: &Value, prefix: &str, amount: Option<u64>) -> Option<Value> {
     let field = |name: &str| event[format!("{prefix}_{name}")].as_str();
-    let (id, login, name) = if event["is_anonymous"].as_bool() == Some(true) {
+    let is_anonymous = event["is_anonymous"].as_bool() == Some(true)
+        || event["chatter_is_anonymous"].as_bool() == Some(true);
+    let (id, login, name) = if is_anonymous {
         ("", "", ANONYMOUS_NAME)
     } else {
         (field("id")?, field("login")?, field("name")?)
@@ -112,7 +161,7 @@ fn user_alert(kind: &str, event: &Value, prefix: &str, amount: Option<u64>) -> O
     Some(alert)
 }
 
-pub fn test_alert(kind: &str, amount: Option<u64>, user: Option<&Value>) -> Option<Value> {
+pub fn test_alert(kind: &str, options: &Value, user: Option<&Value>) -> Option<Value> {
     if !ALERT_TYPES.contains(&kind) {
         return None;
     }
@@ -129,7 +178,22 @@ pub fn test_alert(kind: &str, amount: Option<u64>, user: Option<&Value>) -> Opti
         "test": true,
     });
     if kind != "follow" {
-        alert["amount"] = json!(amount.unwrap_or(if kind == "cheer" { 100 } else { 5 }));
+        alert["amount"] =
+            json!(
+                options["amount"]
+                    .as_u64()
+                    .unwrap_or(if kind == "cheer" { 100 } else { 5 })
+            );
+    }
+    if kind == "sub" || kind == "gift" {
+        let tier = options["tier"]
+            .as_str()
+            .filter(|tier| matches!(*tier, "prime" | "2" | "3"))
+            .unwrap_or("1");
+        alert["tier"] = json!(tier);
+    }
+    if let Some(message) = options["message"].as_str() {
+        alert["message"] = json!(message);
     }
     add_avatar(&mut alert, user);
     Some(alert)
@@ -181,9 +245,11 @@ fn subscriptions(session_id: &str, user_id: &str) -> Vec<(&'static str, String)>
             "2",
             json!({ "broadcaster_user_id": user_id, "moderator_user_id": user_id }),
         ),
-        ("channel.subscribe", "1", broadcaster.clone()),
-        ("channel.subscription.message", "1", broadcaster.clone()),
-        ("channel.subscription.gift", "1", broadcaster.clone()),
+        (
+            "channel.chat.notification",
+            "1",
+            json!({ "broadcaster_user_id": user_id, "user_id": user_id }),
+        ),
         ("channel.cheer", "1", broadcaster),
         (
             "channel.raid",
@@ -332,6 +398,14 @@ impl EventSubClient {
             .filter(|user_id| !user_id.is_empty())
             .and_then(|user_id| self.helix.user(user_id).ok());
         add_avatar(&mut alert, user.as_ref());
+        if alert["type"] == "cheer"
+            && let Some(broadcaster_id) = event["broadcaster_user_id"].as_str()
+            && let Ok(prefixes) = self.helix.cheermote_prefixes(broadcaster_id)
+        {
+            let message =
+                strip_cheermotes(alert["message"].as_str().unwrap_or_default(), &prefixes);
+            alert["message"] = json!(message);
+        }
         self.events.publish("alert", &alert);
     }
 }
@@ -473,43 +547,102 @@ mod tests {
         assert_eq!(alert_from_event("channel.unknown", &event), None);
     }
 
-    #[test]
-    fn builds_sub_gift_cheer_and_raid_alerts() {
-        let user = json!({ "user_id": "7", "user_login": "viewer", "user_name": "Viewer" });
-        let with = |extra: Value| {
-            let mut event = user.clone();
-            event
-                .as_object_mut()
-                .unwrap()
-                .extend(extra.as_object().unwrap().clone());
-            event
-        };
-        let amount = |kind: &str, event: &Value| {
-            alert_from_event(kind, event).map(|alert| alert["amount"].clone())
-        };
+    fn notification(notice_type: &str, details: &Value, message: &str) -> Value {
+        json!({
+            "chatter_user_id": "7",
+            "chatter_user_login": "viewer",
+            "chatter_user_name": "Viewer",
+            "chatter_is_anonymous": false,
+            "notice_type": notice_type,
+            (notice_type): details,
+            "message": { "text": message },
+        })
+    }
 
+    #[test]
+    fn builds_sub_and_gift_alerts_from_chat_notifications() {
+        let sub = alert_from_event(
+            "channel.chat.notification",
+            &notification("sub", &json!({ "sub_tier": "2000", "is_prime": false }), ""),
+        )
+        .unwrap();
         assert_eq!(
-            amount("channel.subscribe", &with(json!({ "is_gift": false }))),
-            Some(json!(1))
+            sub,
+            json!({ "type": "sub", "userId": "7", "userLogin": "viewer", "userName": "Viewer", "amount": 1, "tier": "2", "message": "", "test": false })
+        );
+
+        let resub = alert_from_event(
+            "channel.chat.notification",
+            &notification(
+                "resub",
+                &json!({ "cumulative_months": 14, "sub_tier": "1000", "is_prime": true }),
+                "Still here!",
+            ),
+        )
+        .unwrap();
+        assert_eq!(
+            (&resub["amount"], &resub["tier"], &resub["message"]),
+            (&json!(14), &json!("prime"), &json!("Still here!"))
+        );
+
+        let bomb = alert_from_event(
+            "channel.chat.notification",
+            &notification(
+                "community_sub_gift",
+                &json!({ "total": 5, "sub_tier": "3000" }),
+                "",
+            ),
+        )
+        .unwrap();
+        assert_eq!(
+            (&bomb["type"], &bomb["amount"], &bomb["tier"]),
+            (&json!("gift"), &json!(5), &json!("3"))
+        );
+
+        let single = notification(
+            "sub_gift",
+            &json!({ "sub_tier": "1000", "community_gift_id": null }),
+            "",
         );
         assert_eq!(
-            alert_from_event("channel.subscribe", &with(json!({ "is_gift": true }))),
+            alert_from_event("channel.chat.notification", &single).unwrap()["amount"],
+            1
+        );
+        let part_of_bomb = notification(
+            "sub_gift",
+            &json!({ "sub_tier": "1000", "community_gift_id": "abc" }),
+            "",
+        );
+        assert_eq!(
+            alert_from_event("channel.chat.notification", &part_of_bomb),
             None
         );
         assert_eq!(
-            amount(
-                "channel.subscription.message",
-                &with(json!({ "cumulative_months": 14 }))
+            alert_from_event(
+                "channel.chat.notification",
+                &notification("shared_chat_sub", &json!({}), "")
             ),
-            Some(json!(14))
+            None
         );
+
+        let mut anonymous = notification("community_sub_gift", &json!({ "total": 10 }), "");
+        anonymous["chatter_is_anonymous"] = json!(true);
         assert_eq!(
-            amount("channel.subscription.gift", &with(json!({ "total": 5 }))),
-            Some(json!(5))
+            alert_from_event("channel.chat.notification", &anonymous).unwrap()["userName"],
+            "Anonymous"
         );
+    }
+
+    #[test]
+    fn builds_cheer_and_raid_alerts() {
+        let cheer = alert_from_event(
+            "channel.cheer",
+            &json!({ "user_id": "7", "user_login": "viewer", "user_name": "Viewer", "bits": 67, "message": "Cheer67 hi" }),
+        )
+        .unwrap();
         assert_eq!(
-            amount("channel.cheer", &with(json!({ "bits": 67 }))),
-            Some(json!(67))
+            (&cheer["amount"], &cheer["message"]),
+            (&json!(67), &json!("Cheer67 hi"))
         );
 
         let anonymous = alert_from_event(
@@ -534,28 +667,56 @@ mod tests {
     }
 
     #[test]
+    fn strips_cheermotes_from_messages() {
+        let prefixes = vec!["cheer".to_owned(), "biblethump".to_owned()];
+        assert_eq!(
+            strip_cheermotes(
+                "Cheer100 great  stream BibleThump5 cheer cheers2you",
+                &prefixes
+            ),
+            "great stream cheer cheers2you"
+        );
+    }
+
+    #[test]
     fn builds_test_alerts() {
-        assert_eq!(test_alert("follow", None, None).unwrap()["test"], true);
+        let none = json!({});
+        assert_eq!(test_alert("follow", &none, None).unwrap()["test"], true);
         assert!(
-            test_alert("follow", Some(3), None)
+            test_alert("follow", &json!({ "amount": 3 }), None)
                 .unwrap()
                 .get("amount")
                 .is_none()
         );
-        assert_eq!(test_alert("cheer", None, None).unwrap()["amount"], 100);
-        assert_eq!(test_alert("gift", Some(67), None).unwrap()["amount"], 67);
-        assert_eq!(test_alert("host", None, None), None);
-
-        let friend = json!({ "id": "9", "login": "friend", "displayName": "Friend", "largeProfileImageUrl": "https://cdn/friend.png" });
-        let raid = test_alert("raid", None, Some(&friend)).unwrap();
-        assert_eq!(raid["userName"], "Friend");
-        assert_eq!(raid["avatarUrl"], "https://cdn/friend.png");
+        assert_eq!(test_alert("cheer", &none, None).unwrap()["amount"], 100);
         assert_eq!(
-            test_alert("sub", None, Some(&friend)).unwrap()["avatarUrl"],
-            "https://cdn/friend.png"
+            test_alert("gift", &json!({ "amount": 67 }), None).unwrap()["amount"],
+            67
+        );
+        assert_eq!(test_alert("host", &none, None), None);
+
+        let sub = test_alert("sub", &json!({ "tier": "prime", "message": "Hello" }), None).unwrap();
+        assert_eq!(
+            (&sub["tier"], &sub["message"]),
+            (&json!("prime"), &json!("Hello"))
+        );
+        assert_eq!(
+            test_alert("sub", &json!({ "tier": "9" }), None).unwrap()["tier"],
+            "1"
         );
         assert!(
-            test_alert("sub", None, None)
+            test_alert("raid", &none, None)
+                .unwrap()
+                .get("tier")
+                .is_none()
+        );
+
+        let friend = json!({ "id": "9", "login": "friend", "displayName": "Friend", "largeProfileImageUrl": "https://cdn/friend.png" });
+        let raid = test_alert("raid", &none, Some(&friend)).unwrap();
+        assert_eq!(raid["userName"], "Friend");
+        assert_eq!(raid["avatarUrl"], "https://cdn/friend.png");
+        assert!(
+            test_alert("sub", &none, None)
                 .unwrap()
                 .get("avatarUrl")
                 .is_none()
@@ -579,11 +740,7 @@ mod tests {
 
         let accepted = (202, r#"{"data":[]}"#);
         let forbidden = (403, r#"{"error":"Forbidden"}"#);
-        let fixture = account_fixture(
-            "eventsub",
-            true,
-            &[accepted, forbidden, accepted, accepted, accepted, accepted],
-        );
+        let fixture = account_fixture("eventsub", true, &[accepted, forbidden, accepted, accepted]);
         let events = Arc::new(EventBroadcaster::default());
         let alerts = events.subscribe();
         let helix = Arc::new(HelixClient::new(
@@ -607,14 +764,16 @@ mod tests {
             .iter()
             .filter(|request| request.contains("eventsub/subscriptions"))
             .collect();
-        assert_eq!(subscriptions.len(), 6);
+        assert_eq!(subscriptions.len(), 4);
         assert!(
             subscriptions
                 .iter()
                 .all(|request| request.contains(r#""session_id":"session-1""#))
         );
         assert!(subscriptions[0].contains(r#""moderator_user_id":"42""#));
-        assert!(subscriptions[5].contains(r#""to_broadcaster_user_id":"42""#));
+        assert!(subscriptions[1].contains(r#""type":"channel.chat.notification""#));
+        assert!(subscriptions[1].contains(r#""user_id":"42""#));
+        assert!(subscriptions[3].contains(r#""to_broadcaster_user_id":"42""#));
     }
 
     #[test]

@@ -11,6 +11,7 @@ use crate::config::{self, Config};
 use crate::events::EventBroadcaster;
 use crate::http::{self, Method, ParseError, Request, Response};
 use crate::media::{self, MediaError};
+use crate::tts;
 use crate::twitch::account::TwitchAccount;
 use crate::twitch::eventsub;
 use crate::twitch::helix::{HelixClient, HelixError};
@@ -98,6 +99,12 @@ fn route(request: &Request, state: &AppState) -> Outcome {
             .unwrap_or_else(|| twitch_status(&state.twitch.logout())),
         (Method::Put, "/api/alerts/test", _) => {
             check_write_request(request, state).unwrap_or_else(|| send_test_alert(request, state))
+        }
+        (Method::Get, "/api/tts/voices", _) => {
+            Response::json(200, &serde_json::json!(tts::voices()))
+        }
+        (Method::Put, "/api/tts", _) => {
+            check_write_request(request, state).unwrap_or_else(|| speak(request))
         }
         (Method::Get, "/api/media", _) => Response::json(
             200,
@@ -271,12 +278,29 @@ fn send_test_alert(request: &Request, state: &AppState) -> Response {
                 serde_json::json!({ "id": "0", "login": name.to_lowercase(), "displayName": name })
             })
         });
-    match eventsub::test_alert(kind, body["amount"].as_u64(), user.as_ref()) {
+    match eventsub::test_alert(kind, &body, user.as_ref()) {
         Some(alert) => {
             state.events.publish("alert", &alert);
             Response::json(200, &alert)
         }
         None => Response::text(400, "Unknown alert type"),
+    }
+}
+
+// Speech
+fn speak(request: &Request) -> Response {
+    let body = serde_json::from_slice::<serde_json::Value>(&request.body).unwrap_or_default();
+    let text = body["text"].as_str().unwrap_or_default();
+    let voice = body["voice"].as_str().unwrap_or_default();
+    if text.trim().is_empty() {
+        return Response::text(400, "Expected a text");
+    }
+    match tts::synthesize(text, voice) {
+        Ok(audio) => Response::new(200, "audio/wav", audio),
+        Err(error) => {
+            eprintln!("Text-to-speech failed: {error}");
+            Response::text(500, "Text-to-speech failed")
+        }
     }
 }
 
@@ -641,6 +665,32 @@ mod tests {
             404
         );
         assert_eq!(reply(&get("/api/twitch/unknown"), &test.state).status, 404);
+    }
+
+    #[test]
+    fn speaks_only_for_local_pages() {
+        let test = test_state("speech");
+        let origin = format!("http://127.0.0.1:{PORT}");
+        let speak = |origin: &str, body: &str| {
+            reply(
+                &put("/api/tts", origin, "application/json", body),
+                &test.state,
+            )
+        };
+        assert_eq!(
+            speak("https://evil.example", r#"{"text":"Hi"}"#).status,
+            403
+        );
+        assert_eq!(speak(&origin, r#"{"text":"  "}"#).status, 400);
+        if cfg!(windows) {
+            let spoken = speak(&origin, r#"{"text":"Hi"}"#);
+            assert_eq!((spoken.status, spoken.content_type), (200, "audio/wav"));
+        }
+        assert!(
+            reply(&get("/api/tts/voices"), &test.state)
+                .body
+                .starts_with(b"[")
+        );
     }
 
     #[test]

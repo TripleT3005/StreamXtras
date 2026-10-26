@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { formatAlertText, parseAlert, type OverlayAlert } from "../../../src/overlays/alertbox/alert.ts";
+import { formatAlertText, parseAlert, plainAlertText, type OverlayAlert } from "../../../src/overlays/alertbox/alert.ts";
 import { AlertQueue } from "../../../src/overlays/alertbox/alert-queue.ts";
-import { alertStyle, alertTypeForSection, readAlertboxConfig, variantMatches } from "../../../src/overlays/alertbox/alertbox-config.ts";
+import { alertSpeech, alertStyle, alertTypeForSection, readAlertboxConfig, variantMatches } from "../../../src/overlays/alertbox/alertbox-config.ts";
 import { isVideoReference, mediaUrl, readMediaReference } from "../../../src/shared/config.ts";
 
 // Helpers
 function alert(overrides: Partial<OverlayAlert>): OverlayAlert {
-  return { type: "follow", userName: "Fan", userLogin: "fan", amount: 0, avatarUrl: null, test: false, ...overrides };
+  return { type: "follow", userName: "Fan", userLogin: "fan", amount: 0, tier: null, message: "", avatarUrl: null, test: false, ...overrides };
 }
 
 const variant = {
@@ -28,9 +28,15 @@ describe("alerts", () => {
       userName: "NewFollower",
       userLogin: "newfollower",
       amount: 0,
+      tier: null,
+      message: "",
       avatarUrl: null,
       test: false,
     });
+    const sub = parseAlert({ type: "sub", userName: "Fan", amount: 3, tier: "prime", message: " Hi! " });
+    assert.equal(sub?.tier, "prime");
+    assert.equal(sub?.message, "Hi!");
+    assert.equal(parseAlert({ type: "sub", userName: "Fan", tier: "4", message: 5 })?.tier, null);
     assert.deepEqual(parseAlert({ type: "cheer", userName: "Anonymous", amount: 67 })?.amount, 67);
     assert.equal(parseAlert({ type: "follow", userName: "" }), null);
     assert.equal(parseAlert({ type: "host", userName: "Raider" }), null);
@@ -47,11 +53,12 @@ describe("alerts", () => {
   });
 
   test("replaces name and amount in the text template", () => {
-    assert.deepEqual(formatAlertText("{name} is now following!", { userName: "Fan", amount: 0 }), [
+    const texts = { tier: null, message: "" } as const;
+    assert.deepEqual(formatAlertText("{name} is now following!", { ...texts, userName: "Fan", amount: 0 }), [
       { kind: "highlight", text: "Fan" },
       { kind: "text", text: " is now following!" },
     ]);
-    assert.deepEqual(formatAlertText("Thanks {name} for {amount} bits, {name}!", { userName: "Fan", amount: 67 }), [
+    assert.deepEqual(formatAlertText("Thanks {name} for {amount} bits, {name}!", { ...texts, userName: "Fan", amount: 67 }), [
       { kind: "text", text: "Thanks " },
       { kind: "highlight", text: "Fan" },
       { kind: "text", text: " for " },
@@ -60,7 +67,13 @@ describe("alerts", () => {
       { kind: "highlight", text: "Fan" },
       { kind: "text", text: "!" },
     ]);
-    assert.deepEqual(formatAlertText("New follower {nam}", { userName: "Fan", amount: 0 }), [{ kind: "text", text: "New follower {nam}" }]);
+    assert.deepEqual(formatAlertText("New follower {nam}", { ...texts, userName: "Fan", amount: 0 }), [{ kind: "text", text: "New follower {nam}" }]);
+    assert.deepEqual(formatAlertText("{tier}: {message}", { userName: "Fan", amount: 1, tier: "2", message: "<b>Hi</b>" }), [
+      { kind: "highlight", text: "Tier 2" },
+      { kind: "text", text: ": " },
+      { kind: "text", text: "<b>Hi</b>" },
+    ]);
+    assert.equal(plainAlertText("{name} says {message}", { userName: "Fan", amount: 0, tier: "prime", message: "" }), "Fan says");
   });
 });
 
@@ -147,7 +160,7 @@ describe("alert box settings", () => {
   });
 
   test("match variants by amount or Twitch user", () => {
-    const friend = { userName: "BestFriend", userLogin: "bestfriend", amount: 3 };
+    const friend = { userName: "BestFriend", userLogin: "bestfriend", amount: 3, tier: null };
     assert.equal(variantMatches({ match: "user", value: "@bestfriend" }, friend), true);
     assert.equal(variantMatches({ match: "user", value: "BESTFRIEND " }, friend), true);
     assert.equal(variantMatches({ match: "user", value: "" }, friend), false);
@@ -157,6 +170,35 @@ describe("alert box settings", () => {
     assert.equal(variantMatches({ match: "min", value: "4" }, friend), false);
     assert.equal(variantMatches({ match: "exact", value: "bestfriend" }, friend), false);
     assert.equal(variantMatches({ match: "min", value: "-1" }, friend), false);
+  });
+
+  test("match variants by tier", () => {
+    const facts = { userName: "Fan", userLogin: "fan", amount: 1 };
+    assert.equal(variantMatches({ match: "tier", value: "Prime" }, { ...facts, tier: "prime" }), true);
+    assert.equal(variantMatches({ match: "tier", value: "Tier 3" }, { ...facts, tier: "3" }), true);
+    assert.equal(variantMatches({ match: "tier", value: "3" }, { ...facts, tier: "1" }), false);
+    assert.equal(variantMatches({ match: "tier", value: "" }, { ...facts, tier: null }), false);
+  });
+
+  test("read aloud only when turned on and above the threshold", () => {
+    const config = readAlertboxConfig({
+      cheerTts: "both",
+      cheerTtsMin: 100,
+      subTts: "message",
+      subTtsTiers: ["2", "3"],
+      giftTts: "text",
+      ttsMaxLength: 30,
+    });
+    const cheer = alert({ type: "cheer", amount: 100, message: "Great stream" });
+    assert.equal(alertSpeech(config, cheer, "{name} cheered {amount} bits!"), "Fan cheered 100 bits! Great st");
+    assert.equal(alertSpeech(config, { ...cheer, amount: 99 }, "{name} cheered"), "");
+    assert.equal(alertSpeech(config, cheer, "{name}: {message}"), "Fan: Great stream");
+    assert.equal(alertSpeech(config, alert({ type: "sub", tier: "2", message: "Hi" }), "{name}"), "Hi");
+    assert.equal(alertSpeech(config, alert({ type: "sub", tier: "prime", message: "Hi" }), "{name}"), "");
+    assert.equal(alertSpeech(config, alert({ type: "gift", amount: 4 }), "{name} gifted {amount}"), "");
+    assert.equal(alertSpeech(config, alert({ type: "gift", amount: 5 }), "{name} gifted {amount}"), "Fan gifted 5");
+    assert.equal(alertSpeech(readAlertboxConfig({}), cheer, "{name}"), "");
+    assert.equal(readAlertboxConfig({ followTts: "message" }).followTts, "off");
   });
 
   test("map editor sections to alert types", () => {

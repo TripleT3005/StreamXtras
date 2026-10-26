@@ -10,6 +10,7 @@ mod media;
 mod paths;
 mod server;
 mod tray;
+mod tts;
 mod twitch;
 
 use std::error::Error;

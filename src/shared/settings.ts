@@ -16,6 +16,7 @@ export interface TextSetting extends SettingBase<string> {
   readonly kind: "text";
   readonly placeholder: string;
   readonly suggestions: readonly string[];
+  readonly suggestionsUrl?: string;
 }
 
 export interface FontSetting extends SettingBase<string> {
@@ -95,7 +96,9 @@ interface CommonOptions<T> {
 }
 
 // Factories
-export function textSetting(options: CommonOptions<string> & { readonly placeholder?: string; readonly suggestions?: readonly string[] }): TextSetting {
+export function textSetting(
+  options: CommonOptions<string> & { readonly placeholder?: string; readonly suggestions?: readonly string[]; readonly suggestionsUrl?: string },
+): TextSetting {
   return {
     ...options,
     kind: "text",

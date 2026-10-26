@@ -14,6 +14,7 @@ use crate::events::EventBroadcaster;
 // Constants
 pub const SCOPES: &[&str] = &[
     "bits:read",
+    "user:read:chat",
     "channel:read:redemptions",
     "channel:read:subscriptions",
     "moderator:read:followers",
@@ -437,7 +438,7 @@ mod tests {
     use crate::twitch::auth::tests::FakeHttp;
 
     const DEVICE: &str = r#"{"device_code":"dc","expires_in":1800,"interval":1,"user_code":"ABCD","verification_uri":"https://www.twitch.tv/activate?device-code=ABCD"}"#;
-    const GRANT: &str = r#"{"access_token":"at","refresh_token":"rt","expires_in":14000,"scope":["bits:read","channel:read:redemptions","channel:read:subscriptions","moderator:read:followers"],"token_type":"bearer"}"#;
+    const GRANT: &str = r#"{"access_token":"at","refresh_token":"rt","expires_in":14000,"scope":["bits:read","user:read:chat","channel:read:redemptions","channel:read:subscriptions","moderator:read:followers"],"token_type":"bearer"}"#;
     const VALID: &str = r#"{"client_id":"client","login":"streamer","scopes":[],"user_id":"42","expires_in":14000}"#;
     const PENDING: &str = r#"{"status":400,"message":"authorization_pending"}"#;
 

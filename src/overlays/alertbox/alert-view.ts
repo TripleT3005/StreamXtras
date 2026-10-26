@@ -1,12 +1,14 @@
 import { isVideoReference, mediaUrl } from "../../shared/config.ts";
 import { toFontFamily } from "../../shared/fonts.ts";
 import { formatAlertText, type OverlayAlert } from "./alert.ts";
-import { alertStyle, type AlertboxConfig, type AlertStyle } from "./alertbox-config.ts";
+import { alertSpeech, alertStyle, type AlertboxConfig, type AlertStyle } from "./alertbox-config.ts";
 
 // Constants
 const leaveDurationMs = 500;
 const metadataTimeoutMs = 3000;
 const maxVideoDurationMs = 5 * 60 * 1000;
+const maxSoundWaitMs = 10_000;
+const maxSpeechMs = 60_000;
 
 // Style
 export function applyAlertboxStyle(root: HTMLElement, config: AlertboxConfig): void {
@@ -52,11 +54,12 @@ export async function showAlert(container: HTMLElement, alert: OverlayAlert, con
   element.append(text);
   container.replaceChildren(element);
 
-  playSound(style.sound, config.volume);
-
   const startedAt = performance.now();
+  const sound = playSound(style.sound, config.volume);
+  const speech = alertSpeech(config, alert, style.text);
+  const spoken = speech === "" ? Promise.resolve() : speak(speech, config, sound);
   const visibleMs = await visibleDuration(style.durationMs, visual instanceof HTMLVideoElement ? visual : null);
-  await wait(visibleMs - (performance.now() - startedAt));
+  await Promise.all([wait(visibleMs - (performance.now() - startedAt)), spoken]);
   element.classList.add("leaving");
   await wait(leaveDurationMs);
   element.remove();
@@ -117,12 +120,55 @@ function wait(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, milliseconds)));
 }
 
-function playSound(reference: string, volume: number): void {
+function playSound(reference: string, volume: number): HTMLAudioElement | null {
   const url = mediaUrl(reference);
   if (url === null || volume === 0) {
-    return;
+    return null;
   }
   const audio = new Audio(url);
   audio.volume = volume / 100;
   void audio.play().catch((error: unknown) => console.warn("Playing the alert sound failed", error));
+  return audio;
+}
+
+// Speech
+async function speak(text: string, config: AlertboxConfig, sound: HTMLAudioElement | null): Promise<void> {
+  if (config.ttsVolume === 0) {
+    return;
+  }
+  try {
+    const response = await fetch("/api/tts", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, voice: config.ttsVoice }),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const url = URL.createObjectURL(await response.blob());
+    await finished(sound, maxSoundWaitMs);
+    const audio = new Audio(url);
+    audio.volume = config.ttsVolume / 100;
+    const ended = finished(audio, maxSpeechMs);
+    await audio.play();
+    await ended;
+    URL.revokeObjectURL(url);
+  } catch (error: unknown) {
+    console.warn("Reading the alert aloud failed", error);
+  }
+}
+
+function finished(audio: HTMLAudioElement | null, timeoutMs: number): Promise<void> {
+  if (audio === null || audio.ended) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const done = (): void => {
+      clearTimeout(timeout);
+      resolve();
+    };
+    const timeout = setTimeout(done, timeoutMs);
+    audio.addEventListener("ended", done, { once: true });
+    audio.addEventListener("error", done, { once: true });
+  });
 }

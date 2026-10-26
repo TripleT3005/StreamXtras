@@ -292,12 +292,15 @@ function createTextField(id: string, setting: TextSetting): Field {
   input.placeholder = setting.placeholder;
   input.autocomplete = "off";
   input.spellcheck = false;
-  if (setting.suggestions.length > 0) {
+  if (setting.suggestions.length > 0 || setting.suggestionsUrl !== undefined) {
     const list = document.createElement("datalist");
     list.id = `${id}-suggestions`;
     list.append(...setting.suggestions.map((suggestion) => new Option(suggestion)));
     input.setAttribute("list", list.id);
     control.append(list);
+    if (setting.suggestionsUrl !== undefined) {
+      void loadSuggestions(setting.suggestionsUrl).then((suggestions) => list.append(...suggestions.map((suggestion) => new Option(suggestion))));
+    }
   }
   control.prepend(input);
   return {
@@ -305,6 +308,16 @@ function createTextField(id: string, setting: TextSetting): Field {
     read: () => input.value.trim(),
     write: (value) => (input.value = typeof value === "string" ? value : ""),
   };
+}
+
+async function loadSuggestions(url: string): Promise<readonly string[]> {
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    const data: unknown = response.ok ? await response.json() : [];
+    return Array.isArray(data) ? data.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
 }
 
 function createFontField(id: string, setting: FontSetting): Field {
