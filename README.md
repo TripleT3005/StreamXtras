@@ -22,7 +22,7 @@ A small companion app runs in the system tray, serves the overlays and a setting
 ### Installation
 1. Download the archive for your system from [Releases](../../releases): `windows-x64`, `macos-arm64` (Apple silicon) or `linux-x64`.
 2. Extract it to a folder of your choice, e.g. `DocumentsStreamXtras`. Keep the `web` folder next to the program.
-3. Start `streamxtras`. The app is not signed, so the system may warn on the first start:
+3. Start `StreamXtras` (on Linux `streamxtras`, as commands there are lowercase by convention). The app is not signed, so the system may warn on the first start:
    - **Windows:** SmartScreen → "More info" → "Run anyway"
    - **macOS:** right-click the program → "Open", or allow it under System Settings → Privacy & Security
    - **Linux:** the tray icon needs a desktop with StatusNotifierItem support (KDE Plasma, or GNOME with the AppIndicator extension)
@@ -48,6 +48,8 @@ Release builds contain the Client ID of this project. To use your own Twitch app
 
 ### Chat box settings
 All settings are edited on the settings page with a live preview: channel, number of messages, hiding after a time, animation, position, font, size, colors, message background, spacing, emote size, badges, third-party badges, readable name colors, third-party emote providers, shared chat (streamer icons, messages from partner channels) and the browser source size. Saved changes apply to open chat boxes immediately; only a new channel, other third-party badges or other emote providers reload them.
+
+Filters hide messages from chosen bots (Nightbot, StreamElements, Streamlabs, Moobot, Fossabot, WizeBot, Sery_Bot, SoundAlerts), from the streamer, from further accounts you enter (e.g. your Streamer.bot account) and messages with blocked words. A `*` at the end of a word also matches longer words. Filters apply to new messages right away.
 
 Third-party badges from 7TV, BetterTTV, FrankerFaceZ and Chatterino are off by default and can be turned on one by one. BetterTTV, FrankerFaceZ and Chatterino publish one list for all users; 7TV is asked once per chatter, so in very busy chats this causes many requests.
 
@@ -123,7 +125,7 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 ### Installation
 1. Das Archiv für dein System unter [Releases](../../releases) herunterladen: `windows-x64`, `macos-arm64` (Apple Silicon) oder `linux-x64`.
 2. In einen beliebigen Ordner entpacken, z. B. `DokumenteStreamXtras`. Der Ordner `web` muss neben dem Programm bleiben.
-3. `streamxtras` starten. Die Anwendung ist nicht signiert, deshalb warnt das System beim ersten Start eventuell:
+3. `StreamXtras` starten (unter Linux `streamxtras`, weil Befehle dort üblicherweise kleingeschrieben sind). Die Anwendung ist nicht signiert, deshalb warnt das System beim ersten Start eventuell:
    - **Windows:** SmartScreen → „Weitere Informationen“ → „Trotzdem ausführen“
    - **macOS:** Rechtsklick auf das Programm → „Öffnen“, oder unter Systemeinstellungen → Datenschutz & Sicherheit erlauben
    - **Linux:** Das Tray-Icon braucht einen Desktop mit StatusNotifierItem-Unterstützung (KDE Plasma oder GNOME mit AppIndicator-Erweiterung)
@@ -149,6 +151,8 @@ Release-Builds enthalten die Client-ID dieses Projekts. Um eine eigene Twitch-An
 
 ### Chatbox-Einstellungen
 Alle Einstellungen werden auf der Einstellungsseite mit Live-Vorschau bearbeitet: Kanal, Anzahl der Nachrichten, Ausblenden nach Zeit, Animation, Position, Schrift, Größe, Farben, Hintergrund der Nachrichten, Abstand, Emote-Größe, Badges, Drittanbieter-Badges, lesbare Namensfarben, Emote-Anbieter, geteilter Chat (Streamer-Icons, Nachrichten aus Partnerkanälen) und die Größe der Browserquelle. Gespeicherte Änderungen wirken sofort in geöffneten Chatboxen; nur ein neuer Kanal, andere Drittanbieter-Badges oder andere Emote-Anbieter laden sie neu.
+
+Filter blenden Nachrichten von gewählten Bots (Nightbot, StreamElements, Streamlabs, Moobot, Fossabot, WizeBot, Sery_Bot, SoundAlerts), vom Streamer, von weiteren eingetragenen Konten (z. B. dem Konto deines Streamer.bot) und Nachrichten mit gesperrten Wörtern aus. Ein `*` am Wortende trifft auch längere Wörter. Filter wirken sofort auf neue Nachrichten.
 
 Drittanbieter-Badges von 7TV, BetterTTV, FrankerFaceZ und Chatterino sind standardmäßig aus und lassen sich einzeln einschalten. BetterTTV, FrankerFaceZ und Chatterino veröffentlichen eine Liste für alle Nutzer; bei 7TV wird je Chatter einmal nachgefragt, in sehr vollen Chats sind das also viele Anfragen.
 

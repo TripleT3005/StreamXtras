@@ -29,6 +29,13 @@ body {
   background: var(--color-panel);
 }
 
+.back {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: #b9a8ff;
+  font-size: 0.9rem;
+}
+
 h1 {
   margin: 0 0 4px;
   font-size: 1.25rem;

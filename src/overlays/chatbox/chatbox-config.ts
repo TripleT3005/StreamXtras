@@ -1,5 +1,6 @@
 import { fontSettings, shadowSettings, sizeSettings } from "../../shared/appearance.ts";
 import type { ConfigSource } from "../../shared/config.ts";
+import { streamerOption } from "./chat-filter.ts";
 import type { ThirdPartyEmoteProviderName } from "../../shared/emotes/emote.ts";
 import type { ThirdPartyBadgeProviderName } from "../../shared/twitch/third-party-badges.ts";
 import {
@@ -88,6 +89,37 @@ export const chatboxSettings = {
       { value: "bttv", label: "BetterTTV" },
       { value: "ffz", label: "FrankerFaceZ" },
     ],
+  }),
+
+  hiddenBots: multiChoiceSetting({
+    label: "Hide messages from",
+    group: "Filters",
+    default: [],
+    options: [
+      { value: streamerOption, label: "The streamer" },
+      { value: "nightbot", label: "Nightbot" },
+      { value: "streamelements", label: "StreamElements" },
+      { value: "streamlabs", label: "Streamlabs" },
+      { value: "moobot", label: "Moobot" },
+      { value: "fossabot", label: "Fossabot" },
+      { value: "wizebot", label: "WizeBot" },
+      { value: "sery_bot", label: "Sery_Bot" },
+      { value: "soundalerts", label: "SoundAlerts" },
+    ],
+  }),
+  hiddenUsers: textSetting({
+    label: "Other users to hide",
+    group: "Filters",
+    hint: "Twitch names separated by commas, e.g. the account of your Streamer.bot.",
+    default: "",
+    placeholder: "mybot, anotherbot",
+  }),
+  blockedWords: textSetting({
+    label: "Hide messages with these words",
+    group: "Filters",
+    hint: "Separated by commas, not case-sensitive. A * at the end also matches longer words, e.g. spoil* hides spoiler and spoilers.",
+    default: "",
+    placeholder: "spoiler, spoil*",
   }),
 
   showSharedChatIcons: booleanSetting({
