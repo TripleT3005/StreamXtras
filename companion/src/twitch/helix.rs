@@ -142,6 +142,22 @@ impl HelixClient {
         })
     }
 
+    pub fn followers(&self, broadcaster_id: &str) -> Result<Value, HelixError> {
+        let broadcaster_id = validate_id(broadcaster_id)?;
+        self.get(&format!(
+            "/channels/followers?broadcaster_id={broadcaster_id}&first=20"
+        ))
+        .and_then(|body| parse_followers(&body))
+    }
+
+    pub fn subscriptions(&self, broadcaster_id: &str) -> Result<Value, HelixError> {
+        let broadcaster_id = validate_id(broadcaster_id)?;
+        self.get(&format!(
+            "/subscriptions?broadcaster_id={broadcaster_id}&first=1"
+        ))
+        .and_then(|body| parse_subscriptions(&body))
+    }
+
     pub fn post(&self, path: &str, body: &str) -> Result<HttpResponse, HelixError> {
         let response = self.request(path, Some(body))?;
         if response.status == 401 {
@@ -259,6 +275,33 @@ fn parse_badges(body: &str) -> Result<Value, HelixError> {
         })
         .collect();
     Ok(Value::Object(sets))
+}
+
+fn parse_followers(body: &str) -> Result<Value, HelixError> {
+    let response: Value =
+        serde_json::from_str(body).map_err(|error| HelixError::Failed(error.to_string()))?;
+    let latest: Vec<Value> = response["data"]
+        .as_array()
+        .map(|followers| {
+            followers
+                .iter()
+                .filter_map(|follower| {
+                    Some(json!({
+                        "type": "follow",
+                        "userName": follower["user_name"].as_str()?,
+                        "userLogin": follower["user_login"].as_str()?,
+                    }))
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    Ok(json!({ "total": response["total"].as_u64(), "latest": latest }))
+}
+
+fn parse_subscriptions(body: &str) -> Result<Value, HelixError> {
+    let response: Value =
+        serde_json::from_str(body).map_err(|error| HelixError::Failed(error.to_string()))?;
+    Ok(json!({ "total": response["total"].as_u64(), "points": response["points"].as_u64() }))
 }
 
 fn parse_cheermote_prefixes(body: &str) -> Result<Value, HelixError> {
@@ -392,6 +435,32 @@ mod tests {
         assert!(requests[1].contains("/chat/badges?broadcaster_id=1337"));
         assert!(requests[2].contains("/users?id=42"));
         assert!(requests[3].contains("/users?login=streamer"));
+    }
+
+    #[test]
+    fn loads_follower_and_subscription_counts() {
+        let fixture = fixture(
+            "counts",
+            true,
+            &[
+                (
+                    200,
+                    r#"{"total":120,"data":[{"user_id":"7","user_login":"fan","user_name":"Fan","followed_at":"x"},{"user_id":"8"}]}"#,
+                ),
+                (200, r#"{"total":4,"points":5,"data":[]}"#),
+            ],
+        );
+        assert_eq!(
+            fixture.client.followers("42").unwrap(),
+            json!({ "total": 120, "latest": [{ "type": "follow", "userName": "Fan", "userLogin": "fan" }] })
+        );
+        assert_eq!(
+            fixture.client.subscriptions("42").unwrap(),
+            json!({ "total": 4, "points": 5 })
+        );
+        let requests = fixture.http.requests.lock().unwrap();
+        assert!(requests[1].contains("/channels/followers?broadcaster_id=42&first=20"));
+        assert!(requests[2].contains("/subscriptions?broadcaster_id=42&first=1"));
     }
 
     #[test]

@@ -9,6 +9,7 @@ mod instance;
 mod media;
 mod paths;
 mod server;
+mod stats;
 mod tray;
 mod tts;
 mod twitch;
@@ -69,6 +70,13 @@ fn run() -> Result<(), Box<dyn Error>> {
         EVENTSUB_URL,
     )
     .start();
+    let history = stats::Stats::new(
+        &config_dir,
+        Arc::clone(&events),
+        Arc::clone(&twitch),
+        Arc::clone(&helix),
+    );
+    history.start();
     let state = Arc::new(AppState {
         port,
         web_root: web_root(),
@@ -77,6 +85,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         events,
         twitch,
         helix,
+        stats: history,
     });
     server::start(listener, state)?;
 

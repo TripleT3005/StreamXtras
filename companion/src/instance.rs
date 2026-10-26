@@ -36,6 +36,7 @@ mod tests {
     use crate::config::Config;
     use crate::events::EventBroadcaster;
     use crate::server::{self, AppState};
+    use crate::stats::Stats;
     use crate::twitch::account::TwitchAccount;
     use crate::twitch::auth::tests::FakeHttp;
     use crate::twitch::helix::HelixClient;
@@ -60,6 +61,15 @@ mod tests {
                 Arc::new(FakeHttp::default()),
                 twitch.clone(),
             )),
+            stats: Stats::new(
+                &std::env::temp_dir(),
+                Arc::new(EventBroadcaster::default()),
+                twitch.clone(),
+                Arc::new(HelixClient::new(
+                    Arc::new(FakeHttp::default()),
+                    twitch.clone(),
+                )),
+            ),
             twitch,
         };
         server::start(listener, Arc::new(state)).unwrap();

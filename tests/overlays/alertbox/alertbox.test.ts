@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { formatAlertText, parseAlert, plainAlertText, type OverlayAlert } from "../../../src/overlays/alertbox/alert.ts";
+import { formatAlertText, parseAlert, plainAlertText, type OverlayAlert } from "../../../src/shared/alerts.ts";
 import { AlertQueue } from "../../../src/overlays/alertbox/alert-queue.ts";
 import { alertSpeech, alertStyle, alertTypeForSection, readAlertboxConfig, variantMatches } from "../../../src/overlays/alertbox/alertbox-config.ts";
 import { isVideoReference, mediaUrl, readMediaReference } from "../../../src/shared/config.ts";

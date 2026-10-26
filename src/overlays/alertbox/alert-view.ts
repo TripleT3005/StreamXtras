@@ -1,6 +1,6 @@
 import { isVideoReference, mediaUrl } from "../../shared/config.ts";
 import { toFontFamily } from "../../shared/fonts.ts";
-import { formatAlertText, type OverlayAlert } from "./alert.ts";
+import { formatAlertText, type OverlayAlert } from "../../shared/alerts.ts";
 import { alertSpeech, alertStyle, type AlertboxConfig, type AlertStyle } from "./alertbox-config.ts";
 
 // Constants

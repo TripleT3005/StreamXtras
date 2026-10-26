@@ -86,6 +86,8 @@ export type SettingsSchema = Readonly<Record<string, Setting>>;
 
 export type SettingsValues<S extends SettingsSchema> = { readonly [K in keyof S]: S[K]["default"] };
 
+export type Prefixed<P extends string, S> = { readonly [K in keyof S & string as `${P}${Capitalize<K>}`]: S[K] };
+
 interface CommonOptions<T> {
   readonly label: string;
   readonly group: string;
@@ -196,6 +198,12 @@ export function listSetting<S extends SettingsSchema>(
         .map((item) => readSettings(options.itemSchema, item));
     },
   };
+}
+
+export function prefixed<P extends string, S extends SettingsSchema>(prefix: P, schema: S): Prefixed<P, S> {
+  return Object.fromEntries(
+    Object.entries(schema).map(([key, setting]) => [`${prefix}${key.charAt(0).toUpperCase()}${key.slice(1)}`, setting]),
+  ) as Prefixed<P, S>;
 }
 
 // Reading
