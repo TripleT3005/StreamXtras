@@ -589,8 +589,15 @@ function createMediaField(id: string, setting: MediaSetting, media: MediaLibrary
     }
   };
 
+  const knownValues = (): readonly string[] => [
+    "",
+    current,
+    ...setting.builtIns.map((option) => option.value),
+    ...media.files.filter((file) => shows(file.kind)).map((file) => file.value),
+  ];
+
   select.addEventListener("change", () => {
-    current = select.value;
+    current = knownValues().find((value) => value === select.value) ?? current;
     status.textContent = "";
     updateControls();
   });
