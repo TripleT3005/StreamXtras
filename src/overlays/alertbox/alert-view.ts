@@ -1,5 +1,5 @@
 import { isVideoReference, mediaUrl } from "../../shared/config.ts";
-import { toFontFamily } from "../../shared/fonts.ts";
+import { applyAppearance } from "../../shared/appearance.ts";
 import { formatAlertText, type OverlayAlert } from "../../shared/alerts.ts";
 import { alertSpeech, alertStyle, type AlertboxConfig, type AlertStyle } from "./alertbox-config.ts";
 
@@ -12,13 +12,8 @@ const maxSpeechMs = 60_000;
 
 // Style
 export function applyAlertboxStyle(root: HTMLElement, config: AlertboxConfig): void {
+  applyAppearance(root, config);
   const { style } = root;
-  style.setProperty("--font-family", toFontFamily(config.fontFamily));
-  style.setProperty("--font-size", `${config.fontSize}px`);
-  style.setProperty("--font-weight", config.fontWeight);
-  style.setProperty("--color-text", config.textColor);
-  style.setProperty("--color-highlight", config.highlightColor);
-  style.setProperty("--text-shadow", config.textShadow ? "0 2px 4px rgb(0 0 0 / 85%)" : "none");
   style.setProperty("--image-size", `${config.imageSize}px`);
   style.setProperty("--video-width", `${config.videoWidth}px`);
   root.dataset["layout"] = config.layout;

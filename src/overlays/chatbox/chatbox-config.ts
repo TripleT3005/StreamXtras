@@ -1,3 +1,4 @@
+import { fontSettings, shadowSettings, sizeSettings } from "../../shared/appearance.ts";
 import type { ConfigSource } from "../../shared/config.ts";
 import type { ThirdPartyEmoteProviderName } from "../../shared/emotes/emote.ts";
 import type { ThirdPartyBadgeProviderName } from "../../shared/twitch/third-party-badges.ts";
@@ -5,7 +6,6 @@ import {
   booleanSetting,
   choiceSetting,
   colorSetting,
-  fontSetting,
   multiChoiceSetting,
   numberSetting,
   readSettings,
@@ -17,8 +17,6 @@ import {
 // Constants
 export const chatboxOverlayId = "chatbox";
 export const missingChannelMessage = "No valid channel configured. Open the settings from the tray icon and enter your channel.";
-
-const fontSuggestions = ["Segoe UI", "Arial", "Verdana", "Tahoma", "Trebuchet MS", "Georgia", "Consolas", "Comic Sans MS"];
 
 // Schema
 export const chatboxSettings = {
@@ -54,26 +52,8 @@ export const chatboxSettings = {
     ],
   }),
 
-  fontFamily: fontSetting({
-    label: "Font",
-    group: "Appearance",
-    hint: "The font must be installed on the computer running OBS.",
-    default: "",
-    suggestions: fontSuggestions,
-  }),
-  fontSize: numberSetting({ label: "Font size", group: "Appearance", default: 18, min: 10, max: 64, unit: "px" }),
-  fontWeight: choiceSetting({
-    label: "Font weight",
-    group: "Appearance",
-    default: "600",
-    options: [
-      { value: "400", label: "Normal" },
-      { value: "600", label: "Semibold" },
-      { value: "700", label: "Bold" },
-    ],
-  }),
-  textColor: colorSetting({ label: "Text color", group: "Appearance", default: "#ffffff" }),
-  textShadow: booleanSetting({ label: "Text shadow", group: "Appearance", default: true }),
+  ...fontSettings(undefined, 18, "600"),
+  ...shadowSettings(undefined),
   messageBackground: colorSetting({ label: "Message background", group: "Appearance", default: "#00000000" }),
   messageSpacing: numberSetting({ label: "Space between messages", group: "Appearance", default: 4, min: 0, max: 32, unit: "px" }),
   emoteSize: numberSetting({ label: "Emote size", group: "Appearance", default: 175, min: 100, max: 400, step: 5, unit: "%" }),
@@ -122,16 +102,7 @@ export const chatboxSettings = {
     default: true,
   }),
 
-  width: numberSetting({
-    label: "Width",
-    group: "Browser source size",
-    hint: "Use the same size for the browser source in OBS. The preview uses it as well.",
-    default: 400,
-    min: 100,
-    max: 3840,
-    unit: "px",
-  }),
-  height: numberSetting({ label: "Height", group: "Browser source size", default: 600, min: 100, max: 2160, unit: "px" }),
+  ...sizeSettings(undefined, 400, 600),
 } satisfies SettingsSchema;
 
 // Types

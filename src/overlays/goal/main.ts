@@ -1,7 +1,7 @@
 import { applyAppearance } from "../../shared/appearance.ts";
 import { fetchOverlaySettings, subscribeToSettings } from "../../shared/config.ts";
 import { isRecord } from "../../shared/json.ts";
-import { onPreviewMessage, previewSettingsMessage } from "../../shared/preview-messages.ts";
+import { onPreviewMessage, previewSettingsMessage, reportPreviewOverflow } from "../../shared/preview-messages.ts";
 import { fetchStats, parseStats, subscribeToStats, type StreamStats } from "../../shared/stats.ts";
 import { goalOverlayId, goalProgress, goalState, readGoalConfig, readGoalKind, type GoalConfig, type GoalKind } from "./goal-config.ts";
 
@@ -48,6 +48,7 @@ async function start(): Promise<void> {
       if (isRecord(data["settings"])) {
         config = readGoalConfig(data["settings"]);
         render(root, config, kind, demoStats(config));
+        reportPreviewOverflow();
       }
     });
     return;

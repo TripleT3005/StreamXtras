@@ -1,5 +1,6 @@
 import { fetchOverlaySettings, saveOverlaySettings, type ConfigSource } from "../shared/config.ts";
-import { postPreviewMessage, previewSettingsMessage } from "../shared/preview-messages.ts";
+import { isRecord } from "../shared/json.ts";
+import { postPreviewMessage, previewOverflowMessage, previewSettingsMessage } from "../shared/preview-messages.ts";
 import { defaultSettings, readSettings, type SettingsSchema, type SettingsValues } from "../shared/settings.ts";
 import type { MediaLibrary } from "./media-library.ts";
 import { createSettingsForm } from "./settings-form.ts";
@@ -76,8 +77,15 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
     });
     toolbar.append(chip);
   }
+  const overflowWarning = element("p", "hint warning", "The content does not fit. Increase the width or height under \"Browser source size\".");
+  overflowWarning.hidden = true;
+  window.addEventListener("message", (event: MessageEvent<unknown>) => {
+    if (event.source === frame.contentWindow && isRecord(event.data) && event.data["type"] === previewOverflowMessage) {
+      overflowWarning.hidden = event.data["overflowing"] !== true;
+    }
+  });
   const previewColumn = element("div", "editor-preview");
-  previewColumn.append(toolbar, stage);
+  previewColumn.append(toolbar, stage, overflowWarning);
   const layout = element("div", "editor");
   layout.append(form, previewColumn);
   container.replaceChildren(sourceUrl, layout);

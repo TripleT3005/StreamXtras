@@ -285,7 +285,10 @@ async function lookUpUser(name: string): Promise<Readonly<Record<string, unknown
 // Startup
 async function start(): Promise<void> {
   setupTabs();
-  setupTwitchAccount(getElement("twitch-account", HTMLDivElement));
+  const diagnostics = getElement("diagnostics-link", HTMLAnchorElement);
+  setupTwitchAccount(getElement("twitch-account", HTMLDivElement), (login) => {
+    diagnostics.href = login === null ? "../diagnostics/" : `../diagnostics/?channel=${encodeURIComponent(login)}`;
+  });
   void showVersion();
   const media = new MediaLibrary();
   await media.refresh().catch(() => undefined);

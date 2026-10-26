@@ -5,6 +5,7 @@ mod config;
 mod event_loop;
 mod events;
 mod http;
+mod icon;
 mod instance;
 mod media;
 mod paths;

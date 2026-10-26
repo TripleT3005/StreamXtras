@@ -48,7 +48,7 @@ export const recentSettings = {
     ],
   }),
   emptyText: textSetting({ label: "Text without entries", group: "Layout", section: generalSection, default: "", placeholder: "Nobody yet" }),
-  ...sizeSettings(generalSection, 400, 200),
+  ...sizeSettings(generalSection, 400, 320),
   ...recentTypeSettings("follow"),
   ...recentTypeSettings("sub"),
   ...recentTypeSettings("gift"),
