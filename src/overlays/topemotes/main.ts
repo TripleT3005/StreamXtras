@@ -7,7 +7,7 @@ import { ffzProvider } from "../../shared/emotes/ffz.ts";
 import { buildFragments } from "../../shared/emotes/fragments.ts";
 import { sevenTvProvider } from "../../shared/emotes/seven-tv.ts";
 import { isRecord } from "../../shared/json.ts";
-import { onPreviewMessage, previewSettingsMessage } from "../../shared/preview-messages.ts";
+import { onPreviewMessage, previewSettingsMessage, reportPreviewOverflow } from "../../shared/preview-messages.ts";
 import { hasStructuralChange } from "../../shared/settings.ts";
 import { normalizeChannel, TwitchChatSource } from "../../shared/twitch/twitch-chat-source.ts";
 import { EmoteCounter, type EmoteCount } from "./emote-counter.ts";
@@ -72,6 +72,7 @@ async function start(): Promise<void> {
     onPreviewMessage(previewSettingsMessage, (data) => {
       if (isRecord(data["settings"])) {
         render(root, readTopEmotesConfig(data["settings"]), demoEmotes);
+        reportPreviewOverflow();
       }
     });
     return;

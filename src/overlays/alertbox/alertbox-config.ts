@@ -1,9 +1,8 @@
+import { appearanceSettings, sizeSettings } from "../../shared/appearance.ts";
 import type { ConfigSource } from "../../shared/config.ts";
 import {
   booleanSetting,
   choiceSetting,
-  colorSetting,
-  fontSetting,
   listSetting,
   mediaSetting,
   multiChoiceSetting,
@@ -52,7 +51,6 @@ const imageBuiltIns: readonly SettingOption<string>[] = [
   { value: "assets/images/sparkles.svg", label: "Sparkles" },
 ];
 
-const fontSuggestions = ["Segoe UI", "Arial", "Verdana", "Tahoma", "Trebuchet MS", "Georgia", "Impact", "Comic Sans MS"];
 
 export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinition>> = {
   follow: {
@@ -225,36 +223,7 @@ export const alertboxSettings = {
   }),
   imageSize: numberSetting({ label: "Image size", group: "Appearance", section: generalSection, default: 160, min: 40, max: 600, step: 10, unit: "px" }),
   videoWidth: numberSetting({ label: "Video width", group: "Appearance", section: generalSection, default: 480, min: 100, max: 1920, step: 10, unit: "px" }),
-  fontFamily: fontSetting({
-    label: "Font",
-    group: "Appearance",
-    section: generalSection,
-    hint: "The font must be installed on the computer running OBS.",
-    default: "",
-    suggestions: fontSuggestions,
-  }),
-  fontSize: numberSetting({ label: "Font size", group: "Appearance", section: generalSection, default: 36, min: 12, max: 120, unit: "px" }),
-  fontWeight: choiceSetting({
-    label: "Font weight",
-    group: "Appearance",
-    section: generalSection,
-    default: "700",
-    options: [
-      { value: "400", label: "Normal" },
-      { value: "600", label: "Semibold" },
-      { value: "700", label: "Bold" },
-      { value: "900", label: "Black" },
-    ],
-  }),
-  textColor: colorSetting({ label: "Text color", group: "Appearance", section: generalSection, default: "#ffffff" }),
-  highlightColor: colorSetting({
-    label: "Highlight color",
-    group: "Appearance",
-    section: generalSection,
-    hint: "Used for the name and the number.",
-    default: "#bf94ff",
-  }),
-  textShadow: booleanSetting({ label: "Text shadow", group: "Appearance", section: generalSection, default: true }),
+  ...appearanceSettings(generalSection, 36),
 
   ttsVoice: textSetting({
     label: "Voice",
@@ -268,17 +237,7 @@ export const alertboxSettings = {
   ttsVolume: numberSetting({ label: "Voice volume", group: speechGroup, section: generalSection, default: 80, min: 0, max: 100, unit: "%" }),
   ttsMaxLength: numberSetting({ label: "Maximum length", group: speechGroup, section: generalSection, default: 200, min: 20, max: 500, step: 10, unit: "chars" }),
 
-  width: numberSetting({
-    label: "Width",
-    group: "Browser source size",
-    section: generalSection,
-    hint: "Use the same size for the browser source in OBS. The preview uses it as well.",
-    default: 600,
-    min: 100,
-    max: 3840,
-    unit: "px",
-  }),
-  height: numberSetting({ label: "Height", group: "Browser source size", section: generalSection, default: 400, min: 100, max: 2160, unit: "px" }),
+  ...sizeSettings(generalSection, 600, 400),
 
   ...alertTypeSettings("follow"),
   ...alertTypeSettings("sub"),

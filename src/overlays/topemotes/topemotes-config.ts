@@ -53,7 +53,7 @@ export const topEmotesSettings = {
   emoteSize: numberSetting({ label: "Emote size", group: "Layout", default: 48, min: 16, max: 256, unit: "px" }),
   showCounts: booleanSetting({ label: "Show how often", group: "Layout", default: true }),
   ...appearanceSettings(undefined, 22),
-  ...sizeSettings(undefined, 500, 140),
+  ...sizeSettings(undefined, 500, 200),
 } satisfies SettingsSchema;
 
 export type TopEmotesConfig = SettingsValues<typeof topEmotesSettings>;

@@ -305,6 +305,11 @@ button.secondary:hover {
   font-size: 0.85rem;
 }
 
+.hint.warning {
+  margin-top: 8px;
+  color: #fbbf24;
+}
+
 .actions {
   position: sticky;
   bottom: 0;

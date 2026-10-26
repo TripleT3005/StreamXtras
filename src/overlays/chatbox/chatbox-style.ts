@@ -1,4 +1,4 @@
-import { toFontFamily } from "../../shared/fonts.ts";
+import { applyAppearance } from "../../shared/appearance.ts";
 import type { ChatboxConfig } from "./chatbox-config.ts";
 
 // Constants
@@ -6,12 +6,8 @@ const textShadow = "0 1px 2px rgb(0 0 0 / 80%)";
 
 // Style
 export function applyChatboxStyle(root: HTMLElement, config: ChatboxConfig): void {
+  applyAppearance(root, config, textShadow);
   const { style } = root;
-  style.setProperty("--font-family", toFontFamily(config.fontFamily));
-  style.setProperty("--font-size", `${config.fontSize}px`);
-  style.setProperty("--font-weight", config.fontWeight);
-  style.setProperty("--color-text", config.textColor);
-  style.setProperty("--text-shadow", config.textShadow ? textShadow : "none");
   style.setProperty("--message-background", config.messageBackground);
   style.setProperty("--message-padding", isTransparent(config.messageBackground) ? "0" : "3px 8px");
   style.setProperty("--message-spacing", `${config.messageSpacing}px`);

@@ -52,12 +52,13 @@ async function sendCommand(command: "login" | "logout"): Promise<TwitchStatus | 
 }
 
 // View
-export function setupTwitchAccount(container: HTMLElement): void {
+export function setupTwitchAccount(container: HTMLElement, onLogin: (login: string | null) => void): void {
   let countdown: ReturnType<typeof setInterval> | undefined;
   let busy = false;
 
   const render = (status: TwitchStatus | null): void => {
     clearInterval(countdown);
+    onLogin(status?.state === "loggedIn" ? status.login : null);
     if (status === null) {
       container.replaceChildren(paragraph("The companion app did not answer.", "status error"));
       return;

@@ -2,7 +2,7 @@ import { formatAlertText, isAlertType, type AlertType } from "../../shared/alert
 import { applyAppearance } from "../../shared/appearance.ts";
 import { fetchOverlaySettings, subscribeToSettings } from "../../shared/config.ts";
 import { isRecord } from "../../shared/json.ts";
-import { onPreviewMessage, previewSettingsMessage } from "../../shared/preview-messages.ts";
+import { onPreviewMessage, previewSettingsMessage, reportPreviewOverflow } from "../../shared/preview-messages.ts";
 import { fetchStats, parseStats, subscribeToStats, type RecentEntry, type StreamStats } from "../../shared/stats.ts";
 import { readRecentConfig, recentOverlayId, type RecentConfig } from "./recent-config.ts";
 
@@ -71,6 +71,7 @@ async function start(): Promise<void> {
     onPreviewMessage(previewSettingsMessage, (data) => {
       if (isRecord(data["settings"])) {
         render(root, readRecentConfig(data["settings"]), type, stats);
+        reportPreviewOverflow();
       }
     });
     return;
