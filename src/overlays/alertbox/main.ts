@@ -2,7 +2,7 @@ import { subscribeToCompanionEvent } from "../../shared/companion-events.ts";
 import { fetchOverlaySettings, readStringList, subscribeToSettings } from "../../shared/config.ts";
 import { isRecord } from "../../shared/json.ts";
 import { onPreviewMessage, previewAlertMessage, previewSettingsMessage } from "../../shared/preview-messages.ts";
-import { parseAlert, type OverlayAlert } from "./alert.ts";
+import { parseAlert, type OverlayAlert } from "../../shared/alerts.ts";
 import { AlertQueue } from "./alert-queue.ts";
 import { applyAlertboxStyle, showAlert } from "./alert-view.ts";
 import { alertboxOverlayId, readAlertboxConfig, type AlertboxConfig } from "./alertbox-config.ts";

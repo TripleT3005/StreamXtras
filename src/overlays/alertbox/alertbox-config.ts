@@ -8,13 +8,14 @@ import {
   mediaSetting,
   multiChoiceSetting,
   numberSetting,
+  prefixed,
   readSettings,
   textSetting,
   type SettingOption,
   type SettingsSchema,
   type SettingsValues,
 } from "../../shared/settings.ts";
-import { plainAlertText, subTiers, tierLabel, type AlertType, type OverlayAlert, type SubTier } from "./alert.ts";
+import { plainAlertText, subTiers, tierLabel, type AlertType, type OverlayAlert, type SubTier } from "../../shared/alerts.ts";
 
 // Types
 interface AlertTypeDefinition {
@@ -28,8 +29,6 @@ interface AlertTypeDefinition {
   readonly sound: string;
   readonly avatar: boolean;
 }
-
-type Prefixed<P extends string, S> = { readonly [K in keyof S & string as `${P}${Capitalize<K>}`]: S[K] };
 
 export type VariantMatch = "exact" | "min" | "tier" | "user";
 
@@ -178,12 +177,6 @@ function speechModeOptions(definition: AlertTypeDefinition): readonly SettingOpt
         ] as const)
       : []),
   ];
-}
-
-function prefixed<P extends string, S extends SettingsSchema>(prefix: P, schema: S): Prefixed<P, S> {
-  return Object.fromEntries(
-    Object.entries(schema).map(([key, setting]) => [`${prefix}${key.charAt(0).toUpperCase()}${key.slice(1)}`, setting]),
-  ) as Prefixed<P, S>;
 }
 
 function alertTypeSettings<T extends AlertType>(type: T) {

@@ -1,0 +1,90 @@
+/* Base */
+:root {
+  --font-family: system-ui, sans-serif;
+  --font-size: 28px;
+  --font-weight: 700;
+  --color-text: #ffffff;
+  --color-highlight: #b9a8ff;
+  --text-shadow: 0 2px 4px rgb(0 0 0 / 85%);
+  --bar-color: #775cff;
+  --bar-background: #00000080;
+  --bar-height: 28px;
+  --progress: 0;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  box-sizing: border-box;
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  font-weight: var(--font-weight);
+  line-height: 1.25;
+  text-shadow: var(--text-shadow);
+}
+
+/* Goal */
+.goal {
+  width: 100%;
+}
+
+.goal-header {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.goal-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goal-count {
+  color: var(--color-highlight);
+  white-space: nowrap;
+}
+
+.goal-bar {
+  height: var(--bar-height);
+  overflow: hidden;
+  border-radius: calc(var(--bar-height) / 2);
+  background: var(--bar-background);
+}
+
+.goal-fill {
+  width: calc(var(--progress) * 100%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bar-color);
+  transition: width 600ms ease;
+}
+
+[data-reached="true"] .goal-fill {
+  animation: glow 1.6s ease-in-out infinite;
+}
+
+@keyframes glow {
+  50% {
+    filter: brightness(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goal-fill {
+    transition: none;
+    animation: none !important;
+  }
+}

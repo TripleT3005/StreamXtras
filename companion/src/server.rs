@@ -11,6 +11,7 @@ use crate::config::{self, Config};
 use crate::events::EventBroadcaster;
 use crate::http::{self, Method, ParseError, Request, Response};
 use crate::media::{self, MediaError};
+use crate::stats::Stats;
 use crate::tts;
 use crate::twitch::account::TwitchAccount;
 use crate::twitch::eventsub;
@@ -32,6 +33,7 @@ pub struct AppState {
     pub events: Arc<EventBroadcaster>,
     pub twitch: Arc<TwitchAccount>,
     pub helix: Arc<HelixClient>,
+    pub stats: Arc<Stats>,
 }
 
 enum Outcome {
@@ -100,6 +102,7 @@ fn route(request: &Request, state: &AppState) -> Outcome {
         (Method::Put, "/api/alerts/test", _) => {
             check_write_request(request, state).unwrap_or_else(|| send_test_alert(request, state))
         }
+        (Method::Get, "/api/stats", _) => Response::json(200, &state.stats.snapshot()),
         (Method::Get, "/api/tts/voices", _) => {
             Response::json(200, &serde_json::json!(tts::voices()))
         }
@@ -465,7 +468,16 @@ mod tests {
                 config: Mutex::new(Config::default()),
                 events: Arc::new(EventBroadcaster::default()),
                 twitch: twitch.clone(),
-                helix: Arc::new(HelixClient::new(Arc::new(FakeHttp::default()), twitch)),
+                helix: Arc::new(HelixClient::new(
+                    Arc::new(FakeHttp::default()),
+                    twitch.clone(),
+                )),
+                stats: Stats::new(
+                    &root,
+                    Arc::new(EventBroadcaster::default()),
+                    twitch.clone(),
+                    Arc::new(HelixClient::new(Arc::new(FakeHttp::default()), twitch)),
+                ),
             },
             root,
         }

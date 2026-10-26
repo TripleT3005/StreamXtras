@@ -1,6 +1,9 @@
-import { subTiers, tierLabel, type AlertType } from "../overlays/alertbox/alert.ts";
+import { subTiers, tierLabel, type AlertType } from "../shared/alerts.ts";
 import { alertboxOverlayId, alertboxSettings, alertTypeDefinitions, alertTypeForSection } from "../overlays/alertbox/alertbox-config.ts";
 import { chatboxOverlayId, chatboxSettings } from "../overlays/chatbox/chatbox-config.ts";
+import { goalKindForSection, goalOverlayId, goalSettings } from "../overlays/goal/goal-config.ts";
+import { recentOverlayId, recentSettings, recentTypeForSection } from "../overlays/recent/recent-config.ts";
+import { topEmotesOverlayId, topEmotesSettings } from "../overlays/topemotes/topemotes-config.ts";
 import { isRecord } from "../shared/json.ts";
 import { postPreviewMessage, previewAlertMessage } from "../shared/preview-messages.ts";
 import { normalizeChannel } from "../shared/twitch/twitch-chat-source.ts";
@@ -9,7 +12,7 @@ import { createOverlayEditor, type OverlayEditor } from "./overlay-editor.ts";
 import { setupTwitchAccount } from "./twitch-account.ts";
 
 // Constants
-const tabNames = ["chatbox", "alertbox"] as const;
+const tabNames = ["chatbox", "alertbox", "goals", "recent", "topemotes"] as const;
 
 // State
 const editors = new Map<string, OverlayEditor>();
@@ -192,6 +195,73 @@ async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
   editor.toolbar.parentElement?.append(testRow);
 }
 
+async function setupGoalsEditor(media: MediaLibrary): Promise<void> {
+  let editor: OverlayEditor | null = null;
+  let previewPath = "/goal/?preview&goal=followers";
+  const editorPromise = createOverlayEditor({
+    container: getElement("goals-editor", HTMLElement),
+    title: "Goal",
+    overlayId: goalOverlayId,
+    schema: goalSettings,
+    previewPath,
+    overlayPath: "/goal/?goal=followers",
+    overlayHint: "Use ?goal=followers for the follower goal and ?goal=subs for the sub goal. Needs the Twitch login.",
+    media,
+    onSectionChange: (section) => {
+      const path = `/goal/?preview&goal=${goalKindForSection(section)}`;
+      if (path !== previewPath && section !== "General") {
+        previewPath = path;
+        editor?.setPreviewPath(path);
+      }
+    },
+  });
+  editor = await editorPromise;
+  editors.set("goals", editor);
+}
+
+async function setupRecentEditor(media: MediaLibrary): Promise<void> {
+  let editor: OverlayEditor | null = null;
+  let previewPath = "/recent/?preview&type=follow";
+  const editorPromise = createOverlayEditor({
+    container: getElement("recent-editor", HTMLElement),
+    title: "Recent events",
+    overlayId: recentOverlayId,
+    schema: recentSettings,
+    previewPath,
+    overlayPath: "/recent/?type=follow",
+    overlayHint: "Choose the events with ?type=follow, sub, gift, cheer or raid. Needs the Twitch login; test alerts are not listed.",
+    media,
+    onSectionChange: (section) => {
+      const path = `/recent/?preview&type=${recentTypeForSection(section)}`;
+      if (path !== previewPath && section !== "General") {
+        previewPath = path;
+        editor?.setPreviewPath(path);
+      }
+    },
+  });
+  editor = await editorPromise;
+  editors.set("recent", editor);
+}
+
+async function setupTopEmotesEditor(media: MediaLibrary): Promise<void> {
+  const editor = await createOverlayEditor({
+    container: getElement("topemotes-editor", HTMLElement),
+    title: "Top emotes",
+    overlayId: topEmotesOverlayId,
+    schema: topEmotesSettings,
+    previewPath: "/topemotes/?preview",
+    overlayPath: "/topemotes/",
+    overlayHint: "Counts the emotes in the chat of the entered channel while the browser source is open. The preview shows sample emotes.",
+    media,
+    keepOnReset: ["channel"],
+    prepareSave: (values) => {
+      const channel = normalizeChannel(values.channel);
+      return channel === null ? "Please enter a valid Twitch channel name." : { ...values, channel };
+    },
+  });
+  editors.set("topemotes", editor);
+}
+
 function defaultTestAmount(type: AlertType): number {
   return type === "cheer" ? 100 : 5;
 }
@@ -219,7 +289,13 @@ async function start(): Promise<void> {
   void showVersion();
   const media = new MediaLibrary();
   await media.refresh().catch(() => undefined);
-  await Promise.all([setupChatboxEditor(media), setupAlertboxEditor(media)]);
+  await Promise.all([
+    setupChatboxEditor(media),
+    setupAlertboxEditor(media),
+    setupGoalsEditor(media),
+    setupRecentEditor(media),
+    setupTopEmotesEditor(media),
+  ]);
 }
 
 void start();

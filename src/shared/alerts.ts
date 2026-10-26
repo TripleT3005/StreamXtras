@@ -1,4 +1,4 @@
-import { isRecord } from "../../shared/json.ts";
+import { isRecord } from "./json.ts";
 
 // Types
 export const alertTypes = ["follow", "sub", "gift", "cheer", "raid"] as const;
