@@ -32,6 +32,6 @@ describe("chat box settings", () => {
     const live = Object.entries(chatboxSettings)
       .filter(([, setting]) => !setting.live)
       .map(([key]) => key);
-    assert.deepEqual(live, ["channel", "emoteProviders"]);
+    assert.deepEqual(live, ["channel", "thirdPartyBadges", "emoteProviders"]);
   });
 });

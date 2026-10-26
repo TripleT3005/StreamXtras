@@ -6,11 +6,12 @@ import { buildFragments } from "../../shared/emotes/fragments.ts";
 import { sevenTvProvider } from "../../shared/emotes/seven-tv.ts";
 import type { ChatMessageEvent, OverlayEvent } from "../../shared/events.ts";
 import { BadgeLibrary } from "../../shared/twitch/badge-library.ts";
+import { ThirdPartyBadgeLibrary } from "../../shared/twitch/third-party-badges.ts";
 import { TwitchChatSource } from "../../shared/twitch/twitch-chat-source.ts";
 import { UserLibrary } from "../../shared/twitch/user-library.ts";
 import type { ChatboxConfig } from "./chatbox-config.ts";
 import { ChatList } from "./chat-list.ts";
-import { renderMessage, type MessageContext } from "./message-view.ts";
+import { renderMessage, replaceThirdPartyBadges, type MessageContext } from "./message-view.ts";
 
 // Constants
 const emoteRefreshIntervalMs = 10 * 60_000;
@@ -22,13 +23,19 @@ export class Chatbox {
   readonly #chatList: ChatList;
   readonly #emotes: EmoteLibrary;
   readonly #source: TwitchChatSource;
+  readonly #container: HTMLElement;
   readonly #badges = new BadgeLibrary();
-  readonly #context: MessageContext = { badges: this.#badges, avatars: new UserLibrary() };
+  readonly #thirdPartyBadges: ThirdPartyBadgeLibrary | null;
+  readonly #context: MessageContext;
   #channelId: string | null = null;
   #refreshTimer: ReturnType<typeof setInterval> | undefined;
 
   constructor(config: ChatboxConfig, container: HTMLElement) {
     this.#config = config;
+    this.#container = container;
+    this.#thirdPartyBadges = config.thirdPartyBadges.length === 0 ? null : new ThirdPartyBadgeLibrary(config.thirdPartyBadges);
+    this.#thirdPartyBadges?.onChange((userId) => this.#updateThirdPartyBadges(userId));
+    this.#context = { badges: this.#badges, thirdPartyBadges: this.#thirdPartyBadges, avatars: new UserLibrary() };
     this.#chatList = new ChatList(container, config.maxMessages, config.hideAfterSeconds);
     this.#emotes = new EmoteLibrary(emoteProviders.filter((provider) => config.emoteProviders.includes(provider.name)));
     this.#source = new TwitchChatSource({ channel: config.channel });
@@ -37,6 +44,7 @@ export class Chatbox {
 
   start(): void {
     this.#source.start();
+    void this.#thirdPartyBadges?.load();
     this.#refreshTimer = setInterval(() => this.#refreshEmotes(), emoteRefreshIntervalMs);
   }
 
@@ -85,6 +93,18 @@ export class Chatbox {
     }
     const fragments = buildFragments(message.text, message.emotes, this.#emotes);
     this.#chatList.add(renderMessage(message, fragments, this.#config, this.#context));
+  }
+
+  #updateThirdPartyBadges(userId: string): void {
+    if (this.#thirdPartyBadges === null || !this.#config.showBadges) {
+      return;
+    }
+    const badges = this.#thirdPartyBadges.badgesFor(userId);
+    for (const item of this.#container.querySelectorAll<HTMLElement>(".message")) {
+      if (item.dataset["userId"] === userId) {
+        replaceThirdPartyBadges(item, badges);
+      }
+    }
   }
 
   #refreshEmotes(): void {

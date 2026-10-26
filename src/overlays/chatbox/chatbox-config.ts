@@ -1,5 +1,6 @@
 import type { ConfigSource } from "../../shared/config.ts";
 import type { ThirdPartyEmoteProviderName } from "../../shared/emotes/emote.ts";
+import type { ThirdPartyBadgeProviderName } from "../../shared/twitch/third-party-badges.ts";
 import {
   booleanSetting,
   choiceSetting,
@@ -78,6 +79,19 @@ export const chatboxSettings = {
   emoteSize: numberSetting({ label: "Emote size", group: "Appearance", default: 175, min: 100, max: 400, step: 5, unit: "%" }),
 
   showBadges: booleanSetting({ label: "Show badges", group: "Twitch", default: true }),
+  thirdPartyBadges: multiChoiceSetting<ThirdPartyBadgeProviderName>({
+    label: "Third-party badges",
+    group: "Twitch",
+    hint: "Badges from other chat tools, shown after the Twitch badges. 7TV badges are looked up per user and appear a moment after the first message.",
+    default: [],
+    live: false,
+    options: [
+      { value: "7tv", label: "7TV" },
+      { value: "bttv", label: "BetterTTV" },
+      { value: "ffz", label: "FrankerFaceZ" },
+      { value: "chatterino", label: "Chatterino" },
+    ],
+  }),
   readableColors: booleanSetting({
     label: "Readable name colors",
     group: "Twitch",
