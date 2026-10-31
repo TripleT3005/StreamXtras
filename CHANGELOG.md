@@ -4,6 +4,18 @@ All notable changes to StreamXtras, grouped by version in the style of [Keep a C
 
 Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [Keep a Changelog](https://keepachangelog.com/de/). Der Abschnitt einer Version wird als ihre Release-Notizen verwendet.
 
+## [1.2.1] – 2026-10-31
+
+### English
+
+#### Fixed
+- The Windows installer closes a running StreamXtras of the same installation before updating it; before, the update stopped because Windows could not close the tray app.
+
+### Deutsch
+
+#### Behoben
+- Der Windows-Installer beendet ein laufendes StreamXtras derselben Installation vor dem Update; bisher brach das Update ab, weil Windows die Tray-App nicht schließen konnte.
+
 ## [1.2.0] – 2026-10-31
 
 ### English
