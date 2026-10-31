@@ -16,6 +16,18 @@ Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [
 #### Neu
 - Linux-Pakete: `.deb` für Debian, Ubuntu und ähnliche sowie `.rpm` für Fedora, openSUSE und ähnliche, mit Eintrag im Anwendungsmenü, Icons und `espeak-ng` als empfohlenem Paket für die Sprachausgabe.
 
+## [1.2.1] – 2026-10-31
+
+### English
+
+#### Fixed
+- The Windows installer closes a running StreamXtras of the same installation before updating it; before, the update stopped because Windows could not close the tray app.
+
+### Deutsch
+
+#### Behoben
+- Der Windows-Installer beendet ein laufendes StreamXtras derselben Installation vor dem Update; bisher brach das Update ab, weil Windows die Tray-App nicht schließen konnte.
+
 ## [1.2.0] – 2026-10-31
 
 ### English
