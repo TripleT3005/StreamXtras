@@ -65,12 +65,10 @@ Name: "hebrew"; MessagesFile: "compiler:Languages\Hebrew.isl"
 [CustomMessages]
 AutoStart=Start StreamXtras with Windows (for the current user)
 german.AutoStart=StreamXtras mit Windows starten (für den aktuellen Benutzer)
-OpenSettings=Open the StreamXtras settings
-german.OpenSettings=Einstellungen von StreamXtras öffnen
 
 ; Tasks
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "autostart"; Description: "{cm:AutoStart}"; Flags: unchecked
 
 ; Files
@@ -97,8 +95,39 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 
 ; Start
 [Run]
-Filename: "{app}\{#AppExe}"; Description: "{cm:OpenSettings}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 
 ; Uninstall
-[UninstallRun]
-Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM {#AppExe}"; Flags: runhidden; RunOnceId: "StopStreamXtras"
+[Code]
+procedure StopInstalledCopy;
+var
+  Locator, Service, Processes, Process: Variant;
+  Index: Integer;
+  Path: String;
+begin
+  Path := ExpandConstant('{app}\{#AppExe}');
+  try
+    Locator := CreateOleObject('WbemScripting.SWbemLocator');
+    Service := Locator.ConnectServer('.', 'root\CIMV2');
+    Processes := Service.ExecQuery('SELECT * FROM Win32_Process WHERE Name = ''{#AppExe}''');
+    for Index := 0 to Processes.Count - 1 do
+    begin
+      Process := Processes.ItemIndex(Index);
+      try
+        if CompareText(Process.ExecutablePath, Path) = 0 then
+        begin
+          Process.Terminate(0);
+          Sleep(500);
+        end;
+      except
+      end;
+    end;
+  except
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+    StopInstalledCopy;
+end;

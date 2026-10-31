@@ -19,7 +19,7 @@ A small companion app runs in the system tray, serves the overlays and a setting
 - **Companion app** – tray icon, local settings page with live preview, settings that apply without reloading the OBS source
 
 ### Installation
-**Windows:** download `StreamXtras-<version>-windows-x64-setup.exe` from [Releases](../../releases) and run it. It installs for the current user without administrator rights (to `%LOCALAPPDATA%\Programs\StreamXtras`); "Install for all users" installs to `C:\Program Files\StreamXtras` and asks for administrator rights. Options: Start menu entry (on), desktop shortcut (on), start with Windows (off). Instead of the installer you can use the portable archive `…-windows-x64-portable.zip`.
+**Windows:** download `StreamXtras-<version>-windows-x64-setup.exe` from [Releases](../../releases) and run it. It installs for the current user without administrator rights (to `%LOCALAPPDATA%\Programs\StreamXtras`); "Install for all users" installs to `C:\Program Files\StreamXtras` and asks for administrator rights. Options: Start menu entry (on), desktop shortcut (off), start with Windows (off). Instead of the installer you can use the portable archive `…-windows-x64-portable.zip`.
 
 **macOS and Linux:** download `…-macos-arm64.zip` (Apple silicon) or `…-linux-x64.tar.gz` and extract it to a folder of your choice. Keep the `web` folder next to the program.
 
@@ -38,7 +38,7 @@ With the portable archives, add a shortcut to your autostart to start StreamXtra
 | `/DIR="C:\Path"` | Installation folder |
 | `/SILENT`, `/VERYSILENT` | Without wizard (with or without progress window) |
 | `/SUPPRESSMSGBOXES` | No message boxes in silent mode |
-| `/TASKS="desktopicon,autostart"` | Selected options; `desktopicon` adds a desktop shortcut, `autostart` starts StreamXtras with Windows for the installing user. Without the parameter, the desktop shortcut is on and autostart off |
+| `/TASKS="desktopicon,autostart"` | Selected options; `desktopicon` adds a desktop shortcut, `autostart` starts StreamXtras with Windows for the installing user. Without the parameter, both are off |
 | `/NOICONS` | No Start menu entry |
 | `/LOG="C:\Path\setup.log"` | Write a log file |
 
@@ -160,7 +160,7 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 - **Begleit-Anwendung** – Tray-Icon, lokale Einstellungsseite mit Live-Vorschau, Einstellungen wirken ohne Neuladen der OBS-Quelle
 
 ### Installation
-**Windows:** `StreamXtras-<Version>-windows-x64-setup.exe` unter [Releases](../../releases) herunterladen und ausführen. Es installiert für den aktuellen Benutzer ohne Administratorrechte (nach `%LOCALAPPDATA%\Programs\StreamXtras`); „Für alle Benutzer installieren“ installiert nach `C:\Program Files\StreamXtras` und fragt nach Administratorrechten. Optionen: Startmenü-Eintrag (an), Desktop-Verknüpfung (an), mit Windows starten (aus). Statt des Installers geht auch das portable Archiv `…-windows-x64-portable.zip`.
+**Windows:** `StreamXtras-<Version>-windows-x64-setup.exe` unter [Releases](../../releases) herunterladen und ausführen. Es installiert für den aktuellen Benutzer ohne Administratorrechte (nach `%LOCALAPPDATA%\Programs\StreamXtras`); „Für alle Benutzer installieren“ installiert nach `C:\Program Files\StreamXtras` und fragt nach Administratorrechten. Optionen: Startmenü-Eintrag (an), Desktop-Verknüpfung (aus), mit Windows starten (aus). Statt des Installers geht auch das portable Archiv `…-windows-x64-portable.zip`.
 
 **macOS und Linux:** `…-macos-arm64.zip` (Apple Silicon) oder `…-linux-x64.tar.gz` herunterladen und in einen beliebigen Ordner entpacken. Der Ordner `web` muss neben dem Programm bleiben.
 
@@ -179,7 +179,7 @@ Bei den portablen Archiven für den automatischen Start eine Verknüpfung in den
 | `/DIR="C:\Pfad"` | Installationsordner |
 | `/SILENT`, `/VERYSILENT` | Ohne Assistent (mit oder ohne Fortschrittsfenster) |
 | `/SUPPRESSMSGBOXES` | Keine Meldungsfenster bei stiller Installation |
-| `/TASKS="desktopicon,autostart"` | Gewählte Optionen; `desktopicon` legt eine Desktop-Verknüpfung an, `autostart` startet StreamXtras für den installierenden Benutzer mit Windows. Ohne den Parameter ist die Desktop-Verknüpfung an und der Autostart aus |
+| `/TASKS="desktopicon,autostart"` | Gewählte Optionen; `desktopicon` legt eine Desktop-Verknüpfung an, `autostart` startet StreamXtras für den installierenden Benutzer mit Windows. Ohne den Parameter sind beide aus |
 | `/NOICONS` | Kein Startmenü-Eintrag |
 | `/LOG="C:\Pfad\setup.log"` | Protokolldatei schreiben |
 

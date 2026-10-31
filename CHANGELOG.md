@@ -4,6 +4,26 @@ All notable changes to StreamXtras, grouped by version in the style of [Keep a C
 
 Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [Keep a Changelog](https://keepachangelog.com/de/). Der Abschnitt einer Version wird als ihre Release-Notizen verwendet.
 
+## [1.1.1] – 2026-10-31
+
+### English
+
+#### Changed
+- The installer no longer creates a desktop shortcut by default.
+
+#### Fixed
+- The last page of the installer offers to start StreamXtras instead of promising to open the settings, which only happens on the first start.
+- Uninstalling only stops the StreamXtras of that installation, not other copies.
+
+### Deutsch
+
+#### Geändert
+- Der Installer legt standardmäßig keine Desktop-Verknüpfung mehr an.
+
+#### Behoben
+- Die letzte Seite des Installers bietet an, StreamXtras zu starten, statt das Öffnen der Einstellungen zu versprechen, was nur beim ersten Start passiert.
+- Die Deinstallation beendet nur das StreamXtras dieser Installation, nicht andere Kopien.
+
 ## [1.1.0] – 2026-10-31
 
 ### English
