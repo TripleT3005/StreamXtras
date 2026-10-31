@@ -281,7 +281,7 @@ control.skip.hint = Encerra o alerta exibido agora em todas as caixas de alerta 
 control.pause = Pausar alertas
 control.pause.hint = Os novos alertas esperam na fila até os retomar, por ex. durante uma gravação
 control.resume = Retomar alertas
-control.paused = Os alertas estão pausados. Novos alertas esperam até as retomar.
+control.paused = Os alertas estão em pausa. Os novos alertas esperam até os retomar.
 
 goal.followers = Meta de seguidores
 goal.subs = Meta de subs
