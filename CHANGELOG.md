@@ -4,6 +4,24 @@ All notable changes to StreamXtras, grouped by version in the style of [Keep a C
 
 Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [Keep a Changelog](https://keepachangelog.com/de/). Der Abschnitt einer Version wird als ihre Release-Notizen verwendet.
 
+## [1.2.0] – 2026-10-31
+
+### English
+
+#### Added
+- macOS: StreamXtras is now a real app (`StreamXtras.app` with icon) in a disk image to drag into the Applications folder; it only appears in the menu bar.
+
+#### Removed
+- The macOS ZIP archive with the bare program file; the disk image replaces it.
+
+### Deutsch
+
+#### Neu
+- macOS: StreamXtras ist jetzt eine richtige App (`StreamXtras.app` mit Icon) in einem Disk-Image zum Ziehen in den Ordner Programme; sie erscheint nur in der Menüleiste.
+
+#### Entfernt
+- Das macOS-ZIP-Archiv mit der nackten Programmdatei; das Disk-Image ersetzt es.
+
 ## [1.1.1] – 2026-10-31
 
 ### English

@@ -111,6 +111,7 @@ jobs:
           cargo build --release --locked
 
       - name: Package
+        if: runner.os != 'macOS'
         shell: bash
         run: |
           name="StreamXtras-${{ needs.version.outputs.version }}-${{ matrix.platform }}${{ matrix.suffix }}"
@@ -121,14 +122,30 @@ jobs:
           cd dist
           case "${{ runner.os }}" in
             Windows) 7z a -tzip -bso0 "$name.zip" "$name" && archive="$name.zip" ;;
-            macOS) ditto -c -k --keepParent "$name" "$name.zip" && archive="$name.zip" ;;
             *) tar -czf "$name.tar.gz" "$name" && archive="$name.tar.gz" ;;
           esac
-          if command -v sha256sum > /dev/null; then
-            sha256sum "$archive" > "$archive.sha256"
-          else
-            shasum -a 256 "$archive" > "$archive.sha256"
-          fi
+          sha256sum "$archive" > "$archive.sha256"
+
+      - name: Package macOS app
+        if: runner.os == 'macOS'
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          name="StreamXtras-$VERSION-${{ matrix.platform }}"
+          app="dist/$name/StreamXtras.app"
+          mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+          cp "companion/target/release/${{ matrix.binary }}" "$app/Contents/MacOS/StreamXtras"
+          cp companion/target/release/StreamXtras.icns "$app/Contents/Resources/StreamXtras.icns"
+          cp -R web "$app/Contents/Resources/web"
+          sed "s/APP_VERSION/$VERSION/g" installer/macos/Info.plist > "$app/Contents/Info.plist"
+          plutil -lint "$app/Contents/Info.plist"
+          codesign --force --deep --sign - "$app"
+          codesign --verify --deep --strict "$app"
+          cp LICENSE README.md CHANGELOG.md "dist/$name/"
+          ln -s /Applications "dist/$name/Applications"
+          hdiutil create -volname StreamXtras -srcfolder "dist/$name" -ov -format UDZO "dist/$name.dmg"
+          cd dist
+          shasum -a 256 "$name.dmg" > "$name.dmg.sha256"
 
       - name: Build installer
         if: runner.os == 'Windows'
@@ -154,6 +171,7 @@ jobs:
             dist/*.zip
             dist/*.tar.gz
             dist/*.exe
+            dist/*.dmg
             dist/*.sha256
           if-no-files-found: error
 
@@ -215,7 +233,7 @@ jobs:
             echo "### VirusTotal Scan Report"
             echo "Scanned on: $(date -u +%Y-%m-%d)"
             echo
-            for archive in *.zip *.tar.gz *.exe; do
+            for archive in *.zip *.tar.gz *.exe *.dmg; do
               [ -e "$archive" ] || continue
               curl --fail --silent --show-error \
                 --header "x-apikey: $VT_API_KEY" \

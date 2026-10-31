@@ -21,11 +21,13 @@ A small companion app runs in the system tray, serves the overlays and a setting
 ### Installation
 **Windows:** download `StreamXtras-<version>-windows-x64-setup.exe` from [Releases](../../releases) and run it. It installs for the current user without administrator rights (to `%LOCALAPPDATA%\Programs\StreamXtras`); "Install for all users" installs to `C:\Program Files\StreamXtras` and asks for administrator rights. Options: Start menu entry (on), desktop shortcut (off), start with Windows (off). Instead of the installer you can use the portable archive `…-windows-x64-portable.zip`.
 
-**macOS and Linux:** download `…-macos-arm64.zip` (Apple silicon) or `…-linux-x64.tar.gz` and extract it to a folder of your choice. Keep the `web` folder next to the program.
+**macOS:** download `…-macos-arm64.dmg` (Apple silicon), open it and drag StreamXtras into the Applications folder. StreamXtras only appears in the menu bar, not in the Dock.
+
+**Linux:** download `…-linux-x64.tar.gz` and extract it to a folder of your choice. Keep the `web` folder next to the program.
 
 The app is not signed, so the system may warn on the first start:
 - **Windows:** SmartScreen → "More info" → "Run anyway"
-- **macOS:** right-click the program → "Open", or allow it under System Settings → Privacy & Security
+- **macOS:** the app is not notarized by Apple. On the first start macOS refuses to open it; then choose System Settings → Privacy & Security → "Open Anyway" (on older versions: right-click the app → "Open"). This is needed only once.
 - **Linux:** start `streamxtras` (lowercase, as usual for commands there). The tray icon needs a desktop with StatusNotifierItem support (KDE Plasma, or GNOME with the AppIndicator extension); text-to-speech needs `espeak-ng`
 
 With the portable archives, add a shortcut to your autostart to start StreamXtras with your system (Windows: press Win+R, enter `shell:startup`). Each download has a `.sha256` file to verify it.
@@ -162,11 +164,13 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 ### Installation
 **Windows:** `StreamXtras-<Version>-windows-x64-setup.exe` unter [Releases](../../releases) herunterladen und ausführen. Es installiert für den aktuellen Benutzer ohne Administratorrechte (nach `%LOCALAPPDATA%\Programs\StreamXtras`); „Für alle Benutzer installieren“ installiert nach `C:\Program Files\StreamXtras` und fragt nach Administratorrechten. Optionen: Startmenü-Eintrag (an), Desktop-Verknüpfung (aus), mit Windows starten (aus). Statt des Installers geht auch das portable Archiv `…-windows-x64-portable.zip`.
 
-**macOS und Linux:** `…-macos-arm64.zip` (Apple Silicon) oder `…-linux-x64.tar.gz` herunterladen und in einen beliebigen Ordner entpacken. Der Ordner `web` muss neben dem Programm bleiben.
+**macOS:** `…-macos-arm64.dmg` (Apple Silicon) herunterladen, öffnen und StreamXtras in den Ordner Programme ziehen. StreamXtras erscheint nur in der Menüleiste, nicht im Dock.
+
+**Linux:** `…-linux-x64.tar.gz` herunterladen und in einen beliebigen Ordner entpacken. Der Ordner `web` muss neben dem Programm bleiben.
 
 Die Anwendung ist nicht signiert, deshalb warnt das System beim ersten Start eventuell:
 - **Windows:** SmartScreen → „Weitere Informationen“ → „Trotzdem ausführen“
-- **macOS:** Rechtsklick auf das Programm → „Öffnen“, oder unter Systemeinstellungen → Datenschutz & Sicherheit erlauben
+- **macOS:** Die App ist nicht von Apple beglaubigt. Beim ersten Start verweigert macOS das Öffnen; dann unter Systemeinstellungen → Datenschutz & Sicherheit „Dennoch öffnen“ wählen (bei älteren Versionen: Rechtsklick auf die App → „Öffnen“). Das ist nur einmal nötig.
 - **Linux:** `streamxtras` starten (kleingeschrieben, wie dort für Befehle üblich). Das Tray-Icon braucht einen Desktop mit StatusNotifierItem-Unterstützung (KDE Plasma oder GNOME mit AppIndicator-Erweiterung); die Sprachausgabe braucht `espeak-ng`
 
 Bei den portablen Archiven für den automatischen Start eine Verknüpfung in den Autostart legen (Windows: Win+R, `shell:startup` eingeben). Zu jedem Download gibt es eine `.sha256`-Datei, um ihn zu prüfen.
