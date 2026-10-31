@@ -65,12 +65,10 @@ Name: "hebrew"; MessagesFile: "compiler:Languages\Hebrew.isl"
 [CustomMessages]
 AutoStart=Start StreamXtras with Windows (for the current user)
 german.AutoStart=StreamXtras mit Windows starten (für den aktuellen Benutzer)
-OpenSettings=Open the StreamXtras settings
-german.OpenSettings=Einstellungen von StreamXtras öffnen
 
 ; Tasks
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "autostart"; Description: "{cm:AutoStart}"; Flags: unchecked
 
 ; Files
@@ -97,7 +95,7 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 
 ; Start
 [Run]
-Filename: "{app}\{#AppExe}"; Description: "{cm:OpenSettings}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 
 ; Uninstall
 [UninstallRun]
