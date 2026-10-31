@@ -22,17 +22,64 @@ Diese Liste wird aus den Köpfen der Dateien in [`web/lang`](web/lang) erzeugt. 
 
 | Code | Language | Name in the settings | Reviewed by |
 |---|---|---|---|
-| `de` | German | Deutsch | – |
-| `en` | English | English | – |
+| `ar` | Arabic | العربية | – |
+| `bg` | Bulgarian | Български | – |
+| `cs` | Czech | Čeština | – |
+| `da` | Danish | Dansk | – |
+| `de` | German | Deutsch | [@TripleT3005](https://github.com/TripleT3005) |
+| `de-AT` | German (Austria) | Deutsch (Österreich) | – |
+| `de-CH` | German (Switzerland) | Deutsch (Schweiz) | – |
+| `el` | Greek | Ελληνικά | – |
+| `en` | English | English | [@TripleT3005](https://github.com/TripleT3005) |
+| `es` | Spanish | Español | – |
+| `et` | Estonian | Eesti | – |
+| `fi` | Finnish | Suomi | – |
+| `fr` | French | Français | – |
+| `he` | Hebrew | עברית | – |
+| `hr` | Croatian | Hrvatski | – |
+| `hu` | Hungarian | Magyar | – |
+| `id` | Indonesian | Bahasa Indonesia | – |
+| `it` | Italian | Italiano | – |
+| `ja` | Japanese | 日本語 | – |
+| `ko` | Korean | 한국어 | – |
+| `lt` | Lithuanian | Lietuvių | – |
+| `lv` | Latvian | Latviešu | – |
+| `nb` | Norwegian Bokmål | Norsk bokmål | – |
+| `nl` | Dutch | Nederlands | – |
+| `pl` | Polish | Polski | – |
+| `pt-BR` | Portuguese (Brazil) | Português (Brasil) | – |
+| `pt-PT` | Portuguese (Portugal) | Português (Portugal) | – |
+| `ro` | Romanian | Română | – |
+| `ru` | Russian | Русский | – |
+| `sk` | Slovak | Slovenčina | – |
+| `sl` | Slovenian | Slovenščina | – |
+| `sr-Latn` | Serbian (Latin) | Srpski (latinica) | – |
+| `sv` | Swedish | Svenska | – |
+| `th` | Thai | ไทย | – |
+| `tr` | Turkish | Türkçe | – |
+| `uk` | Ukrainian | Українська | – |
+| `vi` | Vietnamese | Tiếng Việt | – |
+| `zh-Hans` | Chinese (Simplified) | 简体中文 | – |
+| `zh-Hant` | Chinese (Traditional) | 繁體中文 | – |
 
 ## Dialects / Dialekte
 
 | Code | Language | Name in the settings | Reviewed by |
 |---|---|---|---|
+| `bar` | Bavarian | Boarisch | – |
+| `de-x-berlin` | Berlin German (Berlinerisch) | Berlinerisch | – |
+| `ksh` | Colognian (Kölsch) | Kölsch | – |
+| `nds` | Low German | Plattdüütsch | – |
+| `swg` | Swabian | Schwäbisch | – |
+| `sxu` | Upper Saxon | Säggs'sch | – |
 
 ## Fun languages / Spaßsprachen
 
 | Code | Language | Name in the settings | Reviewed by |
 |---|---|---|---|
-| `de-x-amtsdt` | Officialese German (Amtsdeutsch) | Amtsdeutsch | – |
-| `en-x-flipped` | Upside-down English | ɥsılƃuǝ uʍop-ǝpısdn | – |
+| `de-x-amtsdt` | Officialese German (Amtsdeutsch) | Amtsdeutsch | [@TripleT3005](https://github.com/TripleT3005) |
+| `en-x-flipped` | Upside-down English | ɥsılƃuǝ uʍop-ǝpısdn | [@TripleT3005](https://github.com/TripleT3005) |
+| `en-x-lolcat` | LOLcat | LOLcat | – |
+| `en-x-piglatin` | Pig Latin | Igpay Atinlay | – |
+| `en-x-pirate` | Pirate English | Pirate English | – |
+| `en-x-shakesp` | Shakespearean English | Shakespearean English | – |

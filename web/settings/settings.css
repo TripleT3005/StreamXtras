@@ -116,7 +116,7 @@ a {
   display: flex;
   gap: 8px;
   align-items: center;
-  margin-left: auto;
+  margin-inline-start: auto;
   font-size: 0.9rem;
 }
 
@@ -567,7 +567,7 @@ button[hidden] {
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  margin-left: auto;
+  margin-inline-start: auto;
   font-size: 0.9rem;
   cursor: pointer;
 }
