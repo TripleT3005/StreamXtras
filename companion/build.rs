@@ -25,6 +25,7 @@ const ICNS_ENTRIES: [(&[u8; 4], u16); 6] = [
 ];
 const PNG_SIGNATURE: [u8; 8] = [0x89, b'P', b'N', b'G', b'\r', b'\n', 0x1A, b'\n'];
 const MAX_STORED_BLOCK: usize = 65_535;
+const LINUX_ICON_SIZES: [u16; 8] = [16, 24, 32, 48, 64, 128, 256, 512];
 const MANIFEST: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
@@ -49,6 +50,16 @@ fn main() {
     {
         fs::write(profile_dir.join("StreamXtras.icns"), icns_file())
             .expect("writing the icon file failed");
+    }
+    if target_os == "linux"
+        && let Some(profile_dir) = out_dir.ancestors().nth(3)
+    {
+        let icons = profile_dir.join("icons");
+        fs::create_dir_all(&icons).expect("creating the icon folder failed");
+        for size in LINUX_ICON_SIZES {
+            fs::write(icons.join(format!("{size}.png")), png_image(size))
+                .expect("writing an icon failed");
+        }
     }
     if target_os != "windows" || !is_msvc {
         return;

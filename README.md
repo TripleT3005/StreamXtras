@@ -23,7 +23,7 @@ A small companion app runs in the system tray, serves the overlays and a setting
 
 **macOS:** download `…-macos-arm64.dmg` (Apple silicon), open it and drag StreamXtras into the Applications folder. StreamXtras only appears in the menu bar, not in the Dock.
 
-**Linux:** download `…-linux-x64.tar.gz` and extract it to a folder of your choice. Keep the `web` folder next to the program.
+**Linux:** on Debian, Ubuntu, Linux Mint and similar, install `streamxtras_<version>_amd64.deb` (e.g. `sudo apt install ./streamxtras_1.3.0_amd64.deb`); on Fedora, openSUSE and similar, install `streamxtras-<version>-1.x86_64.rpm` (e.g. `sudo dnf install ./streamxtras-1.3.0-1.x86_64.rpm`). Both add StreamXtras to the application menu and recommend `espeak-ng` for text-to-speech. For other distributions, extract `…-linux-x64.tar.gz` to a folder of your choice and keep the `web` folder next to the program.
 
 The app is not signed, so the system may warn on the first start:
 - **Windows:** SmartScreen → "More info" → "Run anyway"
@@ -166,7 +166,7 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 
 **macOS:** `…-macos-arm64.dmg` (Apple Silicon) herunterladen, öffnen und StreamXtras in den Ordner Programme ziehen. StreamXtras erscheint nur in der Menüleiste, nicht im Dock.
 
-**Linux:** `…-linux-x64.tar.gz` herunterladen und in einen beliebigen Ordner entpacken. Der Ordner `web` muss neben dem Programm bleiben.
+**Linux:** Unter Debian, Ubuntu, Linux Mint und ähnlichen `streamxtras_<Version>_amd64.deb` installieren (z. B. `sudo apt install ./streamxtras_1.3.0_amd64.deb`), unter Fedora, openSUSE und ähnlichen `streamxtras-<Version>-1.x86_64.rpm` (z. B. `sudo dnf install ./streamxtras-1.3.0-1.x86_64.rpm`). Beide tragen StreamXtras ins Anwendungsmenü ein und empfehlen `espeak-ng` für die Sprachausgabe. Für andere Distributionen `…-linux-x64.tar.gz` in einen beliebigen Ordner entpacken; der Ordner `web` muss neben dem Programm bleiben.
 
 Die Anwendung ist nicht signiert, deshalb warnt das System beim ersten Start eventuell:
 - **Windows:** SmartScreen → „Weitere Informationen“ → „Trotzdem ausführen“

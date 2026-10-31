@@ -4,6 +4,18 @@ All notable changes to StreamXtras, grouped by version in the style of [Keep a C
 
 Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [Keep a Changelog](https://keepachangelog.com/de/). Der Abschnitt einer Version wird als ihre Release-Notizen verwendet.
 
+## [1.3.0] – 2026-10-31
+
+### English
+
+#### Added
+- Linux packages: `.deb` for Debian, Ubuntu and similar and `.rpm` for Fedora, openSUSE and similar, with an entry in the application menu, icons and `espeak-ng` as recommended package for text-to-speech.
+
+### Deutsch
+
+#### Neu
+- Linux-Pakete: `.deb` für Debian, Ubuntu und ähnliche sowie `.rpm` für Fedora, openSUSE und ähnliche, mit Eintrag im Anwendungsmenü, Icons und `espeak-ng` als empfohlenem Paket für die Sprachausgabe.
+
 ## [1.2.1] – 2026-10-31
 
 ### English
