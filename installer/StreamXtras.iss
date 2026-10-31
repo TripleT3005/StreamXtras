@@ -98,5 +98,36 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 
 ; Uninstall
-[UninstallRun]
-Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM {#AppExe}"; Flags: runhidden; RunOnceId: "StopStreamXtras"
+[Code]
+procedure StopInstalledCopy;
+var
+  Locator, Service, Processes, Process: Variant;
+  Index: Integer;
+  Path: String;
+begin
+  Path := ExpandConstant('{app}\{#AppExe}');
+  try
+    Locator := CreateOleObject('WbemScripting.SWbemLocator');
+    Service := Locator.ConnectServer('.', 'root\CIMV2');
+    Processes := Service.ExecQuery('SELECT * FROM Win32_Process WHERE Name = ''{#AppExe}''');
+    for Index := 0 to Processes.Count - 1 do
+    begin
+      Process := Processes.ItemIndex(Index);
+      try
+        if CompareText(Process.ExecutablePath, Path) = 0 then
+        begin
+          Process.Terminate(0);
+          Sleep(500);
+        end;
+      except
+      end;
+    end;
+  except
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+    StopInstalledCopy;
+end;

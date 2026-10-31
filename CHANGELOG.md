@@ -13,6 +13,7 @@ Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [
 
 #### Fixed
 - The last page of the installer offers to start StreamXtras instead of promising to open the settings, which only happens on the first start.
+- Uninstalling only stops the StreamXtras of that installation, not other copies.
 
 ### Deutsch
 
@@ -21,6 +22,7 @@ Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [
 
 #### Behoben
 - Die letzte Seite des Installers bietet an, StreamXtras zu starten, statt das Öffnen der Einstellungen zu versprechen, was nur beim ersten Start passiert.
+- Die Deinstallation beendet nur das StreamXtras dieser Installation, nicht andere Kopien.
 
 ## [1.1.0] – 2026-10-31
 
