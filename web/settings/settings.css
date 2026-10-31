@@ -112,6 +112,18 @@ a {
   margin: 0;
 }
 
+.language {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-inline-start: auto;
+  font-size: 0.9rem;
+}
+
+.language[hidden] {
+  display: none;
+}
+
 .tabs {
   display: flex;
   gap: 4px;
@@ -555,7 +567,7 @@ button[hidden] {
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  margin-left: auto;
+  margin-inline-start: auto;
   font-size: 0.9rem;
   cursor: pointer;
 }

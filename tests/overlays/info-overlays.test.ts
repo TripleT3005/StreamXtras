@@ -52,7 +52,7 @@ describe("goals", () => {
     assert.equal(empty === null ? null : goalProgress(empty), 0);
     assert.equal(readGoalKind("subs"), "subs");
     assert.equal(readGoalKind("anything"), "followers");
-    assert.equal(goalKindForSection("Sub goal"), "subs");
+    assert.equal(goalKindForSection("goal.subs"), "subs");
   });
 
   test("use the active Twitch goal of the matching type", () => {
@@ -79,8 +79,8 @@ describe("recent events", () => {
     assert.equal(config.cheerCount, 10);
     assert.equal(config.followTitle, "");
     assert.equal(config.subItem, "{name} ({tier})");
-    assert.equal(recentTypeForSection("Gift subs"), "gift");
-    assert.equal(recentTypeForSection("General"), "follow");
+    assert.equal(recentTypeForSection("recent.gift"), "gift");
+    assert.equal(recentTypeForSection("section.general"), "follow");
   });
 });
 

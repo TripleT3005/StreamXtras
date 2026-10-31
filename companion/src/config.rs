@@ -17,6 +17,8 @@ pub struct Config {
     pub port: u16,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub twitch_client_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
     pub overlays: BTreeMap<String, serde_json::Map<String, serde_json::Value>>,
 }
 
@@ -25,6 +27,7 @@ impl Default for Config {
         Self {
             port: DEFAULT_PORT,
             twitch_client_id: None,
+            language: None,
             overlays: BTreeMap::new(),
         }
     }

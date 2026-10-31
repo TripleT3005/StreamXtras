@@ -87,6 +87,7 @@ describe("listSetting", () => {
       group: "Items",
       default: [],
       itemLabel: "Item",
+      addLabel: "Add item",
       maxItems: 2,
       itemSchema: {
         name: textSetting({ label: "Name", group: "", default: "" }),

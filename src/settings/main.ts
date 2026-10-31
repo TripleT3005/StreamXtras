@@ -4,6 +4,8 @@ import { chatboxOverlayId, chatboxSettings } from "../overlays/chatbox/chatbox-c
 import { goalKindForSection, goalOverlayId, goalSettings } from "../overlays/goal/goal-config.ts";
 import { recentOverlayId, recentSettings, recentTypeForSection } from "../overlays/recent/recent-config.ts";
 import { topEmotesOverlayId, topEmotesSettings } from "../overlays/topemotes/topemotes-config.ts";
+import { loadLanguage, saveLanguage, t, translatePage, type LanguageStatus } from "../shared/i18n.ts";
+import { generalSection } from "../shared/settings.ts";
 import { fetchAlertControl, sendAlertAction, subscribeToAlertControl, type AlertAction, type AlertControlStatus } from "../shared/alert-control.ts";
 import { isRecord } from "../shared/json.ts";
 import { postPreviewMessage, previewAlertMessage } from "../shared/preview-messages.ts";
@@ -46,10 +48,10 @@ async function showVersion(): Promise<void> {
   try {
     const data: unknown = await (await fetch("/api/health", { cache: "no-store" })).json();
     if (isRecord(data) && typeof data["version"] === "string") {
-      target.textContent = `Version ${data["version"]}`;
+      target.textContent = t("page.version", { version: data["version"] });
     }
   } catch {
-    target.textContent = "The companion app is not reachable.";
+    target.textContent = t("page.unreachable");
   }
 }
 
@@ -59,12 +61,52 @@ async function showUpdate(): Promise<void> {
     const data: unknown = await (await fetch("/api/update", { cache: "no-store" })).json();
     if (isRecord(data) && data["available"] === true && typeof data["version"] === "string" && typeof data["url"] === "string") {
       link.href = data["url"];
-      link.textContent = `Version ${data["version"]} available`;
+      link.textContent = t("page.update", { version: data["version"] });
       link.hidden = false;
     }
   } catch {
     link.hidden = true;
   }
+}
+
+// Language
+function setupLanguage(status: LanguageStatus | null): void {
+  const select = getElement("language", HTMLSelectElement);
+  if (status === null) {
+    select.parentElement?.setAttribute("hidden", "");
+    return;
+  }
+  const nameOf = (code: string): string => status.languages.find((language) => language.code === code)?.name ?? code;
+  const options = (category: string): HTMLOptionElement[] =>
+    status.languages.filter((language) => language.category === category).map((language) => new Option(language.name, language.code));
+  const group = (label: string, category: string): HTMLOptGroupElement[] => {
+    const children = options(category);
+    if (children.length === 0) {
+      return [];
+    }
+    const element = document.createElement("optgroup");
+    element.label = t(label);
+    element.append(...children);
+    return [element];
+  };
+  select.replaceChildren(
+    new Option(t("page.language.automatic", { language: nameOf(status.automatic) }), ""),
+    ...options("standard"),
+    ...group("page.language.dialects", "dialect"),
+    ...group("page.language.fun", "fun"),
+  );
+  select.value = status.preference ?? "";
+  select.title = t("page.language.hint");
+  select.addEventListener("change", () => {
+    select.disabled = true;
+    saveLanguage(select.value === "" ? null : select.value).then(
+      () => location.reload(),
+      () => {
+        select.disabled = false;
+        select.value = status.preference ?? "";
+      },
+    );
+  });
 }
 
 // Alert control
@@ -74,7 +116,7 @@ function setupAlertControl(): HTMLElement {
   row.className = "alert-test alert-control";
   const label = document.createElement("span");
   label.className = "muted";
-  label.textContent = "Live";
+  label.textContent = t("control.live");
   const status = document.createElement("p");
   status.className = "hint";
   status.setAttribute("role", "status");
@@ -82,17 +124,17 @@ function setupAlertControl(): HTMLElement {
     status.textContent = "";
     sendAlertAction(action).then(render, (error: unknown) => (status.textContent = error instanceof Error ? error.message : String(error)));
   };
-  const replay = button("Replay last alert", "secondary", () => run("replay"));
-  replay.title = "Shows the last real alert again in every open alert box, e.g. in OBS";
-  const skip = button("Skip current alert", "secondary", () => run("skip"));
-  skip.title = "Ends the alert that is shown right now in every open alert box";
+  const replay = button(t("control.replay"), "secondary", () => run("replay"));
+  replay.title = t("control.replay.hint");
+  const skip = button(t("control.skip"), "secondary", () => run("skip"));
+  skip.title = t("control.skip.hint");
   let paused = false;
-  const pause = button("Pause alerts", "secondary", () => run(paused ? "resume" : "pause"));
-  pause.title = "New alerts wait in the queue until you resume them, e.g. while recording";
+  const pause = button(t("control.pause"), "secondary", () => run(paused ? "resume" : "pause"));
+  pause.title = t("control.pause.hint");
   const render = (control: AlertControlStatus): void => {
     paused = control.paused;
     banner.hidden = !paused;
-    pause.textContent = paused ? "Resume alerts" : "Pause alerts";
+    pause.textContent = t(paused ? "control.resume" : "control.pause");
     pause.classList.toggle("active", paused);
   };
   getElement("resume-alerts", HTMLButtonElement).addEventListener("click", () => run("resume"));
@@ -140,7 +182,7 @@ function setupTabs(): void {
 async function setupChatboxEditor(media: MediaLibrary): Promise<void> {
   const editor = await createOverlayEditor({
     container: getElement("chatbox-editor", HTMLElement),
-    title: "Chat box",
+    title: "overlay.chatbox",
     overlayId: chatboxOverlayId,
     schema: chatboxSettings,
     previewPath: "/chatbox/?preview",
@@ -149,18 +191,18 @@ async function setupChatboxEditor(media: MediaLibrary): Promise<void> {
     keepOnReset: ["channel"],
     prepareSave: (values) => {
       const channel = normalizeChannel(values.channel);
-      return channel === null ? "Please enter a valid Twitch channel name." : { ...values, channel };
+      return channel === null ? "editor.invalid_channel" : { ...values, channel };
     },
   });
 
   editors.set("chatbox", editor);
   const toggle = document.createElement("label");
   toggle.className = "toggle";
-  toggle.title = "Shows the real chat of the entered channel instead of sample messages";
+  toggle.title = t("chatbox.live_preview.hint");
   const live = document.createElement("input");
   live.type = "checkbox";
   live.addEventListener("change", () => editor.setPreviewPath(live.checked ? "/chatbox/?preview=live" : "/chatbox/?preview"));
-  toggle.append(live, " Live chat");
+  toggle.append(live, ` ${t("chatbox.live_preview")}`);
   editor.toolbar.append(toggle);
 }
 
@@ -170,32 +212,32 @@ async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
   amount.min = "0";
   amount.className = "number";
   const from = document.createElement("input");
-  from.placeholder = "Twitch name";
+  from.placeholder = t("test.twitch_name");
   from.autocomplete = "off";
   from.spellcheck = false;
-  from.title = "Optional. With a Twitch name the test uses its profile picture and matches its variants.";
+  from.title = t("test.twitch_name.hint");
   const tier = document.createElement("select");
-  tier.setAttribute("aria-label", "Tier");
+  tier.setAttribute("aria-label", t("test.tier"));
   tier.append(...subTiers.map((value) => new Option(tierLabel(value), value)));
   tier.value = "1";
   const message = document.createElement("input");
-  message.placeholder = "Message";
+  message.placeholder = t("test.message");
   message.autocomplete = "off";
-  message.setAttribute("aria-label", "Message of the viewer");
+  message.setAttribute("aria-label", t("test.message.label"));
   let type: AlertType = "follow";
 
   const selectType = (section: string): void => {
     type = alertTypeForSection(section);
     const definition = alertTypeDefinitions[type];
-    const counted = definition.amount;
+    const { counted } = definition;
     amount.disabled = counted === null;
     amount.value = "";
     amount.placeholder = counted === null ? "" : String(defaultTestAmount(type));
-    amount.title = counted === null ? "" : `Number of ${counted}`;
-    amount.setAttribute("aria-label", amount.title || "Number");
+    amount.title = counted === null ? "" : t(counted.amount);
+    amount.setAttribute("aria-label", amount.title || t("test.number"));
     tier.hidden = !definition.tiers;
     message.hidden = !definition.message;
-    sendTest.title = `Plays a ${definition.label.toLowerCase()} alert in every open alert box, e.g. in OBS`;
+    sendTest.title = t(definition.test);
   };
 
   const testAlert = (): Readonly<Record<string, unknown>> => ({
@@ -206,11 +248,11 @@ async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
     ...(message.hidden || message.value.trim() === "" ? {} : { message: message.value.trim() }),
   });
 
-  const showInPreview = button("Show in preview", "secondary", () => {
+  const showInPreview = button(t("test.preview"), "secondary", () => {
     const alert = testAlert();
     void lookUpUser(from.value.trim()).then((user) => postPreviewMessage(editor.frame, previewAlertMessage, { alert: { ...alert, ...user } }));
   });
-  const sendTest = button("Send to OBS", "secondary", () => {
+  const sendTest = button(t("test.send"), "secondary", () => {
     fetch("/api/alerts/test", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -218,20 +260,20 @@ async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
     }).then(
       (response) =>
         response.ok
-          ? editor.showStatus("ok", "Test alert sent to all open alert boxes (with the saved settings).")
-          : editor.showStatus("error", `Sending the test alert failed: HTTP ${response.status}`),
-      (error: unknown) => editor.showStatus("error", `Sending the test alert failed: ${error instanceof Error ? error.message : String(error)}`),
+          ? editor.showStatus("ok", t("test.sent"))
+          : editor.showStatus("error", t("test.failed", { error: `HTTP ${response.status}` })),
+      (error: unknown) => editor.showStatus("error", t("test.failed", { error: error instanceof Error ? error.message : String(error) })),
     );
   });
 
   const editor = await createOverlayEditor({
     container: getElement("alertbox-editor", HTMLElement),
-    title: "Alert box",
+    title: "overlay.alertbox",
     overlayId: alertboxOverlayId,
     schema: alertboxSettings,
     previewPath: "/alertbox/?preview",
     overlayPath: "/alertbox/",
-    overlayHint: "To show only some alert types in a browser source, add for example ?types=follow,raid to the URL. Types: follow, sub, gift, cheer, raid.",
+    overlayHint: "alertbox.url_hint",
     media,
     onSectionChange: selectType,
   });
@@ -242,7 +284,7 @@ async function setupAlertboxEditor(media: MediaLibrary): Promise<void> {
   testRow.className = "alert-test";
   const label = document.createElement("span");
   label.className = "muted";
-  label.textContent = "Test";
+  label.textContent = t("test.label");
   testRow.append(label, amount, tier, from, message, showInPreview, sendTest);
   editor.toolbar.parentElement?.append(testRow, setupAlertControl());
 }
@@ -252,16 +294,16 @@ async function setupGoalsEditor(media: MediaLibrary): Promise<void> {
   let previewPath = "/goal/?preview&goal=followers";
   const editorPromise = createOverlayEditor({
     container: getElement("goals-editor", HTMLElement),
-    title: "Goal",
+    title: "overlay.goals",
     overlayId: goalOverlayId,
     schema: goalSettings,
     previewPath,
     overlayPath: "/goal/?goal=followers",
-    overlayHint: "Use ?goal=followers for the follower goal and ?goal=subs for the sub goal. Needs the Twitch login.",
+    overlayHint: "goal.url_hint",
     media,
     onSectionChange: (section) => {
       const path = `/goal/?preview&goal=${goalKindForSection(section)}`;
-      if (path !== previewPath && section !== "General") {
+      if (path !== previewPath && section !== generalSection) {
         previewPath = path;
         editor?.setPreviewPath(path);
       }
@@ -276,16 +318,16 @@ async function setupRecentEditor(media: MediaLibrary): Promise<void> {
   let previewPath = "/recent/?preview&type=follow";
   const editorPromise = createOverlayEditor({
     container: getElement("recent-editor", HTMLElement),
-    title: "Recent events",
+    title: "overlay.recent",
     overlayId: recentOverlayId,
     schema: recentSettings,
     previewPath,
     overlayPath: "/recent/?type=follow",
-    overlayHint: "Choose the events with ?type=follow, sub, gift, cheer or raid. Needs the Twitch login; test alerts are not listed.",
+    overlayHint: "recent.url_hint",
     media,
     onSectionChange: (section) => {
       const path = `/recent/?preview&type=${recentTypeForSection(section)}`;
-      if (path !== previewPath && section !== "General") {
+      if (path !== previewPath && section !== generalSection) {
         previewPath = path;
         editor?.setPreviewPath(path);
       }
@@ -298,17 +340,17 @@ async function setupRecentEditor(media: MediaLibrary): Promise<void> {
 async function setupTopEmotesEditor(media: MediaLibrary): Promise<void> {
   const editor = await createOverlayEditor({
     container: getElement("topemotes-editor", HTMLElement),
-    title: "Top emotes",
+    title: "overlay.topemotes",
     overlayId: topEmotesOverlayId,
     schema: topEmotesSettings,
     previewPath: "/topemotes/?preview",
     overlayPath: "/topemotes/",
-    overlayHint: "Counts the emotes in the chat of the entered channel while the browser source is open. The preview shows sample emotes.",
+    overlayHint: "topemotes.url_hint",
     media,
     keepOnReset: ["channel"],
     prepareSave: (values) => {
       const channel = normalizeChannel(values.channel);
-      return channel === null ? "Please enter a valid Twitch channel name." : { ...values, channel };
+      return channel === null ? "editor.invalid_channel" : { ...values, channel };
     },
   });
   editors.set("topemotes", editor);
@@ -349,6 +391,8 @@ function fillOwnChannel(): void {
 
 // Startup
 async function start(): Promise<void> {
+  setupLanguage(await loadLanguage());
+  translatePage();
   setupTabs();
   const diagnostics = getElement("diagnostics-link", HTMLAnchorElement);
   setupTwitchAccount(getElement("twitch-account", HTMLDivElement), (login) => {

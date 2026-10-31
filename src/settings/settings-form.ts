@@ -13,6 +13,7 @@ import type {
   TextSetting,
 } from "../shared/settings.ts";
 import { isVideoReference, mediaUrl } from "../shared/config.ts";
+import { t } from "../shared/i18n.ts";
 import { defaultSettings } from "../shared/settings.ts";
 import type { MediaLibrary } from "./media-library.ts";
 
@@ -83,7 +84,7 @@ export function createSettingsForm(schema: SettingsSchema, idPrefix: string, onC
     const id = `${idPrefix}-section-${sections.size}`;
     const tab = document.createElement("div");
     tab.className = "section-tab";
-    const sectionButton = button(name, "", () => selectSection(name));
+    const sectionButton = button(t(name), "", () => selectSection(name));
     sectionButton.id = `${id}-tab`;
     sectionButton.setAttribute("role", "tab");
     sectionButton.setAttribute("aria-controls", `${id}-panel`);
@@ -123,7 +124,7 @@ export function createSettingsForm(schema: SettingsSchema, idPrefix: string, onC
       group.className = "settings-group";
       if (setting.group !== "") {
         const legend = document.createElement("legend");
-        legend.textContent = setting.group;
+        legend.textContent = t(setting.group);
         group.append(legend);
       }
       groups.set(groupKey, group);
@@ -164,8 +165,8 @@ function createSectionToggle(id: string, setting: BooleanSetting): Field {
   const input = document.createElement("input");
   input.type = "checkbox";
   input.id = id;
-  input.setAttribute("aria-label", `Show ${setting.label.toLowerCase()}`);
-  input.title = `Show ${setting.label.toLowerCase()}`;
+  input.setAttribute("aria-label", t(setting.label));
+  input.title = t("form.section_toggle");
   return {
     element: input,
     read: () => input.checked,
@@ -220,7 +221,7 @@ function createListField(id: string, setting: ListSetting, context: FormContext)
 
   const render = (): void => {
     entries.forEach((entry, index) => {
-      entry.title.textContent = `${setting.itemLabel} ${index + 1}`;
+      entry.title.textContent = t("form.list.item", { item: t(setting.itemLabel), number: index + 1 });
       entry.up.disabled = index === 0;
       entry.down.disabled = index === entries.length - 1;
     });
@@ -251,12 +252,12 @@ function createListField(id: string, setting: ListSetting, context: FormContext)
     const form = createSettingsForm(setting.itemSchema, `${id}-${created}`, () => undefined, context);
     form.setValues(values);
     const up = button("\u2191", "secondary icon", () => move(entry, -1));
-    up.setAttribute("aria-label", "Move up");
-    up.title = "Move up";
+    up.setAttribute("aria-label", t("form.list.up"));
+    up.title = t("form.list.up");
     const down = button("\u2193", "secondary icon", () => move(entry, 1));
-    down.setAttribute("aria-label", "Move down");
-    down.title = "Move down";
-    const remove = button("Remove", "secondary", () => {
+    down.setAttribute("aria-label", t("form.list.down"));
+    down.title = t("form.list.down");
+    const remove = button(t("form.list.remove"), "secondary", () => {
       entries = entries.filter((candidate) => candidate !== entry);
       render();
       changed();
@@ -267,7 +268,7 @@ function createListField(id: string, setting: ListSetting, context: FormContext)
     return entry;
   };
 
-  const add = button(`Add ${setting.itemLabel.toLowerCase()}`, "secondary", () => {
+  const add = button(t(setting.addLabel), "secondary", () => {
     entries.push(createEntry(defaultSettings(setting.itemSchema)));
     render();
     changed();
@@ -289,7 +290,7 @@ function createTextField(id: string, setting: TextSetting): Field {
   const { wrapper, control } = createLabeledField(id, setting);
   const input = document.createElement("input");
   input.id = id;
-  input.placeholder = setting.placeholder;
+  input.placeholder = t(setting.placeholder);
   input.autocomplete = "off";
   input.spellcheck = false;
   if (setting.suggestions.length > 0 || setting.suggestionsUrl !== undefined) {
@@ -326,15 +327,15 @@ function createFontField(id: string, setting: FontSetting): Field {
   const select = document.createElement("select");
   select.id = id;
   const custom = document.createElement("input");
-  custom.placeholder = "Font name";
+  custom.placeholder = t("form.font.name");
   custom.autocomplete = "off";
   custom.spellcheck = false;
-  custom.setAttribute("aria-label", `${setting.label} name`);
+  custom.setAttribute("aria-label", t("form.font.name"));
   custom.hidden = true;
 
   let fonts: readonly string[] = setting.suggestions;
   const renderOptions = (selected: string): void => {
-    const options = [new Option("System font", ""), ...fonts.map((font) => fontOption(font)), new Option("Other…", customValue)];
+    const options = [new Option(t("form.font.system"), ""), ...fonts.map((font) => fontOption(font)), new Option(t("form.font.other"), customValue)];
     select.replaceChildren(...options);
     const isListed = selected === "" || fonts.includes(selected);
     select.value = isListed ? selected : customValue;
@@ -356,8 +357,8 @@ function createFontField(id: string, setting: FontSetting): Field {
     const load = document.createElement("button");
     load.type = "button";
     load.className = "secondary";
-    load.textContent = "Installed fonts";
-    load.title = "Lists the fonts installed on this computer. The browser asks for permission once.";
+    load.textContent = t("form.font.installed");
+    load.title = t("form.font.installed.hint");
     load.addEventListener("click", () => {
       queryLocalFonts.call(window).then(
         (installed) => {
@@ -365,7 +366,7 @@ function createFontField(id: string, setting: FontSetting): Field {
           renderOptions(read());
           load.remove();
         },
-        () => (load.textContent = "Not allowed"),
+        () => (load.textContent = t("form.font.not_allowed")),
       );
     });
     control.append(load);
@@ -396,7 +397,7 @@ function createNumberField(id: string, setting: NumberSetting): Field {
     input.step = String(setting.step);
   }
   range.type = "range";
-  range.setAttribute("aria-label", setting.label);
+  range.setAttribute("aria-label", t(setting.label));
   range.tabIndex = -1;
   number.type = "number";
   number.id = id;
@@ -407,7 +408,7 @@ function createNumberField(id: string, setting: NumberSetting): Field {
   if (setting.unit !== "") {
     const unit = document.createElement("span");
     unit.className = "unit";
-    unit.textContent = setting.unit;
+    unit.textContent = t(setting.unit);
     control.append(unit);
   }
   return {
@@ -429,7 +430,7 @@ function createBooleanField(id: string, setting: BooleanSetting): Field {
   input.id = id;
   const label = document.createElement("label");
   label.htmlFor = id;
-  label.textContent = setting.label;
+  label.textContent = t(setting.label);
   wrapper.append(input, label);
   appendHint(wrapper, setting.hint);
   return {
@@ -443,7 +444,7 @@ function createChoiceField(id: string, setting: ChoiceSetting): Field {
   const { wrapper, control } = createLabeledField(id, setting);
   const select = document.createElement("select");
   select.id = id;
-  select.append(...setting.options.map((option) => new Option(option.label, option.value)));
+  select.append(...setting.options.map((option) => new Option(t(option.label), option.value)));
   control.append(select);
   return {
     element: wrapper,
@@ -456,7 +457,7 @@ function createMultiChoiceField(id: string, setting: MultiChoiceSetting): Field 
   const wrapper = document.createElement("fieldset");
   wrapper.className = "field choices";
   const legend = document.createElement("legend");
-  legend.textContent = setting.label;
+  legend.textContent = t(setting.label);
   wrapper.append(legend);
   const inputs = setting.options.map((option) => {
     const input = document.createElement("input");
@@ -465,7 +466,7 @@ function createMultiChoiceField(id: string, setting: MultiChoiceSetting): Field 
     input.value = option.value;
     const label = document.createElement("label");
     label.htmlFor = input.id;
-    label.textContent = option.label;
+    label.textContent = t(option.label);
     const item = document.createElement("span");
     item.className = "choice";
     item.append(input, label);
@@ -494,7 +495,7 @@ function createColorField(id: string, setting: ColorSetting): Field {
   opacity.type = "range";
   opacity.min = "0";
   opacity.max = "100";
-  opacity.setAttribute("aria-label", `${setting.label} opacity`);
+  opacity.setAttribute("aria-label", t("form.color.opacity", { setting: t(setting.label) }));
   const output = document.createElement("span");
   output.className = "unit";
   const updateOutput = (): void => {
@@ -522,9 +523,9 @@ function createMediaField(id: string, setting: MediaSetting, media: MediaLibrary
   upload.type = "file";
   upload.hidden = true;
   upload.accept = setting.accepts.map((kind) => uploadTypes[kind]).join(",");
-  const uploadButton = button("Upload…", "secondary", () => upload.click());
-  uploadButton.title = "Up to 50 MB";
-  const deleteButton = button("Delete file", "secondary", () => void removeCurrent());
+  const uploadButton = button(t("form.media.upload"), "secondary", () => upload.click());
+  uploadButton.title = t("form.media.upload.hint");
+  const deleteButton = button(t("form.media.delete"), "secondary", () => void removeCurrent());
   const status = document.createElement("p");
   status.className = "hint";
   const shows = (kind: MediaKind): boolean => setting.accepts.includes(kind);
@@ -539,17 +540,17 @@ function createMediaField(id: string, setting: MediaSetting, media: MediaLibrary
     videoPreview.muted = true;
     videoPreview.preload = "metadata";
   }
-  const play = shows("sound") ? button("Play", "secondary", () => playCurrent()) : null;
+  const play = shows("sound") ? button(t("form.media.play"), "secondary", () => playCurrent()) : null;
 
   let current = setting.default;
 
   const renderOptions = (): void => {
-    const included = optionGroup("Included", setting.builtIns.map((option) => new Option(option.label, option.value)));
+    const included = optionGroup(t("form.media.included"), setting.builtIns.map((option) => new Option(t(option.label), option.value)));
     const uploaded = media.files.filter((file) => shows(file.kind));
-    const own = optionGroup("Your files", uploaded.map((file) => new Option(file.file, file.value)));
+    const own = optionGroup(t("form.media.own"), uploaded.map((file) => new Option(file.file, file.value)));
     const isKnown = current === "" || setting.builtIns.some((option) => option.value === current) || uploaded.some((file) => file.value === current);
-    const missing = isKnown ? [] : [new Option(`Missing file (${current})`, current)];
-    select.replaceChildren(new Option("None", ""), included, ...(own.children.length > 0 ? [own] : []), ...missing);
+    const missing = isKnown ? [] : [new Option(t("form.media.missing", { file: current }), current)];
+    select.replaceChildren(new Option(t("form.media.none"), ""), included, ...(own.children.length > 0 ? [own] : []), ...missing);
     select.value = current;
     updateControls();
   };
@@ -585,7 +586,7 @@ function createMediaField(id: string, setting: MediaSetting, media: MediaLibrary
     if (url !== null) {
       const audio = new Audio(url);
       audio.volume = 0.7;
-      void audio.play().catch(() => (status.textContent = "Playing the sound failed."));
+      void audio.play().catch(() => (status.textContent = t("form.media.play_failed")));
     }
   };
 
@@ -596,9 +597,9 @@ function createMediaField(id: string, setting: MediaSetting, media: MediaLibrary
       current = setting.default;
       renderOptions();
       changed();
-      status.textContent = "File deleted.";
+      status.textContent = t("form.media.deleted");
     } catch (error: unknown) {
-      status.textContent = `Deleting failed: ${error instanceof Error ? error.message : String(error)}`;
+      status.textContent = t("form.media.delete_failed", { error: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -620,15 +621,15 @@ function createMediaField(id: string, setting: MediaSetting, media: MediaLibrary
     if (file === undefined) {
       return;
     }
-    status.textContent = "Uploading…";
+    status.textContent = t("form.media.uploading");
     media.upload(file).then(
       (stored) => {
         current = stored.value;
         renderOptions();
         changed();
-        status.textContent = "Uploaded.";
+        status.textContent = t("form.media.uploaded");
       },
-      (error: unknown) => (status.textContent = `Upload failed: ${error instanceof Error ? error.message : String(error)}`),
+      (error: unknown) => (status.textContent = t("form.media.upload_failed", { error: error instanceof Error ? error.message : String(error) })),
     );
   });
   let wasConnected = false;
@@ -688,7 +689,7 @@ function createLabeledField(id: string, setting: Setting): { wrapper: HTMLDivEle
   wrapper.className = "field";
   const label = document.createElement("label");
   label.htmlFor = id;
-  label.textContent = setting.label;
+  label.textContent = t(setting.label);
   const control = document.createElement("div");
   control.className = "control";
   wrapper.append(label, control);
@@ -700,7 +701,7 @@ function appendHint(wrapper: HTMLElement, hint: string | undefined): void {
   if (hint !== undefined) {
     const paragraph = document.createElement("p");
     paragraph.className = "hint";
-    paragraph.textContent = hint;
+    paragraph.textContent = t(hint);
     wrapper.append(paragraph);
   }
 }

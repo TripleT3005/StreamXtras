@@ -1,6 +1,15 @@
 import { appearanceSettings, sizeSettings } from "../../shared/appearance.ts";
 import type { ConfigSource } from "../../shared/config.ts";
-import { choiceSetting, colorSetting, numberSetting, readSettings, textSetting, type SettingsSchema, type SettingsValues } from "../../shared/settings.ts";
+import {
+  choiceSetting,
+  colorSetting,
+  generalSection,
+  numberSetting,
+  readSettings,
+  textSetting,
+  type SettingsSchema,
+  type SettingsValues,
+} from "../../shared/settings.ts";
 import type { StreamStats, TwitchGoal } from "../../shared/stats.ts";
 
 // Types
@@ -14,22 +23,21 @@ export interface GoalState {
 
 // Constants
 export const goalOverlayId = "goals";
-export const goalSections: Readonly<Record<GoalKind, string>> = { followers: "Follower goal", subs: "Sub goal" };
-const generalSection = "General";
+export const goalSections: Readonly<Record<GoalKind, string>> = { followers: "goal.followers", subs: "goal.subs" };
 const twitchGoalTypes: Readonly<Record<GoalKind, readonly string[]>> = {
   followers: ["follower"],
   subs: ["subscription", "subscription_count", "new_subscription", "new_subscription_count"],
 };
 
-function sourceSetting(section: string, kind: string) {
+function sourceSetting(section: string, hint: string) {
   return choiceSetting({
-    label: "Goal from",
-    group: "Goal",
+    label: "goal.source",
+    group: "group.goal",
     section,
-    hint: `"Twitch" uses the active ${kind} goal from your Twitch dashboard (also set by moderators) and updates live. Without an active goal the overlay stays empty. Needs the Twitch login.`,
+    hint,
     default: "here",
     options: [
-      { value: "here", label: "The target set here" },
+      { value: "here", label: "goal.source.here" },
       { value: "twitch", label: "Twitch" },
     ],
   });
@@ -38,27 +46,27 @@ function sourceSetting(section: string, kind: string) {
 // Schema
 export const goalSettings = {
   ...appearanceSettings(generalSection, 28),
-  barColor: colorSetting({ label: "Bar color", group: "Bar", section: generalSection, default: "#775cff" }),
-  barBackground: colorSetting({ label: "Bar background", group: "Bar", section: generalSection, default: "#00000080" }),
-  barHeight: numberSetting({ label: "Bar height", group: "Bar", section: generalSection, default: 28, min: 4, max: 200, unit: "px" }),
+  barColor: colorSetting({ label: "goal.bar_color", group: "group.bar", section: generalSection, default: "#775cff" }),
+  barBackground: colorSetting({ label: "goal.bar_background", group: "group.bar", section: generalSection, default: "#00000080" }),
+  barHeight: numberSetting({ label: "goal.bar_height", group: "group.bar", section: generalSection, default: 28, min: 4, max: 200, unit: "px" }),
   ...sizeSettings(generalSection, 600, 120),
 
-  followersSource: sourceSetting(goalSections.followers, "follower"),
-  followersTitle: textSetting({ label: "Title", group: "Goal", section: goalSections.followers, default: "Follower goal", placeholder: "Follower goal" }),
-  followersTarget: numberSetting({ label: "Target", group: "Goal", section: goalSections.followers, default: 100, min: 1, max: 100_000_000 }),
+  followersSource: sourceSetting(goalSections.followers, "goal.followers.source_hint"),
+  followersTitle: textSetting({ label: "setting.title", group: "group.goal", section: goalSections.followers, default: "Follower goal", placeholder: "Follower goal" }),
+  followersTarget: numberSetting({ label: "goal.target", group: "group.goal", section: goalSections.followers, default: 100, min: 1, max: 100_000_000 }),
 
-  subsSource: sourceSetting(goalSections.subs, "sub"),
-  subsTitle: textSetting({ label: "Title", group: "Goal", section: goalSections.subs, default: "Sub goal", placeholder: "Sub goal" }),
-  subsTarget: numberSetting({ label: "Target", group: "Goal", section: goalSections.subs, default: 10, min: 1, max: 10_000_000 }),
+  subsSource: sourceSetting(goalSections.subs, "goal.subs.source_hint"),
+  subsTitle: textSetting({ label: "setting.title", group: "group.goal", section: goalSections.subs, default: "Sub goal", placeholder: "Sub goal" }),
+  subsTarget: numberSetting({ label: "goal.target", group: "group.goal", section: goalSections.subs, default: 10, min: 1, max: 10_000_000 }),
   subsCount: choiceSetting({
-    label: "Count",
-    group: "Goal",
+    label: "goal.count",
+    group: "group.goal",
     section: goalSections.subs,
-    hint: "Sub points count Tier 2 as 2 and Tier 3 as 6, like Twitch does.",
+    hint: "goal.count.hint",
     default: "subscribers",
     options: [
-      { value: "subscribers", label: "Subscribers" },
-      { value: "points", label: "Sub points" },
+      { value: "subscribers", label: "goal.count.subscribers" },
+      { value: "points", label: "goal.count.points" },
     ],
   }),
 } satisfies SettingsSchema;

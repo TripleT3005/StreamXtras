@@ -1,3 +1,5 @@
+import { loadLanguage, t, translatePage } from "../shared/i18n.ts";
+
 // Types
 interface Check {
   readonly label: string;
@@ -13,20 +15,20 @@ const parameters = new URLSearchParams(location.search);
 const channel = parameters.get("channel")?.trim().toLowerCase() ?? "";
 
 const checks: readonly Check[] = [
-  { label: "ES modules", run: async () => "loaded" },
-  { label: "Location", run: async () => location.href },
-  { label: "URL parameters", run: async () => describeParameters() },
-  { label: "Local JSON file", run: async () => describeLocalJson() },
+  { label: "diagnostics.modules", run: async () => t("diagnostics.loaded") },
+  { label: "diagnostics.location", run: async () => location.href },
+  { label: "diagnostics.parameters", run: async () => describeParameters() },
+  { label: "diagnostics.local_json", run: async () => describeLocalJson() },
   { label: "7TV API", run: async () => countSevenTvGlobalEmotes() },
   { label: "BetterTTV API", run: async () => countBttvGlobalEmotes() },
   { label: "FrankerFaceZ API", run: async () => countFfzGlobalEmotes() },
-  { label: "Twitch chat (anonymous)", run: () => connectToTwitchChat() },
+  { label: "diagnostics.chat", run: () => connectToTwitchChat() },
 ];
 
 function describeParameters(): string {
   const entries = [...parameters.entries()];
   if (entries.length === 0) {
-    throw new Error("none received (try ?channel=yourname)");
+    throw new Error(t("diagnostics.no_parameters"));
   }
   return entries.map(([key, value]) => `${key}=${value}`).join(", ");
 }
@@ -34,9 +36,9 @@ function describeParameters(): string {
 async function describeLocalJson(): Promise<string> {
   const data = await fetchJson(new URL("probe.json", location.href).href);
   if (!isRecord(data) || data["ok"] !== true) {
-    throw new Error("unexpected content");
+    throw new Error(t("diagnostics.unexpected"));
   }
-  return "readable";
+  return t("diagnostics.readable");
 }
 
 async function countSevenTvGlobalEmotes(): Promise<string> {
@@ -64,7 +66,7 @@ function connectToTwitchChat(): Promise<string> {
       socket.close();
       action();
     };
-    const timeout = setTimeout(() => finish(() => reject(new Error("timed out"))), requestTimeoutMs);
+    const timeout = setTimeout(() => finish(() => reject(new Error(t("diagnostics.timed_out")))), requestTimeoutMs);
 
     socket.addEventListener("open", () => {
       socket.send("CAP REQ :twitch.tv/tags twitch.tv/commands");
@@ -80,21 +82,21 @@ function connectToTwitchChat(): Promise<string> {
           socket.send(line.replace("PING", "PONG"));
         } else if (line.includes(" 001 ")) {
           if (channel === "") {
-            finish(() => resolve("connected"));
+            finish(() => resolve(t("diagnostics.connected")));
             return;
           }
           socket.send(`JOIN #${channel}`);
         } else if (line.includes(" ROOMSTATE ")) {
           const roomId = /(?:^@|;)room-id=(\d+)/.exec(line)?.[1];
           if (roomId !== undefined) {
-            finish(() => resolve(`connected, joined #${channel} (room-id ${roomId})`));
+            finish(() => resolve(t("diagnostics.joined", { channel, room: roomId })));
             return;
           }
         }
       }
     });
 
-    socket.addEventListener("error", () => finish(() => reject(new Error("connection failed"))));
+    socket.addEventListener("error", () => finish(() => reject(new Error(t("diagnostics.connection_failed")))));
   });
 }
 
@@ -113,9 +115,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function describeCount(value: unknown): string {
   if (!Array.isArray(value) || value.length === 0) {
-    throw new Error("no emotes found");
+    throw new Error(t("diagnostics.no_emotes"));
   }
-  return `${value.length} global emotes`;
+  return t("diagnostics.emotes", { count: value.length });
 }
 
 function describeError(error: unknown): string {
@@ -129,8 +131,8 @@ function renderCheck(list: HTMLElement, check: Check): void {
   const result = document.createElement("span");
   label.className = "label";
   result.className = "result";
-  label.textContent = check.label;
-  result.textContent = "running…";
+  label.textContent = t(check.label);
+  result.textContent = t("diagnostics.running");
   item.className = "pending";
   item.append(label, result);
   list.append(item);
@@ -147,10 +149,17 @@ function renderCheck(list: HTMLElement, check: Check): void {
   );
 }
 
-const resultList = document.getElementById("results");
-if (resultList !== null) {
-  resultList.replaceChildren();
-  for (const check of checks) {
-    renderCheck(resultList, check);
+// Startup
+async function start(): Promise<void> {
+  await loadLanguage();
+  translatePage();
+  const resultList = document.getElementById("results");
+  if (resultList !== null) {
+    resultList.replaceChildren();
+    for (const check of checks) {
+      renderCheck(resultList, check);
+    }
   }
 }
+
+void start();

@@ -233,9 +233,9 @@ describe("alert box settings", () => {
   });
 
   test("map editor sections to alert types", () => {
-    assert.equal(alertTypeForSection("Gift subs"), "gift");
-    assert.equal(alertTypeForSection("Raid"), "raid");
-    assert.equal(alertTypeForSection("General"), "follow");
+    assert.equal(alertTypeForSection("alert.gift"), "gift");
+    assert.equal(alertTypeForSection("alert.raid"), "raid");
+    assert.equal(alertTypeForSection("section.general"), "follow");
     assert.equal(alertTypeForSection(null), "follow");
   });
 
