@@ -1,4 +1,4 @@
-# StreamXtras
+# <img src="web/favicon.svg" alt="" width="36" height="36"> StreamXtras
 
 [English](#english) · [Deutsch](#deutsch)
 
@@ -7,38 +7,35 @@
 Lightweight, self-hosted extras for your stream in OBS – chat box, alerts and more – as a free alternative to hosted overlay services.
 A small companion app runs in the system tray, serves the overlays and a settings page on your computer and connects them to Twitch. No account with a third-party service, no tracking, no external fonts or scripts.
 
-> Feedback and bug reports are welcome as issues. Not affiliated with or endorsed by Twitch, 7TV, BetterTTV or FrankerFaceZ. Twitch is a trademark of Twitch Interactive, Inc.
+> Feedback and bug reports are welcome as issues. Not affiliated with or endorsed by Twitch, 7TV, BetterTTV, FrankerFaceZ or Chatterino. Twitch is a trademark of Twitch Interactive, Inc.
 
 ### Features
-- **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ, highlights announcements and removes messages deleted by moderators
-- **Companion app** – tray icon, local settings page with live preview, overlay settings that apply live without reloading the OBS source
-- **Twitch login** – device code login with automatic renewal; with it, the chat box shows all global and channel badges and, during a shared chat, the icon of the channel each message comes from
-- **Alert box** – alerts for follows, subscriptions, gift subs, cheers and raids with image or video, text and sound; variants per amount or per Twitch user; ten images and ten sounds are included, your own files can be uploaded on the settings page
-- **Goals** – follower goal and sub goal (subscribers or sub points) as a progress bar
+- **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ, highlights announcements, removes messages deleted by moderators and filters bots and words
+- **Alert box** – alerts for follows, subscriptions, gift subs, cheers and raids with image or video, text and sound; variants per amount, tier or Twitch user; ten images and ten sounds are included, your own files can be uploaded
+- **Goals** – follower goal and sub goal as a progress bar, set on the settings page or taken from your Twitch dashboard
 - **Recent events** – the latest followers, subs, gift subs, cheers or raids, e.g. for a BRB scene
 - **Top emotes** – the most used emotes in the chat over a chosen time
 - **Text-to-speech** – reads alerts and viewer messages aloud with the voices of the operating system
+- **Companion app** – tray icon, local settings page with live preview, settings that apply without reloading the OBS source
 
 ### Installation
 1. Download the archive for your system from [Releases](../../releases): `windows-x64`, `macos-arm64` (Apple silicon) or `linux-x64`.
-2. Extract it to a folder of your choice, e.g. `DocumentsStreamXtras`. Keep the `web` folder next to the program.
+2. Extract it to a folder of your choice, e.g. `Documents\StreamXtras`. Keep the `web` folder next to the program.
 3. Start `StreamXtras` (on Linux `streamxtras`, as commands there are lowercase by convention). The app is not signed, so the system may warn on the first start:
    - **Windows:** SmartScreen → "More info" → "Run anyway"
    - **macOS:** right-click the program → "Open", or allow it under System Settings → Privacy & Security
-   - **Linux:** the tray icon needs a desktop with StatusNotifierItem support (KDE Plasma, or GNOME with the AppIndicator extension)
+   - **Linux:** the tray icon needs a desktop with StatusNotifierItem support (KDE Plasma, or GNOME with the AppIndicator extension); text-to-speech needs `espeak-ng`
 4. To start it automatically, add a shortcut to your autostart (Windows: press Win+R, enter `shell:startup`).
 
 Each archive has a `.sha256` file to verify the download.
 
 ### Usage
 1. Start the companion app. On the first start the settings page opens in your browser; later you open it with a click on the tray icon.
-2. Enter your Twitch channel in the settings.
-3. Copy the URL of the overlay (e.g. `http://127.0.0.1:47820/chatbox/`) and add it to OBS as a browser source with **Local file** unchecked.
+2. Log in with Twitch on the settings page (needed for alerts, goals, recent events and all badges) and check your channel in the chat box tab.
+3. Copy the URL of an overlay from its tab (e.g. `http://127.0.0.1:47820/chatbox/`) and add it to OBS as a browser source with **Local file** unchecked. Use the same width and height as on the settings page.
 
-The companion app only listens on `127.0.0.1`. Its configuration lives outside the repository (Windows: `%APPDATA%\StreamXtras`, macOS: `~/Library/Application Support/StreamXtras`, Linux: `~/.config/streamxtras`).
-
-### Twitch login
-For all Twitch badges, streamer icons in shared chat and later alerts, the companion app connects to the Twitch API. Log in on the settings page: Twitch opens with a code already filled in, you confirm, done. The login only grants read access (bits, channel point redemptions, subscriptions, followers, chat notifications for subscription tiers and messages, creator goals), is renewed automatically and stays valid as long as the app runs at least once every 30 days. The token is stored only in `twitch-token.json` in the configuration folder and never leaves the companion app.
+#### Twitch login
+Twitch opens with a code already filled in, you confirm, done. The login only grants read access (bits, channel point redemptions, subscriptions, followers, chat notifications for subscription tiers and messages, creator goals), is renewed automatically and stays valid as long as the app runs at least once every 30 days. If the settings page asks you to log in again after an update, a new feature needs another permission.
 
 Release builds contain the Client ID of this project. To use your own Twitch application (or when building yourself), register one at [dev.twitch.tv](https://dev.twitch.tv/console) with client type **Public** and redirect URL `http://localhost`, and add its Client ID to `config.json`:
 
@@ -46,41 +43,66 @@ Release builds contain the Client ID of this project. To use your own Twitch app
 { "twitchClientId": "your-client-id" }
 ```
 
-### Chat box settings
-All settings are edited on the settings page with a live preview: channel, number of messages, hiding after a time, animation, position, font, size, colors, message background, spacing, emote size, badges, third-party badges, readable name colors, third-party emote providers, shared chat (streamer icons, messages from partner channels) and the browser source size. Saved changes apply to open chat boxes immediately; only a new channel, other third-party badges or other emote providers reload them.
+#### Chat box
+All settings are edited on the settings page with a live preview: channel, number of messages, hiding after a time, animation, position, font, size, colors, message background, spacing, emote size, badges, third-party badges, readable name colors, third-party emote providers, filters, shared chat (streamer icons, messages from partner channels) and the browser source size. Saved changes apply to open chat boxes immediately; only a new channel, other third-party badges or other emote providers reload them.
 
-Filters hide messages from chosen bots (Nightbot, StreamElements, Streamlabs, Moobot, Fossabot, WizeBot, Sery_Bot, SoundAlerts, KofiStreamBot, StreamStickers), from the streamer, from further accounts you enter (e.g. your Streamer.bot account) and messages with blocked words. A `*` at the end of a word also matches longer words. Filters apply to new messages right away.
+Filters hide messages from chosen bots (Nightbot, StreamElements, Streamlabs, Moobot, Fossabot, WizeBot, Sery_Bot, SoundAlerts, KofiStreamBot, StreamStickers), from the streamer, from further accounts you enter (e.g. your Streamer.bot account) and messages with blocked words. A `*` at the end of a word also matches longer words.
 
-Third-party badges from 7TV, BetterTTV, FrankerFaceZ and Chatterino are off by default and can be turned on one by one. BetterTTV, FrankerFaceZ and Chatterino publish one list for all users; 7TV is asked once per chatter, so in very busy chats this causes many requests.
+Third-party badges from 7TV, BetterTTV, FrankerFaceZ and Chatterino are off by default and can be turned on one by one.
 
-URL parameters override the stored settings for a single browser source, e.g. `?channel=othername&fontSize=24`. The parameter names are the keys in the `chatbox` section of `config.json`.
+URL parameters override the stored settings for a single browser source, e.g. `?channel=othername&fontSize=24`. The parameter names are the keys in the `chatbox` section of `config.json`. Users who never picked a name color get a fixed color from Twitch's palette, based on their user ID, instead of a random one.
 
-Users who never picked a name color get a random default color on Twitch that changes with every page load. The chat box instead assigns them a fixed color from the same palette, based on their user ID.
+#### Alert box
+The alert box shows one alert at a time; further alerts wait in a queue. Alerts always belong to the logged-in channel. The list on the left switches between the general settings and the alert types; the checkbox next to a type turns it on or off. Every type has the same options: text with placeholders (`{name}`, `{amount}` for months, gifted subs, bits or viewers, `{tier}`, `{message}`), image or video, the profile picture of the user instead, sound, duration and text-to-speech. Videos play to the end with their own sound.
 
-### Alert box
-The alert box shows one alert at a time; further alerts wait in a queue. Alerts need the Twitch login and always belong to the logged-in channel. On the settings page, the list on the left switches between the general settings and the alert types; the checkbox next to a type turns it on or off. Every type has the same options: text (`{name}` is replaced with the name, `{amount}` with the number of months, gifted subs, bits or viewers), image or video, the profile picture of the user instead, sound and duration. Videos play to the end with their own sound.
+Variants replace these options for single alerts, e.g. for exactly 67 bits, from 500 bits on, for a subscription tier or for a raid by a certain streamer. The first matching variant wins. In the test row below the preview you can enter a number, a tier, a Twitch name and a message: "Show in preview" plays the alert in the preview, "Send to OBS" in every open alert box. To mix the sound in OBS, enable "Control audio via OBS" in the browser source.
 
-Variants replace these options for single alerts, e.g. for exactly 67 bits, from 500 bits on or for a raid by a certain streamer. The first matching variant wins. In the test row below the preview you can enter a number and a Twitch name: "Show in preview" plays the alert in the preview, "Send to OBS" in every open alert box. To mix the sound in OBS, enable "Control audio via OBS" in the browser source.
-
-Below the preview, the "Live" row controls all open alert boxes, also in OBS: replay the last real alert, skip the alert shown right now (e.g. during a raid) or pause alerts, e.g. while recording. While paused, new alerts wait in the queue and a banner on every tab of the settings page shows it. The pause ends when the companion app restarts.
+The "Live" row controls all open alert boxes: replay the last real alert, skip the alert shown right now (e.g. during a raid) or pause alerts, e.g. while recording. While paused, new alerts wait in the queue and a banner on every tab of the settings page shows it. The pause ends when the companion app restarts.
 
 To show only some alert types in a browser source, add them to the URL, e.g. `http://127.0.0.1:47820/alertbox/?types=follow,raid`. Available types: `follow`, `sub`, `gift`, `cheer`, `raid`.
 
-Text-to-speech reads the alert text and/or the message of the viewer aloud. It is off by default and is turned on per alert type, with a minimum for gift subs and cheers and a choice of tiers for subscriptions. It uses the voices of the operating system, no AI model and no online service: on Windows the installed voices, on macOS `say`, on Linux `espeak-ng` (install it with your package manager). Voice, volume and maximum length are set under General. Cheer emotes like `Cheer100` are removed before reading. If you logged in before version 0.3, log in again once so that subscription tiers and messages arrive.
+Text-to-speech is off by default and is turned on per alert type, with a minimum for gift subs and cheers and a choice of tiers for subscriptions. Voice, volume and maximum length are set under General. Cheer emotes like `Cheer100` are removed before reading.
 
-Uploaded files (MP3, OGG, WAV, PNG, GIF, WebP, JPEG, MP4, WebM, up to 50 MB) are stored in the `media` folder inside the configuration folder. The file type is detected from the content; SVG files are not accepted. The included sounds are generated by `tools/generate-sounds.js`, the included images are plain SVG files in `web/assets/images`.
+Uploaded files (MP3, OGG, WAV, PNG, GIF, WebP, JPEG, MP4, WebM, up to 50 MB) are stored in the `media` folder inside the configuration folder. The file type is detected from the content; SVG files are not accepted.
 
-### Goals, recent events and top emotes
-These overlays have their own tabs on the settings page. Goals and recent events need the Twitch login: the companion app reads the follower and subscriber counts every five minutes and keeps the latest 20 events per type in `history.json` in the configuration folder, so the list survives a restart. Test alerts are not listed. The follower list starts with the latest followers from Twitch; subs, cheers and raids are collected from the moment the companion app runs.
-
+#### Goals, recent events and top emotes
 - Goals: `http://127.0.0.1:47820/goal/?goal=followers` or `?goal=subs`. Each goal uses either the target set on the settings page or the active goal from your Twitch creator dashboard, which moderators can set as well and which updates live.
-- Recent events: `http://127.0.0.1:47820/recent/?type=follow` (also `sub`, `gift`, `cheer`, `raid`)
-- Top emotes: `http://127.0.0.1:47820/topemotes/` reads the chat anonymously and counts every emote once per message. The count starts when the browser source is loaded.
+- Recent events: `http://127.0.0.1:47820/recent/?type=follow` (also `sub`, `gift`, `cheer`, `raid`). Test alerts are not listed.
+- Top emotes: `http://127.0.0.1:47820/topemotes/` counts every emote once per message, starting when the browser source is loaded.
 
-### Updates
-When the settings page is opened, the companion app asks GitHub at most once a day whether a newer release exists and then shows a link to it next to the version. Nothing is downloaded or installed automatically.
+#### Updates
+When the settings page is opened, the companion app checks at most once a day whether a newer release exists and then shows a link to it next to the version. Nothing is downloaded or installed automatically.
 
-### Development
+### How it works
+The companion app is a small Rust program with a tray icon and a web server that only listens on `127.0.0.1` (port 47820). It serves the overlays and the settings page from its `web` folder; OBS shows the overlays as browser sources. Settings are sent to open overlays as they change, so OBS never has to reload them.
+
+The chat box and the top emotes connect to the Twitch chat themselves, anonymously and read-only. With the Twitch login, the companion app receives follows, subscriptions, gift subs, cheers, raids and goal changes through Twitch EventSub and passes them to the overlays. Text-to-speech uses the speech engine of the operating system (Windows voices, `say` on macOS, `espeak-ng` on Linux).
+
+All data stays in the configuration folder of your user account (Windows: `%APPDATA%\StreamXtras`, macOS: `~/Library/Application Support/StreamXtras`, Linux: `~/.config/streamxtras`):
+
+| File | Content |
+|---|---|
+| `config.json` | Settings of all overlays and the port |
+| `twitch-token.json` | Twitch login (access and refresh token) |
+| `history.json` | The latest 20 events per type for the recent events |
+| `update-check.json` | Time and result of the last update check |
+| `media/` | Your uploaded images, videos and sounds |
+
+### Privacy
+StreamXtras has no telemetry and no server of its own. The settings page and the overlays only talk to the companion app on your computer. These network accesses exist:
+
+| Access | When | Sent | Received |
+|---|---|---|---|
+| Twitch chat (`irc-ws.chat.twitch.tv`) | Chat box, top emotes, diagnostics | The channel name, anonymously | Chat messages of the channel |
+| 7TV, BetterTTV, FrankerFaceZ APIs | Chat box and top emotes, per provider switchable | The Twitch ID of the channel | Emote lists |
+| Emote and badge images (Twitch, 7TV, BetterTTV, FrankerFaceZ, Chatterino) | Whenever an image is shown | The image address, without referrer | The image |
+| Third-party badge lists (BetterTTV, FrankerFaceZ, Chatterino, 7TV) | Only when turned on, off by default | 7TV: the Twitch ID of each chatter | Badge lists |
+| Twitch login and API (`id.twitch.tv`, `api.twitch.tv`, `eventsub.wss.twitch.tv`) | Only when logged in | Your login token, your channel ID and the IDs of the users shown | Badges, profile pictures, cheermotes, follower and subscriber counts, goals and live events |
+| GitHub releases (`api.github.com`) | At most once a day when the settings page is opened | A request without personal data | The latest version number and its link |
+
+The Twitch token never leaves the companion app except to Twitch itself. Without the Twitch login, only the anonymous chat, the emote providers and the update check remain.
+
+### Build
 Requires [Node.js](https://nodejs.org/) (LTS) for the overlays and [Rust](https://www.rust-lang.org/) (stable) for the companion app. The only Node dependency is the TypeScript compiler.
 
 ```
@@ -97,10 +119,9 @@ cargo run
 
 On Windows PowerShell with a restrictive execution policy, use `npm.cmd` instead of `npm`.
 
-Releases: a new version in `companion/Cargo.toml` and `package.json` (both must match) creates a release with archives for all three systems when merged into `main`. The release workflow needs the repository secret `TWITCH_CLIENT_ID`; `VT_API_KEY` (VirusTotal) is optional.
+Tests: `npm test` for the overlays, `cargo test` in `companion/` for the companion app. The diagnostics page (`/diagnostics/`) checks the emote APIs and the anonymous Twitch chat connection. The included sounds are generated by `tools/generate-sounds.js`, the included images are plain SVG files in `web/assets/images`.
 
-Tests: `npm test` for the overlays, `cargo test` in `companion/` for the companion app.
-The diagnostics page (`/diagnostics/`) checks the emote APIs and the anonymous Twitch chat connection; add `?channel=yourname` to also test joining a channel.
+Releases: a new version in `companion/Cargo.toml` and `package.json` (CI checks that both match) together with a section for it in [CHANGELOG.md](CHANGELOG.md) creates a release when merged into `main`; the changelog section becomes the release notes. Versions `0.x` and versions with a suffix such as `1.1.0-beta.1` are published as pre-releases. The release workflow needs the repository secret `TWITCH_CLIENT_ID`; `VT_API_KEY` (VirusTotal) is optional.
 
 ### License
 [MIT](LICENSE)
@@ -110,38 +131,35 @@ The diagnostics page (`/diagnostics/`) checks the emote APIs and the anonymous T
 Schlanke, selbst betriebene Extras für deinen Stream in OBS – Chatbox, Alerts und mehr – als kostenlose Alternative zu gehosteten Overlay-Diensten.
 Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays und eine Einstellungsseite auf deinem Rechner aus und verbindet sie mit Twitch. Kein Konto bei einem Drittanbieter, kein Tracking, keine externen Schriften oder Skripte.
 
-> Rückmeldungen und Fehlerberichte gern als Issue. Keine Verbindung zu Twitch, 7TV, BetterTTV oder FrankerFaceZ und nicht von ihnen unterstützt. Twitch ist eine Marke von Twitch Interactive, Inc.
+> Rückmeldungen und Fehlerberichte gern als Issue. Keine Verbindung zu Twitch, 7TV, BetterTTV, FrankerFaceZ oder Chatterino und nicht von ihnen unterstützt. Twitch ist eine Marke von Twitch Interactive, Inc.
 
 ### Funktionen
-- **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ, hebt Ankündigungen hervor und entfernt von Moderatoren gelöschte Nachrichten
-- **Begleit-Anwendung** – Tray-Icon, lokale Einstellungsseite mit Live-Vorschau, Overlay-Einstellungen wirken sofort, ohne die OBS-Quelle neu zu laden
-- **Twitch-Login** – Anmeldung per Gerätecode mit automatischer Erneuerung; damit zeigt die Chatbox alle globalen und kanaleigenen Badges und im geteilten Chat das Icon des Kanals, aus dem eine Nachricht kommt
-- **Alertbox** – Alerts für Follows, Abos, Geschenkabos, Cheers und Raids mit Bild oder Video, Text und Sound; Varianten je Anzahl oder je Twitch-Nutzer; zehn Bilder und zehn Sounds sind dabei, eigene Dateien lassen sich auf der Einstellungsseite hochladen
-- **Ziele** – Follower- und Sub-Goal (Abonnenten oder Sub-Punkte) als Fortschrittsbalken
+- **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ, hebt Ankündigungen hervor, entfernt von Moderatoren gelöschte Nachrichten und filtert Bots und Wörter
+- **Alertbox** – Alerts für Follows, Abos, Geschenkabos, Cheers und Raids mit Bild oder Video, Text und Sound; Varianten je Anzahl, Stufe oder Twitch-Nutzer; zehn Bilder und zehn Sounds sind dabei, eigene Dateien lassen sich hochladen
+- **Ziele** – Follower- und Sub-Goal als Fortschrittsbalken, auf der Einstellungsseite festgelegt oder aus deinem Twitch-Dashboard übernommen
 - **Letzte Ereignisse** – die letzten Follower, Abos, Geschenkabos, Cheers oder Raids, z. B. für eine BRB-Szene
 - **Top-Emotes** – die meistgenutzten Emotes im Chat über einen gewählten Zeitraum
 - **Sprachausgabe** – liest Alerts und Zuschauer-Nachrichten mit den Stimmen des Betriebssystems vor
+- **Begleit-Anwendung** – Tray-Icon, lokale Einstellungsseite mit Live-Vorschau, Einstellungen wirken ohne Neuladen der OBS-Quelle
 
 ### Installation
 1. Das Archiv für dein System unter [Releases](../../releases) herunterladen: `windows-x64`, `macos-arm64` (Apple Silicon) oder `linux-x64`.
-2. In einen beliebigen Ordner entpacken, z. B. `DokumenteStreamXtras`. Der Ordner `web` muss neben dem Programm bleiben.
+2. In einen beliebigen Ordner entpacken, z. B. `Dokumente\StreamXtras`. Der Ordner `web` muss neben dem Programm bleiben.
 3. `StreamXtras` starten (unter Linux `streamxtras`, weil Befehle dort üblicherweise kleingeschrieben sind). Die Anwendung ist nicht signiert, deshalb warnt das System beim ersten Start eventuell:
    - **Windows:** SmartScreen → „Weitere Informationen“ → „Trotzdem ausführen“
    - **macOS:** Rechtsklick auf das Programm → „Öffnen“, oder unter Systemeinstellungen → Datenschutz & Sicherheit erlauben
-   - **Linux:** Das Tray-Icon braucht einen Desktop mit StatusNotifierItem-Unterstützung (KDE Plasma oder GNOME mit AppIndicator-Erweiterung)
+   - **Linux:** Das Tray-Icon braucht einen Desktop mit StatusNotifierItem-Unterstützung (KDE Plasma oder GNOME mit AppIndicator-Erweiterung); die Sprachausgabe braucht `espeak-ng`
 4. Für den automatischen Start eine Verknüpfung in den Autostart legen (Windows: Win+R, `shell:startup` eingeben).
 
 Zu jedem Archiv gibt es eine `.sha256`-Datei, um den Download zu prüfen.
 
-### Verwendung
+### Bedienung
 1. Begleit-Anwendung starten. Beim ersten Start öffnet sich die Einstellungsseite im Browser, danach per Klick auf das Tray-Icon.
-2. In den Einstellungen den eigenen Twitch-Kanal eintragen.
-3. Die URL des Overlays kopieren (z. B. `http://127.0.0.1:47820/chatbox/`) und in OBS als Browserquelle hinzufügen, **Lokale Datei** nicht anhaken.
+2. Auf der Einstellungsseite mit Twitch anmelden (nötig für Alerts, Ziele, letzte Ereignisse und alle Badges) und im Chatbox-Tab den Kanal prüfen.
+3. Die URL eines Overlays aus seinem Tab kopieren (z. B. `http://127.0.0.1:47820/chatbox/`) und in OBS als Browserquelle hinzufügen, **Lokale Datei** nicht anhaken. Breite und Höhe wie auf der Einstellungsseite wählen.
 
-Die Begleit-Anwendung lauscht nur auf `127.0.0.1`. Ihre Konfiguration liegt außerhalb des Repos (Windows: `%APPDATA%\StreamXtras`, macOS: `~/Library/Application Support/StreamXtras`, Linux: `~/.config/streamxtras`).
-
-### Twitch-Login
-Für alle Twitch-Badges, Streamer-Icons im geteilten Chat und später Alerts verbindet sich die Begleit-Anwendung mit der Twitch-API. Die Anmeldung erfolgt auf der Einstellungsseite: Twitch öffnet sich mit bereits eingetragenem Code, du bestätigst, fertig. Der Login gewährt nur Lesezugriff (Bits, Kanalpunkte-Einlösungen, Abos, Follower, Chat-Benachrichtigungen für Abo-Stufen und Nachrichten, Creator-Ziele), wird automatisch erneuert und bleibt gültig, solange die Anwendung mindestens alle 30 Tage einmal läuft. Das Token liegt nur in `twitch-token.json` im Konfigurationsordner und verlässt die Begleit-Anwendung nie.
+#### Twitch-Login
+Twitch öffnet sich mit bereits eingetragenem Code, du bestätigst, fertig. Der Login gewährt nur Lesezugriff (Bits, Kanalpunkte-Einlösungen, Abos, Follower, Chat-Benachrichtigungen für Abo-Stufen und Nachrichten, Creator-Ziele), wird automatisch erneuert und bleibt gültig, solange die Anwendung mindestens alle 30 Tage einmal läuft. Bittet die Einstellungsseite nach einem Update um eine neue Anmeldung, braucht eine neue Funktion eine weitere Berechtigung.
 
 Release-Builds enthalten die Client-ID dieses Projekts. Um eine eigene Twitch-Anwendung zu nutzen (oder beim Selbstbauen), unter [dev.twitch.tv](https://dev.twitch.tv/console) eine Anwendung mit Client-Typ **Öffentlich** und Weiterleitungs-URL `http://localhost` registrieren und ihre Client-ID in die `config.json` eintragen:
 
@@ -149,41 +167,66 @@ Release-Builds enthalten die Client-ID dieses Projekts. Um eine eigene Twitch-An
 { "twitchClientId": "deine-client-id" }
 ```
 
-### Chatbox-Einstellungen
-Alle Einstellungen werden auf der Einstellungsseite mit Live-Vorschau bearbeitet: Kanal, Anzahl der Nachrichten, Ausblenden nach Zeit, Animation, Position, Schrift, Größe, Farben, Hintergrund der Nachrichten, Abstand, Emote-Größe, Badges, Drittanbieter-Badges, lesbare Namensfarben, Emote-Anbieter, geteilter Chat (Streamer-Icons, Nachrichten aus Partnerkanälen) und die Größe der Browserquelle. Gespeicherte Änderungen wirken sofort in geöffneten Chatboxen; nur ein neuer Kanal, andere Drittanbieter-Badges oder andere Emote-Anbieter laden sie neu.
+#### Chatbox
+Alle Einstellungen werden auf der Einstellungsseite mit Live-Vorschau bearbeitet: Kanal, Anzahl der Nachrichten, Ausblenden nach Zeit, Animation, Position, Schrift, Größe, Farben, Hintergrund der Nachrichten, Abstand, Emote-Größe, Badges, Drittanbieter-Badges, lesbare Namensfarben, Emote-Anbieter, Filter, geteilter Chat (Streamer-Icons, Nachrichten aus Partnerkanälen) und die Größe der Browserquelle. Gespeicherte Änderungen wirken sofort in geöffneten Chatboxen; nur ein neuer Kanal, andere Drittanbieter-Badges oder andere Emote-Anbieter laden sie neu.
 
-Filter blenden Nachrichten von gewählten Bots (Nightbot, StreamElements, Streamlabs, Moobot, Fossabot, WizeBot, Sery_Bot, SoundAlerts, KofiStreamBot, StreamStickers), vom Streamer, von weiteren eingetragenen Konten (z. B. dem Konto deines Streamer.bot) und Nachrichten mit gesperrten Wörtern aus. Ein `*` am Wortende trifft auch längere Wörter. Filter wirken sofort auf neue Nachrichten.
+Filter blenden Nachrichten von gewählten Bots (Nightbot, StreamElements, Streamlabs, Moobot, Fossabot, WizeBot, Sery_Bot, SoundAlerts, KofiStreamBot, StreamStickers), vom Streamer, von weiteren eingetragenen Konten (z. B. dem Konto deines Streamer.bot) und Nachrichten mit gesperrten Wörtern aus. Ein `*` am Wortende trifft auch längere Wörter.
 
-Drittanbieter-Badges von 7TV, BetterTTV, FrankerFaceZ und Chatterino sind standardmäßig aus und lassen sich einzeln einschalten. BetterTTV, FrankerFaceZ und Chatterino veröffentlichen eine Liste für alle Nutzer; bei 7TV wird je Chatter einmal nachgefragt, in sehr vollen Chats sind das also viele Anfragen.
+Drittanbieter-Badges von 7TV, BetterTTV, FrankerFaceZ und Chatterino sind standardmäßig aus und lassen sich einzeln einschalten.
 
-URL-Parameter überschreiben die gespeicherten Einstellungen für eine einzelne Browserquelle, z. B. `?channel=andererkanal&fontSize=24`. Die Parameternamen sind die Schlüssel im Abschnitt `chatbox` der `config.json`.
+URL-Parameter überschreiben die gespeicherten Einstellungen für eine einzelne Browserquelle, z. B. `?channel=andererkanal&fontSize=24`. Die Parameternamen sind die Schlüssel im Abschnitt `chatbox` der `config.json`. Nutzer, die nie eine Namensfarbe gewählt haben, bekommen statt einer zufälligen eine feste Farbe aus Twitchs Palette, abhängig von ihrer Nutzer-ID.
 
-Nutzer, die nie eine Namensfarbe gewählt haben, bekommen auf Twitch bei jedem Laden der Seite eine zufällige Standardfarbe. Die Chatbox gibt ihnen stattdessen eine feste Farbe aus derselben Palette, abhängig von ihrer Nutzer-ID.
+#### Alertbox
+Die Alertbox zeigt immer einen Alert an, weitere warten in einer Warteschlange. Alerts gelten immer für den angemeldeten Kanal. Die Liste links wechselt zwischen den allgemeinen Einstellungen und den Alert-Typen; die Checkbox neben einem Typ schaltet ihn ein oder aus. Jeder Typ hat dieselben Optionen: Text mit Platzhaltern (`{name}`, `{amount}` für Monate, Geschenkabos, Bits oder Zuschauer, `{tier}`, `{message}`), Bild oder Video, stattdessen das Profilbild des Nutzers, Sound, Dauer und Sprachausgabe. Videos laufen bis zum Ende, mit eigenem Ton.
 
-### Alertbox
-Die Alertbox zeigt immer einen Alert an, weitere warten in einer Warteschlange. Alerts brauchen den Twitch-Login und gelten immer für den angemeldeten Kanal. Auf der Einstellungsseite wechselt die Liste links zwischen den allgemeinen Einstellungen und den Alert-Typen; die Checkbox neben einem Typ schaltet ihn ein oder aus. Jeder Typ hat dieselben Optionen: Text (`{name}` wird durch den Namen ersetzt, `{amount}` durch die Anzahl der Monate, Geschenkabos, Bits oder Zuschauer), Bild oder Video, stattdessen das Profilbild des Nutzers, Sound und Dauer. Videos laufen bis zum Ende, mit eigenem Ton.
+Varianten ersetzen diese Optionen für einzelne Alerts, z. B. für genau 67 Bits, ab 500 Bits, für eine Abo-Stufe oder für den Raid eines bestimmten Streamers. Es gilt die erste passende Variante. In der Testzeile unter der Vorschau trägst du Anzahl, Stufe, Twitch-Namen und Nachricht ein: „Show in preview“ spielt den Alert in der Vorschau ab, „Send to OBS“ in jeder geöffneten Alertbox. Wer den Sound in OBS mischen möchte, aktiviert in der Browserquelle „Audio über OBS steuern“.
 
-Varianten ersetzen diese Optionen für einzelne Alerts, z. B. für genau 67 Bits, ab 500 Bits oder für den Raid eines bestimmten Streamers. Es gilt die erste passende Variante. In der Testzeile unter der Vorschau kannst du eine Anzahl und einen Twitch-Namen eintragen: „Show in preview“ spielt den Alert in der Vorschau ab, „Send to OBS“ in jeder geöffneten Alertbox. Wer den Sound in OBS mischen möchte, aktiviert in der Browserquelle „Audio über OBS steuern“.
-
-Die Zeile „Live“ unter der Vorschau steuert alle geöffneten Alertboxen, auch in OBS: den letzten echten Alert wiederholen, den gerade gezeigten Alert überspringen (z. B. bei einem Raid) oder Alerts pausieren, z. B. für Aufnahmen. Während der Pause warten neue Alerts in der Warteschlange, und ein Banner auf jedem Tab der Einstellungsseite zeigt das an. Ein Neustart der Begleit-Anwendung beendet die Pause.
+Die Zeile „Live“ steuert alle geöffneten Alertboxen: den letzten echten Alert wiederholen, den gerade gezeigten Alert überspringen (z. B. bei einem Raid) oder Alerts pausieren, z. B. für Aufnahmen. Während der Pause warten neue Alerts in der Warteschlange, und ein Banner auf jedem Tab der Einstellungsseite zeigt das an. Ein Neustart der Begleit-Anwendung beendet die Pause.
 
 Sollen in einer Browserquelle nur bestimmte Alert-Typen erscheinen, hängst du sie an die Adresse an, z. B. `http://127.0.0.1:47820/alertbox/?types=follow,raid`. Verfügbare Typen: `follow`, `sub`, `gift`, `cheer`, `raid`.
 
-Die Sprachausgabe liest den Alert-Text und/oder die Nachricht des Zuschauers vor. Sie ist standardmäßig aus und wird je Alert-Typ eingeschaltet, mit einem Mindestwert für Geschenkabos und Cheers und einer Auswahl der Stufen bei Abos. Sie nutzt die Stimmen des Betriebssystems, kein KI-Modell und keinen Online-Dienst: unter Windows die installierten Stimmen, unter macOS `say`, unter Linux `espeak-ng` (über die Paketverwaltung installieren). Stimme, Lautstärke und maximale Länge stellst du unter General ein. Cheer-Emotes wie `Cheer100` werden vor dem Vorlesen entfernt. Wer sich vor Version 0.3 angemeldet hat, meldet sich einmal neu an, damit Abo-Stufen und Nachrichten ankommen.
+Die Sprachausgabe ist standardmäßig aus und wird je Alert-Typ eingeschaltet, mit einem Mindestwert für Geschenkabos und Cheers und einer Auswahl der Stufen bei Abos. Stimme, Lautstärke und maximale Länge stellst du unter General ein. Cheer-Emotes wie `Cheer100` werden vor dem Vorlesen entfernt.
 
-Hochgeladene Dateien (MP3, OGG, WAV, PNG, GIF, WebP, JPEG, MP4, WebM, bis 50 MB) liegen im Ordner `media` im Konfigurationsordner. Der Dateityp wird am Inhalt erkannt; SVG-Dateien werden nicht angenommen. Die mitgelieferten Sounds erzeugt `tools/generate-sounds.js`, die mitgelieferten Bilder sind einfache SVG-Dateien in `web/assets/images`.
+Hochgeladene Dateien (MP3, OGG, WAV, PNG, GIF, WebP, JPEG, MP4, WebM, bis 50 MB) liegen im Ordner `media` im Konfigurationsordner. Der Dateityp wird am Inhalt erkannt; SVG-Dateien werden nicht angenommen.
 
-### Ziele, letzte Ereignisse und Top-Emotes
-Diese Overlays haben eigene Tabs auf der Einstellungsseite. Ziele und letzte Ereignisse brauchen den Twitch-Login: Die Begleit-Anwendung liest alle fünf Minuten die Zahl der Follower und Abonnenten und speichert die letzten 20 Ereignisse je Typ in `history.json` im Konfigurationsordner, damit die Liste einen Neustart übersteht. Test-Alerts werden nicht aufgenommen. Die Follower-Liste beginnt mit den letzten Followern von Twitch; Abos, Cheers und Raids werden ab dem Start der Begleit-Anwendung gesammelt.
-
+#### Ziele, letzte Ereignisse und Top-Emotes
 - Ziele: `http://127.0.0.1:47820/goal/?goal=followers` oder `?goal=subs`. Jedes Ziel nutzt entweder das auf der Einstellungsseite eingetragene Ziel oder das aktive Ziel aus deinem Twitch-Dashboard, das auch Moderatoren setzen können und das sich live aktualisiert.
-- Letzte Ereignisse: `http://127.0.0.1:47820/recent/?type=follow` (auch `sub`, `gift`, `cheer`, `raid`)
-- Top-Emotes: `http://127.0.0.1:47820/topemotes/` liest den Chat anonym und zählt jedes Emote einmal pro Nachricht. Die Zählung beginnt, wenn die Browserquelle geladen wird.
+- Letzte Ereignisse: `http://127.0.0.1:47820/recent/?type=follow` (auch `sub`, `gift`, `cheer`, `raid`). Test-Alerts werden nicht aufgenommen.
+- Top-Emotes: `http://127.0.0.1:47820/topemotes/` zählt jedes Emote einmal pro Nachricht, ab dem Laden der Browserquelle.
 
-### Updates
-Beim Öffnen der Einstellungsseite fragt die Begleit-Anwendung höchstens einmal am Tag bei GitHub nach, ob es ein neueres Release gibt, und zeigt dann neben der Version einen Link dorthin. Es wird nichts automatisch heruntergeladen oder installiert.
+#### Updates
+Beim Öffnen der Einstellungsseite prüft die Begleit-Anwendung höchstens einmal am Tag, ob es ein neueres Release gibt, und zeigt dann neben der Version einen Link dorthin. Es wird nichts automatisch heruntergeladen oder installiert.
 
-### Entwicklung
+### Funktionsweise
+Die Begleit-Anwendung ist ein kleines Rust-Programm mit Tray-Icon und einem Webserver, der nur auf `127.0.0.1` lauscht (Port 47820). Er liefert die Overlays und die Einstellungsseite aus seinem Ordner `web` aus; OBS zeigt die Overlays als Browserquellen. Einstellungen gehen beim Ändern direkt an geöffnete Overlays, OBS muss sie also nie neu laden.
+
+Chatbox und Top-Emotes verbinden sich selbst mit dem Twitch-Chat, anonym und nur lesend. Mit dem Twitch-Login empfängt die Begleit-Anwendung Follows, Abos, Geschenkabos, Cheers, Raids und Zieländerungen über Twitch EventSub und gibt sie an die Overlays weiter. Die Sprachausgabe nutzt die Sprachausgabe des Betriebssystems (Windows-Stimmen, `say` unter macOS, `espeak-ng` unter Linux).
+
+Alle Daten bleiben im Konfigurationsordner deines Benutzerkontos (Windows: `%APPDATA%\StreamXtras`, macOS: `~/Library/Application Support/StreamXtras`, Linux: `~/.config/streamxtras`):
+
+| Datei | Inhalt |
+|---|---|
+| `config.json` | Einstellungen aller Overlays und der Port |
+| `twitch-token.json` | Twitch-Login (Zugriffs- und Erneuerungstoken) |
+| `history.json` | Die letzten 20 Ereignisse je Typ für die letzten Ereignisse |
+| `update-check.json` | Zeitpunkt und Ergebnis der letzten Update-Prüfung |
+| `media/` | Deine hochgeladenen Bilder, Videos und Sounds |
+
+### Datenschutz
+StreamXtras hat keine Telemetrie und keinen eigenen Server. Einstellungsseite und Overlays sprechen nur mit der Begleit-Anwendung auf deinem Rechner. Diese Netzwerkzugriffe gibt es:
+
+| Zugriff | Wann | Gesendet | Abgerufen |
+|---|---|---|---|
+| Twitch-Chat (`irc-ws.chat.twitch.tv`) | Chatbox, Top-Emotes, Diagnose | Der Kanalname, anonym | Chatnachrichten des Kanals |
+| APIs von 7TV, BetterTTV, FrankerFaceZ | Chatbox und Top-Emotes, je Anbieter abschaltbar | Die Twitch-ID des Kanals | Emote-Listen |
+| Emote- und Badge-Bilder (Twitch, 7TV, BetterTTV, FrankerFaceZ, Chatterino) | Sobald ein Bild angezeigt wird | Die Bildadresse, ohne Referrer | Das Bild |
+| Listen der Drittanbieter-Badges (BetterTTV, FrankerFaceZ, Chatterino, 7TV) | Nur wenn eingeschaltet, standardmäßig aus | 7TV: die Twitch-ID jedes Chatters | Badge-Listen |
+| Twitch-Login und -API (`id.twitch.tv`, `api.twitch.tv`, `eventsub.wss.twitch.tv`) | Nur mit Anmeldung | Dein Login-Token, deine Kanal-ID und die IDs der angezeigten Nutzer | Badges, Profilbilder, Cheermotes, Follower- und Abo-Zahlen, Ziele und Live-Ereignisse |
+| GitHub-Releases (`api.github.com`) | Höchstens einmal am Tag beim Öffnen der Einstellungsseite | Eine Anfrage ohne persönliche Daten | Die neueste Versionsnummer und ihr Link |
+
+Das Twitch-Token verlässt die Begleit-Anwendung nur in Richtung Twitch. Ohne Twitch-Login bleiben nur der anonyme Chat, die Emote-Anbieter und die Update-Prüfung.
+
+### Bauen
 Voraussetzung sind [Node.js](https://nodejs.org/) (LTS) für die Overlays und [Rust](https://www.rust-lang.org/) (stable) für die Begleit-Anwendung. Einzige Node-Abhängigkeit ist der TypeScript-Compiler.
 
 ```
@@ -200,10 +243,9 @@ cargo run
 
 In Windows PowerShell mit restriktiver Ausführungsrichtlinie `npm.cmd` statt `npm` verwenden.
 
-Releases: Eine neue Version in `companion/Cargo.toml` und `package.json` (beide müssen übereinstimmen) erzeugt beim Merge in `main` ein Release mit Archiven für alle drei Systeme. Der Release-Workflow braucht das Repository-Secret `TWITCH_CLIENT_ID`; `VT_API_KEY` (VirusTotal) ist optional.
+Tests: `npm test` für die Overlays, `cargo test` in `companion/` für die Begleit-Anwendung. Die Diagnoseseite (`/diagnostics/`) prüft die Emote-APIs und die anonyme Verbindung zum Twitch-Chat. Die mitgelieferten Sounds erzeugt `tools/generate-sounds.js`, die mitgelieferten Bilder sind einfache SVG-Dateien in `web/assets/images`.
 
-Tests: `npm test` für die Overlays, `cargo test` in `companion/` für die Begleit-Anwendung.
-Die Diagnoseseite (`/diagnostics/`) prüft die Emote-APIs und die anonyme Verbindung zum Twitch-Chat; mit `?channel=deinname` wird zusätzlich das Betreten eines Kanals getestet.
+Releases: Eine neue Version in `companion/Cargo.toml` und `package.json` (die CI prüft, dass beide übereinstimmen) zusammen mit einem Abschnitt dafür in der [CHANGELOG.md](CHANGELOG.md) erzeugt beim Merge in `main` ein Release; der Changelog-Abschnitt wird zu den Release-Notizen. Versionen `0.x` und Versionen mit Zusatz wie `1.1.0-beta.1` erscheinen als Vorabversion. Der Release-Workflow braucht das Repository-Secret `TWITCH_CLIENT_ID`; `VT_API_KEY` (VirusTotal) ist optional.
 
 ### Lizenz
 [MIT](LICENSE)

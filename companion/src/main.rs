@@ -10,6 +10,8 @@ mod icon;
 mod instance;
 mod media;
 mod paths;
+#[cfg(test)]
+mod release_check;
 mod server;
 mod stats;
 mod tray;
