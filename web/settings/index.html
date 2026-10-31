@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <title>StreamXtras – Settings</title>
+  <title data-text="page.title">StreamXtras – Settings</title>
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="settings.css">
   <script type="module" src="../scripts/settings/main.js"></script>
@@ -16,20 +16,24 @@
       <p id="version" class="muted"></p>
       <a id="update-link" class="update-link" target="_blank" rel="noopener noreferrer" hidden></a>
     </div>
-    <div id="twitch-account" class="account" role="region" aria-label="Twitch account"></div>
+    <label class="language">
+      <span data-text="page.language">Language</span>
+      <select id="language"></select>
+    </label>
+    <div id="twitch-account" class="account" role="region" aria-label="Twitch account" data-text-label="page.account"></div>
   </header>
 
   <div id="pause-banner" class="pause-banner" role="status" hidden>
-    <span>Alerts are paused. New alerts wait until you resume them.</span>
-    <button type="button" id="resume-alerts">Resume alerts</button>
+    <span data-text="control.paused">Alerts are paused. New alerts wait until you resume them.</span>
+    <button type="button" id="resume-alerts" data-text="control.resume">Resume alerts</button>
   </div>
 
-  <nav class="tabs" role="tablist" aria-label="Overlays">
-    <button type="button" role="tab" id="tab-chatbox" aria-controls="chatbox-editor" data-tab="chatbox">Chat box</button>
-    <button type="button" role="tab" id="tab-alertbox" aria-controls="alertbox-editor" data-tab="alertbox">Alert box</button>
-    <button type="button" role="tab" id="tab-goals" aria-controls="goals-editor" data-tab="goals">Goals</button>
-    <button type="button" role="tab" id="tab-recent" aria-controls="recent-editor" data-tab="recent">Recent events</button>
-    <button type="button" role="tab" id="tab-topemotes" aria-controls="topemotes-editor" data-tab="topemotes">Top emotes</button>
+  <nav class="tabs" role="tablist" aria-label="Overlays" data-text-label="page.overlays">
+    <button type="button" role="tab" id="tab-chatbox" aria-controls="chatbox-editor" data-tab="chatbox" data-text="overlay.chatbox">Chat box</button>
+    <button type="button" role="tab" id="tab-alertbox" aria-controls="alertbox-editor" data-tab="alertbox" data-text="overlay.alertbox">Alert box</button>
+    <button type="button" role="tab" id="tab-goals" aria-controls="goals-editor" data-tab="goals" data-text="overlay.goals">Goals</button>
+    <button type="button" role="tab" id="tab-recent" aria-controls="recent-editor" data-tab="recent" data-text="overlay.recent">Recent events</button>
+    <button type="button" role="tab" id="tab-topemotes" aria-controls="topemotes-editor" data-tab="topemotes" data-text="overlay.topemotes">Top emotes</button>
   </nav>
 
   <main>
@@ -41,7 +45,7 @@
   </main>
 
   <footer>
-    <a id="diagnostics-link" href="../diagnostics/">Diagnostics</a>
+    <a id="diagnostics-link" href="../diagnostics/" data-text="page.diagnostics">Diagnostics</a>
   </footer>
 </body>
 </html>

@@ -2,6 +2,7 @@ import { appearanceSettings, sizeSettings } from "../../shared/appearance.ts";
 import type { ConfigSource } from "../../shared/config.ts";
 import {
   booleanSetting,
+  generalSection,
   choiceSetting,
   listSetting,
   mediaSetting,
@@ -18,9 +19,13 @@ import { plainAlertText, subTiers, tierLabel, type AlertType, type OverlayAlert,
 
 // Types
 interface AlertTypeDefinition {
-  readonly label: string;
+  readonly section: string;
+  readonly enabled: string;
   readonly text: string;
-  readonly amount: string | null;
+  readonly textHint: string;
+  readonly counted: { readonly exact: string; readonly min: string; readonly amount: string } | null;
+  readonly variantValue: string;
+  readonly test: string;
   readonly tiers: boolean;
   readonly message: boolean;
   readonly match: VariantMatch;
@@ -35,42 +40,44 @@ export type SpeechMode = "off" | "text" | "message" | "both";
 
 // Constants
 export const alertboxOverlayId = "alertbox";
-export const generalSection = "General";
-const speechGroup = "Text-to-speech";
+const speechGroup = "group.speech";
 const maxVariants = 20;
 
 const soundBuiltIns: readonly SettingOption<string>[] = [
-  { value: "assets/sounds/chime.wav", label: "Chime" },
-  { value: "assets/sounds/pop.wav", label: "Pop" },
-  { value: "assets/sounds/bell.wav", label: "Bell" },
-  { value: "assets/sounds/coin.wav", label: "Coin" },
-  { value: "assets/sounds/level-up.wav", label: "Level up" },
-  { value: "assets/sounds/fanfare.wav", label: "Fanfare" },
-  { value: "assets/sounds/sparkle.wav", label: "Sparkle" },
-  { value: "assets/sounds/whoosh.wav", label: "Whoosh" },
-  { value: "assets/sounds/bubble.wav", label: "Bubble" },
-  { value: "assets/sounds/drum-hit.wav", label: "Drum hit" },
+  { value: "assets/sounds/chime.wav", label: "sound.chime" },
+  { value: "assets/sounds/pop.wav", label: "sound.pop" },
+  { value: "assets/sounds/bell.wav", label: "sound.bell" },
+  { value: "assets/sounds/coin.wav", label: "sound.coin" },
+  { value: "assets/sounds/level-up.wav", label: "sound.level_up" },
+  { value: "assets/sounds/fanfare.wav", label: "sound.fanfare" },
+  { value: "assets/sounds/sparkle.wav", label: "sound.sparkle" },
+  { value: "assets/sounds/whoosh.wav", label: "sound.whoosh" },
+  { value: "assets/sounds/bubble.wav", label: "sound.bubble" },
+  { value: "assets/sounds/drum-hit.wav", label: "sound.drum_hit" },
 ];
 
 const imageBuiltIns: readonly SettingOption<string>[] = [
-  { value: "assets/images/heart.svg", label: "Heart" },
-  { value: "assets/images/star.svg", label: "Star" },
-  { value: "assets/images/sparkles.svg", label: "Sparkles" },
-  { value: "assets/images/x.svg", label: "StreamXtras X" },
-  { value: "assets/images/crown.svg", label: "Crown" },
-  { value: "assets/images/gift.svg", label: "Gift" },
-  { value: "assets/images/explosion.svg", label: "Explosion" },
-  { value: "assets/images/rocket.svg", label: "Rocket" },
-  { value: "assets/images/trophy.svg", label: "Trophy" },
-  { value: "assets/images/confetti.svg", label: "Confetti" },
+  { value: "assets/images/heart.svg", label: "image.heart" },
+  { value: "assets/images/star.svg", label: "image.star" },
+  { value: "assets/images/sparkles.svg", label: "image.sparkles" },
+  { value: "assets/images/x.svg", label: "image.x" },
+  { value: "assets/images/crown.svg", label: "image.crown" },
+  { value: "assets/images/gift.svg", label: "image.gift" },
+  { value: "assets/images/explosion.svg", label: "image.explosion" },
+  { value: "assets/images/rocket.svg", label: "image.rocket" },
+  { value: "assets/images/trophy.svg", label: "image.trophy" },
+  { value: "assets/images/confetti.svg", label: "image.confetti" },
 ];
-
 
 export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinition>> = {
   follow: {
-    label: "Follow",
+    section: "alert.follow",
+    enabled: "alert.follow.enabled",
     text: "{name} is now following!",
-    amount: null,
+    textHint: "alert.follow.text_hint",
+    counted: null,
+    variantValue: "alert.follow.variant_value",
+    test: "alert.follow.test",
     tiers: false,
     message: false,
     match: "user",
@@ -79,9 +86,13 @@ export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinitio
     avatar: false,
   },
   sub: {
-    label: "Subscription",
+    section: "alert.sub",
+    enabled: "alert.sub.enabled",
     text: "{name} just subscribed!",
-    amount: "months",
+    textHint: "alert.sub.text_hint",
+    counted: { exact: "alert.sub.match_exact", min: "alert.sub.match_min", amount: "alert.sub.amount" },
+    variantValue: "alert.sub.variant_value",
+    test: "alert.sub.test",
     tiers: true,
     message: true,
     match: "min",
@@ -90,9 +101,13 @@ export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinitio
     avatar: false,
   },
   gift: {
-    label: "Gift subs",
+    section: "alert.gift",
+    enabled: "alert.gift.enabled",
     text: "{name} gifted {amount} subs!",
-    amount: "gifted subs",
+    textHint: "alert.gift.text_hint",
+    counted: { exact: "alert.gift.match_exact", min: "alert.gift.match_min", amount: "alert.gift.amount" },
+    variantValue: "alert.gift.variant_value",
+    test: "alert.gift.test",
     tiers: true,
     message: false,
     match: "min",
@@ -101,9 +116,13 @@ export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinitio
     avatar: false,
   },
   cheer: {
-    label: "Cheer",
+    section: "alert.cheer",
+    enabled: "alert.cheer.enabled",
     text: "{name} cheered {amount} bits!",
-    amount: "bits",
+    textHint: "alert.cheer.text_hint",
+    counted: { exact: "alert.cheer.match_exact", min: "alert.cheer.match_min", amount: "alert.cheer.amount" },
+    variantValue: "alert.cheer.variant_value",
+    test: "alert.cheer.test",
     tiers: false,
     message: true,
     match: "min",
@@ -112,9 +131,13 @@ export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinitio
     avatar: false,
   },
   raid: {
-    label: "Raid",
+    section: "alert.raid",
+    enabled: "alert.raid.enabled",
     text: "{name} is raiding with {amount} viewers!",
-    amount: "viewers",
+    textHint: "alert.raid.text_hint",
+    counted: { exact: "alert.raid.match_exact", min: "alert.raid.match_min", amount: "alert.raid.amount" },
+    variantValue: "alert.raid.variant_value",
+    test: "alert.raid.test",
     tiers: false,
     message: false,
     match: "user",
@@ -126,66 +149,60 @@ export const alertTypeDefinitions: Readonly<Record<AlertType, AlertTypeDefinitio
 
 // Schema
 function presentationSettings(definition: AlertTypeDefinition, group: string, section?: string) {
-  const hints = [
-    "{name} is replaced with the name.",
-    definition.amount === null ? "" : `{amount} with the number of ${definition.amount}.`,
-    definition.tiers ? "{tier} with Prime or Tier 1 to 3." : "",
-    definition.message ? "{message} with the message of the viewer." : "",
-  ];
   return {
     text: textSetting({
-      label: "Text",
+      label: "alert.text",
       group,
       section,
-      hint: hints.filter((hint) => hint !== "").join(" "),
+      hint: definition.textHint,
       default: definition.text,
       placeholder: definition.text,
     }),
     image: mediaSetting({
-      label: "Image or video",
+      label: "alert.image",
       group,
       section,
-      hint: "Videos play to the end, with their own sound.",
+      hint: "alert.image.hint",
       accepts: ["image", "video"],
       builtIns: imageBuiltIns,
       default: definition.image,
     }),
-    avatar: booleanSetting({ label: "Show the profile picture instead", group, section, default: definition.avatar }),
-    sound: mediaSetting({ label: "Sound", group, section, accepts: ["sound"], builtIns: soundBuiltIns, default: definition.sound }),
-    duration: numberSetting({ label: "Duration", group, section, default: 6, min: 2, max: 30, unit: "s" }),
+    avatar: booleanSetting({ label: "alert.avatar", group, section, default: definition.avatar }),
+    sound: mediaSetting({ label: "alert.sound", group, section, accepts: ["sound"], builtIns: soundBuiltIns, default: definition.sound }),
+    duration: numberSetting({ label: "alert.duration", group, section, default: 6, min: 2, max: 30, unit: "unit.seconds" }),
   };
 }
 
 function variantSettings(definition: AlertTypeDefinition) {
+  const { counted } = definition;
   const amountOptions: readonly SettingOption<VariantMatch>[] =
-    definition.amount === null
+    counted === null
       ? []
       : [
-          { value: "exact", label: `Exactly this number of ${definition.amount}` },
-          { value: "min", label: `At least this number of ${definition.amount}` },
+          { value: "exact", label: counted.exact },
+          { value: "min", label: counted.min },
         ];
-  const tierOptions: readonly SettingOption<VariantMatch>[] = definition.tiers ? [{ value: "tier", label: "With this tier (Prime, 1, 2 or 3)" }] : [];
-  const valueLabel = [definition.amount === null ? "" : "Number", definition.tiers ? "tier" : "", "Twitch name"].filter((part) => part !== "").join(", ");
+  const tierOptions: readonly SettingOption<VariantMatch>[] = definition.tiers ? [{ value: "tier", label: "alert.match_tier" }] : [];
   return {
     match: choiceSetting<VariantMatch>({
-      label: "When",
+      label: "alert.when",
       group: "",
       default: definition.match,
-      options: [...amountOptions, ...tierOptions, { value: "user", label: "From this Twitch user" }],
+      options: [...amountOptions, ...tierOptions, { value: "user", label: "alert.match_user" }],
     }),
-    value: textSetting({ label: valueLabel.replace(/, (?=[^,]*$)/, " or "), group: "", default: "" }),
+    value: textSetting({ label: definition.variantValue, group: "", default: "" }),
     ...presentationSettings(definition, ""),
   };
 }
 
 function speechModeOptions(definition: AlertTypeDefinition): readonly SettingOption<SpeechMode>[] {
   return [
-    { value: "off", label: "Off" },
-    { value: "text", label: "Read the alert text" },
+    { value: "off", label: "speech.off" },
+    { value: "text", label: "speech.text" },
     ...(definition.message
       ? ([
-          { value: "message", label: "Read the message of the viewer" },
-          { value: "both", label: "Read the alert text and the message" },
+          { value: "message", label: "speech.message" },
+          { value: "both", label: "speech.both" },
         ] as const)
       : []),
   ];
@@ -193,18 +210,19 @@ function speechModeOptions(definition: AlertTypeDefinition): readonly SettingOpt
 
 function alertTypeSettings<T extends AlertType>(type: T) {
   const definition = alertTypeDefinitions[type];
-  const section = definition.label;
+  const { section } = definition;
   return prefixed(type, {
-    enabled: booleanSetting({ label: `${definition.label} alerts`, group: section, section, default: true, sectionToggle: true }),
+    enabled: booleanSetting({ label: definition.enabled, group: section, section, default: true, sectionToggle: true }),
     ...presentationSettings(definition, section, section),
-    tts: choiceSetting<SpeechMode>({ label: "Read aloud", group: speechGroup, section, default: "off", options: speechModeOptions(definition) }),
+    tts: choiceSetting<SpeechMode>({ label: "alert.tts", group: speechGroup, section, default: "off", options: speechModeOptions(definition) }),
     variants: listSetting({
-      label: "Variants",
-      group: "Variants",
+      label: "alert.variants",
+      group: "group.variants",
       section,
-      hint: "A variant replaces the settings above when it matches. The first matching variant wins.",
+      hint: "alert.variants.hint",
       itemSchema: variantSettings(definition),
-      itemLabel: "Variant",
+      itemLabel: "alert.variant",
+      addLabel: "alert.variant.add",
       maxItems: maxVariants,
       default: [],
     }),
@@ -212,44 +230,53 @@ function alertTypeSettings<T extends AlertType>(type: T) {
 }
 
 export const alertboxSettings = {
-  volume: numberSetting({ label: "Volume", group: "Sound", section: generalSection, default: 70, min: 0, max: 100, unit: "%" }),
+  volume: numberSetting({ label: "alertbox.volume", group: "group.sound", section: generalSection, default: 70, min: 0, max: 100, unit: "%" }),
 
   layout: choiceSetting({
-    label: "Layout",
-    group: "Appearance",
+    label: "setting.layout",
+    group: "group.appearance",
     section: generalSection,
     default: "stacked",
     options: [
-      { value: "stacked", label: "Image above text" },
-      { value: "side", label: "Image next to text" },
+      { value: "stacked", label: "alertbox.layout.stacked" },
+      { value: "side", label: "alertbox.layout.side" },
     ],
   }),
   animation: choiceSetting({
-    label: "Animation",
-    group: "Appearance",
+    label: "setting.animation",
+    group: "group.appearance",
     section: generalSection,
     default: "pop",
     options: [
-      { value: "pop", label: "Pop" },
-      { value: "fade", label: "Fade" },
-      { value: "slide", label: "Slide in" },
+      { value: "pop", label: "alertbox.animation.pop" },
+      { value: "fade", label: "alertbox.animation.fade" },
+      { value: "slide", label: "setting.animation.slide" },
     ],
   }),
-  imageSize: numberSetting({ label: "Image size", group: "Appearance", section: generalSection, default: 160, min: 40, max: 600, step: 10, unit: "px" }),
-  videoWidth: numberSetting({ label: "Video width", group: "Appearance", section: generalSection, default: 480, min: 100, max: 1920, step: 10, unit: "px" }),
+  imageSize: numberSetting({ label: "alertbox.image_size", group: "group.appearance", section: generalSection, default: 160, min: 40, max: 600, step: 10, unit: "px" }),
+  videoWidth: numberSetting({ label: "alertbox.video_width", group: "group.appearance", section: generalSection, default: 480, min: 100, max: 1920, step: 10, unit: "px" }),
   ...appearanceSettings(generalSection, 36),
 
   ttsVoice: textSetting({
-    label: "Voice",
+    label: "alertbox.voice",
     group: speechGroup,
     section: generalSection,
-    hint: "Leave empty for the default voice of the computer running the companion app. Turn reading aloud on per alert type.",
+    hint: "alertbox.voice.hint",
     default: "",
-    placeholder: "Default voice",
+    placeholder: "alertbox.voice.placeholder",
     suggestionsUrl: "/api/tts/voices",
   }),
-  ttsVolume: numberSetting({ label: "Voice volume", group: speechGroup, section: generalSection, default: 80, min: 0, max: 100, unit: "%" }),
-  ttsMaxLength: numberSetting({ label: "Maximum length", group: speechGroup, section: generalSection, default: 200, min: 20, max: 500, step: 10, unit: "chars" }),
+  ttsVolume: numberSetting({ label: "alertbox.voice_volume", group: speechGroup, section: generalSection, default: 80, min: 0, max: 100, unit: "%" }),
+  ttsMaxLength: numberSetting({
+    label: "alertbox.max_length",
+    group: speechGroup,
+    section: generalSection,
+    default: 200,
+    min: 20,
+    max: 500,
+    step: 10,
+    unit: "unit.characters",
+  }),
 
   ...sizeSettings(generalSection, 600, 400),
 
@@ -260,14 +287,30 @@ export const alertboxSettings = {
   ...alertTypeSettings("raid"),
 
   subTtsTiers: multiChoiceSetting<SubTier>({
-    label: "Read aloud for",
+    label: "alertbox.tts_tiers",
     group: speechGroup,
-    section: alertTypeDefinitions.sub.label,
+    section: alertTypeDefinitions.sub.section,
     default: subTiers,
     options: subTiers.map((tier) => ({ value: tier, label: tierLabel(tier) })),
   }),
-  giftTtsMin: numberSetting({ label: "Read aloud from", group: speechGroup, section: alertTypeDefinitions.gift.label, default: 5, min: 1, max: 1000, unit: "subs" }),
-  cheerTtsMin: numberSetting({ label: "Read aloud from", group: speechGroup, section: alertTypeDefinitions.cheer.label, default: 100, min: 1, max: 1000000, unit: "bits" }),
+  giftTtsMin: numberSetting({
+    label: "alertbox.tts_from",
+    group: speechGroup,
+    section: alertTypeDefinitions.gift.section,
+    default: 5,
+    min: 1,
+    max: 1000,
+    unit: "unit.subs",
+  }),
+  cheerTtsMin: numberSetting({
+    label: "alertbox.tts_from",
+    group: speechGroup,
+    section: alertTypeDefinitions.cheer.section,
+    default: 100,
+    min: 1,
+    max: 1000000,
+    unit: "unit.bits",
+  }),
 } satisfies SettingsSchema;
 
 // Types
@@ -292,7 +335,7 @@ export function readAlertboxConfig(source: ConfigSource): AlertboxConfig {
 }
 
 export function alertTypeForSection(section: string | null): AlertType {
-  const entry = Object.entries(alertTypeDefinitions).find(([, definition]) => definition.label === section);
+  const entry = Object.entries(alertTypeDefinitions).find(([, definition]) => definition.section === section);
   return (entry?.[0] as AlertType | undefined) ?? "follow";
 }
 

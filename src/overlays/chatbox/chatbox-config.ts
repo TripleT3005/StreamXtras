@@ -21,49 +21,49 @@ export const missingChannelMessage = "No valid channel configured. Open the sett
 
 // Schema
 export const chatboxSettings = {
-  channel: textSetting({ label: "Twitch channel", group: "Channel", default: "", placeholder: "yourchannel", live: false }),
+  channel: textSetting({ label: "setting.channel", group: "group.channel", default: "", placeholder: "yourchannel", live: false }),
 
-  maxMessages: numberSetting({ label: "Maximum messages", group: "Messages", default: 30, min: 1, max: 200 }),
+  maxMessages: numberSetting({ label: "chatbox.max_messages", group: "group.messages", default: 30, min: 1, max: 200 }),
   hideAfterSeconds: numberSetting({
-    label: "Hide messages after",
-    group: "Messages",
-    hint: "0 keeps messages until they are pushed out by newer ones.",
+    label: "chatbox.hide_after",
+    group: "group.messages",
+    hint: "chatbox.hide_after.hint",
     default: 0,
     min: 0,
     max: 600,
-    unit: "s",
+    unit: "unit.seconds",
   }),
   animation: choiceSetting({
-    label: "Animation for new messages",
-    group: "Messages",
+    label: "chatbox.animation",
+    group: "group.messages",
     default: "fade",
     options: [
-      { value: "none", label: "None" },
-      { value: "fade", label: "Fade in" },
-      { value: "slide", label: "Slide in" },
+      { value: "none", label: "chatbox.animation.none" },
+      { value: "fade", label: "chatbox.animation.fade" },
+      { value: "slide", label: "setting.animation.slide" },
     ],
   }),
   alignment: choiceSetting({
-    label: "Position of messages",
-    group: "Messages",
+    label: "chatbox.alignment",
+    group: "group.messages",
     default: "bottom",
     options: [
-      { value: "bottom", label: "Bottom" },
-      { value: "top", label: "Top" },
+      { value: "bottom", label: "chatbox.alignment.bottom" },
+      { value: "top", label: "chatbox.alignment.top" },
     ],
   }),
 
   ...fontSettings(undefined, 18, "600"),
   ...shadowSettings(undefined),
-  messageBackground: colorSetting({ label: "Message background", group: "Appearance", default: "#00000000" }),
-  messageSpacing: numberSetting({ label: "Space between messages", group: "Appearance", default: 4, min: 0, max: 32, unit: "px" }),
-  emoteSize: numberSetting({ label: "Emote size", group: "Appearance", default: 175, min: 100, max: 400, step: 5, unit: "%" }),
+  messageBackground: colorSetting({ label: "chatbox.message_background", group: "group.appearance", default: "#00000000" }),
+  messageSpacing: numberSetting({ label: "chatbox.message_spacing", group: "group.appearance", default: 4, min: 0, max: 32, unit: "px" }),
+  emoteSize: numberSetting({ label: "setting.emote_size", group: "group.appearance", default: 175, min: 100, max: 400, step: 5, unit: "%" }),
 
-  showBadges: booleanSetting({ label: "Show badges", group: "Twitch", default: true }),
+  showBadges: booleanSetting({ label: "chatbox.show_badges", group: "group.twitch", default: true }),
   thirdPartyBadges: multiChoiceSetting<ThirdPartyBadgeProviderName>({
-    label: "Third-party badges",
-    group: "Twitch",
-    hint: "Badges from other chat tools, shown after the Twitch badges. 7TV badges are looked up per user and appear a moment after the first message.",
+    label: "chatbox.third_party_badges",
+    group: "group.twitch",
+    hint: "chatbox.third_party_badges.hint",
     default: [],
     live: false,
     options: [
@@ -74,14 +74,14 @@ export const chatboxSettings = {
     ],
   }),
   readableColors: booleanSetting({
-    label: "Readable name colors",
-    group: "Twitch",
-    hint: "Lightens dark name colors like Twitch's dark chat.",
+    label: "chatbox.readable_colors",
+    group: "group.twitch",
+    hint: "chatbox.readable_colors.hint",
     default: true,
   }),
   emoteProviders: multiChoiceSetting<ThirdPartyEmoteProviderName>({
-    label: "Third-party emotes",
-    group: "Twitch",
+    label: "setting.third_party_emotes",
+    group: "group.twitch",
     default: ["7tv", "bttv", "ffz"],
     live: false,
     options: [
@@ -92,11 +92,11 @@ export const chatboxSettings = {
   }),
 
   hiddenBots: multiChoiceSetting({
-    label: "Hide messages from",
-    group: "Filters",
+    label: "chatbox.hidden_bots",
+    group: "group.filters",
     default: [],
     options: [
-      { value: streamerOption, label: "The streamer" },
+      { value: streamerOption, label: "chatbox.hidden_bots.streamer" },
       { value: "nightbot", label: "Nightbot" },
       { value: "streamelements", label: "StreamElements" },
       { value: "streamlabs", label: "Streamlabs" },
@@ -110,29 +110,29 @@ export const chatboxSettings = {
     ],
   }),
   hiddenUsers: textSetting({
-    label: "Other users to hide",
-    group: "Filters",
-    hint: "Twitch names separated by commas, e.g. the account of your Streamer.bot.",
+    label: "chatbox.hidden_users",
+    group: "group.filters",
+    hint: "chatbox.hidden_users.hint",
     default: "",
     placeholder: "mybot, anotherbot",
   }),
   blockedWords: textSetting({
-    label: "Hide messages with these words",
-    group: "Filters",
-    hint: "Separated by commas, not case-sensitive. A * at the end also matches longer words, e.g. spoil* hides spoiler and spoilers.",
+    label: "chatbox.blocked_words",
+    group: "group.filters",
+    hint: "chatbox.blocked_words.hint",
     default: "",
     placeholder: "spoiler, spoil*",
   }),
 
   showSharedChatIcons: booleanSetting({
-    label: "Show streamer icons",
-    group: "Shared chat",
-    hint: "During a shared chat, each message shows the profile picture of the channel it comes from. Needs the Twitch login.",
+    label: "chatbox.shared_chat_icons",
+    group: "group.shared_chat",
+    hint: "chatbox.shared_chat_icons.hint",
     default: true,
   }),
   showPartnerMessages: booleanSetting({
-    label: "Show messages from partner channels",
-    group: "Shared chat",
+    label: "chatbox.partner_messages",
+    group: "group.shared_chat",
     default: true,
   }),
 

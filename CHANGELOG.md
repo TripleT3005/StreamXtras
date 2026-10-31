@@ -4,6 +4,20 @@ All notable changes to StreamXtras, grouped by version in the style of [Keep a C
 
 Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [Keep a Changelog](https://keepachangelog.com/de/). Der Abschnitt einer Version wird als ihre Release-Notizen verwendet.
 
+## [1.4.0] – 2026-10-31
+
+### English
+
+#### Added
+- The settings page, the diagnostics page and the tray menu are available in 51 languages, including German dialects and a few fun languages. StreamXtras follows the display language of your system, or you choose one at the top right of the settings page.
+- Your own translations can be placed in the `lang` folder next to the settings.
+
+### Deutsch
+
+#### Neu
+- Die Einstellungsseite, die Diagnoseseite und das Tray-Menü gibt es in 51 Sprachen, darunter deutsche Dialekte und ein paar Spaßsprachen. StreamXtras folgt der Anzeigesprache deines Systems, oder du wählst oben rechts auf der Einstellungsseite eine aus.
+- Eigene Übersetzungen können im Ordner `lang` neben den Einstellungen abgelegt werden.
+
 ## [1.3.1] – 2026-10-31
 
 ### English

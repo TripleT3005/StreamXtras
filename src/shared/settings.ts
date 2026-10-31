@@ -68,6 +68,7 @@ export interface ListSetting<S extends SettingsSchema = SettingsSchema> extends 
   readonly kind: "list";
   readonly itemSchema: S;
   readonly itemLabel: string;
+  readonly addLabel: string;
   readonly maxItems: number;
 }
 
@@ -96,6 +97,9 @@ interface CommonOptions<T> {
   readonly default: T;
   readonly live?: boolean;
 }
+
+// Constants
+export const generalSection = "section.general";
 
 // Factories
 export function textSetting(
@@ -181,7 +185,12 @@ export function multiChoiceSetting<T extends string>(
 }
 
 export function listSetting<S extends SettingsSchema>(
-  options: CommonOptions<readonly SettingsValues<S>[]> & { readonly itemSchema: S; readonly itemLabel: string; readonly maxItems: number },
+  options: CommonOptions<readonly SettingsValues<S>[]> & {
+    readonly itemSchema: S;
+    readonly itemLabel: string;
+    readonly addLabel: string;
+    readonly maxItems: number;
+  },
 ): ListSetting<S> {
   return {
     ...options,

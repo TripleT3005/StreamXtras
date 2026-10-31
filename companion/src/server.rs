@@ -11,6 +11,7 @@ use crate::alert_control::{AlertAction, AlertControl};
 use crate::config::{self, Config};
 use crate::events::EventBroadcaster;
 use crate::http::{self, Method, ParseError, Request, Response};
+use crate::i18n;
 use crate::media::{self, MediaError};
 use crate::stats::Stats;
 use crate::tts;
@@ -112,6 +113,10 @@ fn route(request: &Request, state: &AppState) -> Outcome {
             }
             (Method::Put, "/api/alerts/control", _) => check_write_request(request, state)
                 .unwrap_or_else(|| control_alerts(request, state)),
+            (Method::Get, "/api/language", _) => language_status(state),
+            (Method::Put, "/api/language", _) => {
+                check_write_request(request, state).unwrap_or_else(|| set_language(request, state))
+            }
             (Method::Get, "/api/stats", _) => Response::json(200, &state.stats.snapshot()),
             (Method::Get, "/api/tts/voices", _) => {
                 Response::json(200, &serde_json::json!(tts::voices()))
@@ -208,6 +213,46 @@ fn put_overlay_settings(request: &Request, state: &AppState, id: &str) -> Respon
 }
 
 // Media
+// Language
+fn language_status(state: &AppState) -> Response {
+    let preference = lock(&state.config).language.clone();
+    let directories = i18n::directories(&state.web_root, &state.config_dir);
+    language_response(preference.as_deref(), &directories)
+}
+
+fn set_language(request: &Request, state: &AppState) -> Response {
+    let Ok(serde_json::Value::Object(body)) = serde_json::from_slice(&request.body) else {
+        return Response::text(400, "Expected a JSON object");
+    };
+    let directories = i18n::directories(&state.web_root, &state.config_dir);
+    let language = match body.get("language") {
+        None | Some(serde_json::Value::Null) => None,
+        Some(serde_json::Value::String(code)) if code.is_empty() => None,
+        Some(serde_json::Value::String(code)) => match i18n::find_language(code, &directories) {
+            Some(code) => Some(code),
+            None => return Response::text(400, "Unknown language"),
+        },
+        Some(_) => return Response::text(400, "Expected a language code"),
+    };
+    let mut config = lock(&state.config);
+    let previous = std::mem::replace(&mut config.language, language);
+    if let Err(error) = config::save(&state.config_dir, &config) {
+        config.language = previous;
+        eprintln!("Saving the language failed: {error}");
+        return Response::text(500, "Saving the language failed");
+    }
+    let preference = config.language.clone();
+    drop(config);
+    language_response(preference.as_deref(), &directories)
+}
+
+fn language_response(preference: Option<&str>, directories: &[PathBuf]) -> Response {
+    match serde_json::to_value(i18n::status(preference, directories)) {
+        Ok(status) => Response::json(200, &status),
+        Err(_) => Response::text(500, "Reading the languages failed"),
+    }
+}
+
 fn upload_media(request: &Request, state: &AppState) -> Response {
     if !is_local_origin(request.header("origin"), state.port, "http://") {
         return Response::text(403, "Forbidden");
@@ -902,5 +947,67 @@ mod tests {
             route(&get("/api/events"), &test.state),
             Outcome::EventStream
         ));
+    }
+
+    #[test]
+    fn switches_the_language_from_the_settings_page_only() {
+        let test = test_state("language");
+        let lang = test.state.web_root.join("lang");
+        fs::create_dir_all(&lang).unwrap();
+        fs::write(
+            lang.join("de.lang"),
+            "language.name = Deutsch
+tray.quit = Beenden
+",
+        )
+        .unwrap();
+        let origin = format!("http://127.0.0.1:{PORT}");
+        let rejected = reply(
+            &put(
+                "/api/language",
+                "http://evil.example",
+                "application/json",
+                r#"{"language":"de"}"#,
+            ),
+            &test.state,
+        );
+        assert_eq!(rejected.status, 403);
+        let unknown = reply(
+            &put(
+                "/api/language",
+                &origin,
+                "application/json",
+                r#"{"language":"xx"}"#,
+            ),
+            &test.state,
+        );
+        assert_eq!(unknown.status, 400);
+        let switched = reply(
+            &put(
+                "/api/language",
+                &origin,
+                "application/json",
+                r#"{"language":"DE"}"#,
+            ),
+            &test.state,
+        );
+        assert_eq!(switched.status, 200);
+        assert_eq!(lock(&test.state.config).language.as_deref(), Some("de"));
+        let status: serde_json::Value =
+            serde_json::from_slice(&reply(&get("/api/language"), &test.state).body).unwrap();
+        assert_eq!(status["code"], "de");
+        assert_eq!(status["texts"]["tray.quit"], "Beenden");
+        assert!(status["texts"]["tray.open"].is_string());
+        let automatic = reply(
+            &put(
+                "/api/language",
+                &origin,
+                "application/json",
+                r#"{"language":""}"#,
+            ),
+            &test.state,
+        );
+        assert_eq!(automatic.status, 200);
+        assert_eq!(lock(&test.state.config).language, None);
     }
 }

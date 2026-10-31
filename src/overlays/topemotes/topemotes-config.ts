@@ -17,21 +17,21 @@ export const topEmotesOverlayId = "topemotes";
 
 // Schema
 export const topEmotesSettings = {
-  channel: textSetting({ label: "Twitch channel", group: "Channel", default: "", placeholder: "yourchannel", live: false }),
-  count: numberSetting({ label: "Number of emotes", group: "Emotes", default: 5, min: 1, max: 10 }),
+  channel: textSetting({ label: "setting.channel", group: "group.channel", default: "", placeholder: "yourchannel", live: false }),
+  count: numberSetting({ label: "topemotes.count", group: "group.emotes", default: 5, min: 1, max: 10 }),
   windowMinutes: numberSetting({
-    label: "Count the last",
-    group: "Emotes",
-    hint: "0 counts everything since the browser source was loaded. Every emote counts once per message.",
+    label: "topemotes.window",
+    group: "group.emotes",
+    hint: "topemotes.window.hint",
     default: 60,
     min: 0,
     max: 1440,
     step: 5,
-    unit: "min",
+    unit: "unit.minutes",
   }),
   emoteProviders: multiChoiceSetting<ThirdPartyEmoteProviderName>({
-    label: "Third-party emotes",
-    group: "Emotes",
+    label: "setting.third_party_emotes",
+    group: "group.emotes",
     default: ["7tv", "bttv", "ffz"],
     live: false,
     options: [
@@ -40,18 +40,18 @@ export const topEmotesSettings = {
       { value: "ffz", label: "FrankerFaceZ" },
     ],
   }),
-  title: textSetting({ label: "Title", group: "Layout", hint: "Leave empty to hide the title.", default: "Top emotes" }),
+  title: textSetting({ label: "setting.title", group: "group.layout", hint: "setting.title.hint", default: "Top emotes" }),
   layout: choiceSetting({
-    label: "Layout",
-    group: "Layout",
+    label: "setting.layout",
+    group: "group.layout",
     default: "row",
     options: [
-      { value: "row", label: "Side by side" },
-      { value: "column", label: "Below each other" },
+      { value: "row", label: "topemotes.layout.row" },
+      { value: "column", label: "topemotes.layout.column" },
     ],
   }),
-  emoteSize: numberSetting({ label: "Emote size", group: "Layout", default: 48, min: 16, max: 256, unit: "px" }),
-  showCounts: booleanSetting({ label: "Show how often", group: "Layout", default: true }),
+  emoteSize: numberSetting({ label: "setting.emote_size", group: "group.layout", default: 48, min: 16, max: 256, unit: "px" }),
+  showCounts: booleanSetting({ label: "topemotes.show_counts", group: "group.layout", default: true }),
   ...appearanceSettings(undefined, 22),
   ...sizeSettings(undefined, 500, 200),
 } satisfies SettingsSchema;

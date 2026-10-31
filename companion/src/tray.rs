@@ -3,6 +3,7 @@ use std::error::Error;
 use tray_icon::menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem};
 use tray_icon::{Icon, MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent};
 
+use crate::i18n::{self, Translations};
 use crate::icon::icon_pixels;
 use crate::{browser, event_loop};
 
@@ -10,9 +11,9 @@ use crate::{browser, event_loop};
 const ICON_SIZE: u16 = 32;
 
 // Tray
-pub fn create(url: String) -> Result<TrayIcon, Box<dyn Error>> {
-    let open_item = MenuItem::new("Open settings", true, None);
-    let quit_item = MenuItem::new("Quit", true, None);
+pub fn create(url: String, translations: &Translations) -> Result<TrayIcon, Box<dyn Error>> {
+    let open_item = MenuItem::new(translations.text(i18n::TRAY_OPEN), true, None);
+    let quit_item = MenuItem::new(translations.text(i18n::TRAY_QUIT), true, None);
     let menu = Menu::with_items(&[&open_item, &PredefinedMenuItem::separator(), &quit_item])?;
 
     let open_id = open_item.id().clone();

@@ -6,8 +6,11 @@ mod config;
 mod event_loop;
 mod events;
 mod http;
+mod i18n;
 mod icon;
 mod instance;
+#[cfg(test)]
+mod language_list;
 mod media;
 mod paths;
 #[cfg(test)]
@@ -52,6 +55,11 @@ fn run() -> Result<(), Box<dyn Error>> {
         eprintln!("Moving files to {} failed: {error}", local_dir.display());
     }
     let port = config.port;
+    let web_root = web_root();
+    let translations = i18n::Translations::load(
+        config.language.as_deref(),
+        &i18n::directories(&web_root, &config_dir),
+    );
     let url = format!("http://127.0.0.1:{port}/");
 
     let listener = match TcpListener::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, port))) {
@@ -95,7 +103,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     alert_control.start();
     let state = Arc::new(AppState {
         port,
-        web_root: web_root(),
+        web_root,
         config_dir,
         config: Mutex::new(config),
         events,
@@ -108,7 +116,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     server::start(listener, state)?;
 
     event_loop::init();
-    let _tray = tray::create(url.clone())?;
+    let _tray = tray::create(url.clone(), &translations)?;
     if is_first_start {
         browser::open(&url)?;
     }

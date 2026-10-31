@@ -1,4 +1,5 @@
 import { fetchOverlaySettings, saveOverlaySettings, type ConfigSource } from "../shared/config.ts";
+import { t } from "../shared/i18n.ts";
 import { isRecord } from "../shared/json.ts";
 import { postPreviewMessage, previewOverflowMessage, previewSettingsMessage } from "../shared/preview-messages.ts";
 import { defaultSettings, readSettings, type SettingsSchema, type SettingsValues } from "../shared/settings.ts";
@@ -40,17 +41,17 @@ interface PreviewSize {
 // Editor
 export async function createOverlayEditor<S extends SettingsSchema>(options: OverlayEditorOptions<S>): Promise<OverlayEditor> {
   const { container, schema, overlayId } = options;
-  const sourceUrl = createSourceUrl(options.title, options.overlayPath, `${overlayId}-url`);
+  const sourceUrl = createSourceUrl(options.overlayPath, `${overlayId}-url`);
   if (options.overlayHint !== undefined) {
-    sourceUrl.append(element("p", "hint", options.overlayHint));
+    sourceUrl.append(element("p", "hint", t(options.overlayHint)));
   }
   const form = element("form", "editor-form");
   form.noValidate = true;
   const fields = element("div", "");
   const actions = element("div", "actions");
-  const saveButton = element("button", "", "Save");
+  const saveButton = element("button", "", t("editor.save"));
   saveButton.type = "submit";
-  const resetButton = element("button", "secondary", "Reset to defaults");
+  const resetButton = element("button", "secondary", t("editor.reset"));
   resetButton.type = "button";
   const status = element("p", "status");
   status.setAttribute("role", "status");
@@ -58,14 +59,18 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
   form.append(fields, actions);
 
   const toolbar = element("div", "preview-toolbar");
-  toolbar.append(element("span", "muted", "Preview"));
+  toolbar.append(element("span", "muted", t("editor.preview")));
   const stage = element("div", "preview-stage");
   stage.dataset["background"] = "checkered";
   const frame = element("iframe", "");
-  frame.title = `${options.title} preview`;
+  frame.title = t("editor.preview.title", { overlay: t(options.title) });
   stage.append(frame);
-  for (const [value, label] of [["checkered", "Checkered"], ["dark", "Dark"], ["light", "Light"]] as const) {
-    const chip = element("button", "chip", label);
+  for (const [value, label] of [
+    ["checkered", "editor.background.checkered"],
+    ["dark", "editor.background.dark"],
+    ["light", "editor.background.light"],
+  ] as const) {
+    const chip = element("button", "chip", t(label));
     chip.type = "button";
     chip.dataset["previewBackground"] = value;
     chip.setAttribute("aria-pressed", String(value === "checkered"));
@@ -77,7 +82,7 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
     });
     toolbar.append(chip);
   }
-  const overflowWarning = element("p", "hint warning", "The content does not fit. Increase the width or height under \"Browser source size\".");
+  const overflowWarning = element("p", "hint warning", t("editor.overflow"));
   overflowWarning.hidden = true;
   window.addEventListener("message", (event: MessageEvent<unknown>) => {
     if (event.source === frame.contentWindow && isRecord(event.data) && event.data["type"] === previewOverflowMessage) {
@@ -112,7 +117,7 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
     const isDirty = JSON.stringify(currentValues()) !== savedValues;
     saveButton.disabled = !isDirty;
     if (isDirty) {
-      showStatus("", "Unsaved changes. The preview already shows them.");
+      showStatus("", t("editor.unsaved"));
     }
   };
 
@@ -143,7 +148,7 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
     event.preventDefault();
     const prepared = options.prepareSave?.(currentValues()) ?? currentValues();
     if (typeof prepared === "string") {
-      showStatus("error", prepared);
+      showStatus("error", t(prepared));
       return;
     }
     const updated = { ...stored, ...prepared };
@@ -153,9 +158,9 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
         savedValues = JSON.stringify(readSettings(schema, stored));
         settingsForm.setValues(readSettings(schema, stored));
         saveButton.disabled = true;
-        showStatus("ok", "Saved. Open overlays in OBS update automatically.");
+        showStatus("ok", t("editor.saved"));
       },
-      (error: unknown) => showStatus("error", `Saving failed: ${error instanceof Error ? error.message : String(error)}`),
+      (error: unknown) => showStatus("error", t("editor.save_failed", { error: error instanceof Error ? error.message : String(error) })),
     );
   });
 
@@ -182,22 +187,22 @@ export async function createOverlayEditor<S extends SettingsSchema>(options: Ove
   };
 }
 
-function createSourceUrl(title: string, path: string, id: string): HTMLElement {
+function createSourceUrl(path: string, id: string): HTMLElement {
   const row = element("div", "source-url");
-  const label = element("label", "", "OBS browser source URL");
+  const label = element("label", "", t("editor.url"));
   label.htmlFor = id;
   const url = element("input", "");
   url.id = id;
   url.readOnly = true;
   url.value = new URL(path, location.origin).href;
-  url.title = `Add the ${title.toLowerCase()} to OBS as a browser source with this URL. Leave "Local file" unchecked.`;
+  url.title = t("editor.url.hint");
   url.addEventListener("focus", () => url.select());
-  const copy = element("button", "secondary", "Copy");
+  const copy = element("button", "secondary", t("editor.copy"));
   copy.type = "button";
   copy.addEventListener("click", () => {
     void navigator.clipboard.writeText(url.value).then(() => {
-      copy.textContent = "Copied";
-      setTimeout(() => (copy.textContent = "Copy"), 1500);
+      copy.textContent = t("editor.copied");
+      setTimeout(() => (copy.textContent = t("editor.copy")), 1500);
     });
   });
   row.append(label, url, copy);

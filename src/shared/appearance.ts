@@ -12,7 +12,7 @@ export interface AppearanceValues {
 }
 
 // Constants
-const group = "Appearance";
+const group = "group.appearance";
 const fontSuggestions = ["Segoe UI", "Arial", "Verdana", "Tahoma", "Trebuchet MS", "Georgia", "Impact", "Consolas", "Comic Sans MS"];
 const defaultTextShadow = "0 2px 4px rgb(0 0 0 / 85%)";
 
@@ -20,56 +20,56 @@ const defaultTextShadow = "0 2px 4px rgb(0 0 0 / 85%)";
 export function fontSettings(section: string | undefined, fontSize: number, fontWeight = "700") {
   return {
     fontFamily: fontSetting({
-      label: "Font",
+      label: "setting.font",
       group,
       section,
-      hint: "The font must be installed on the computer running OBS.",
+      hint: "setting.font.hint",
       default: "",
       suggestions: fontSuggestions,
     }),
-    fontSize: numberSetting({ label: "Font size", group, section, default: fontSize, min: 10, max: 120, unit: "px" }),
+    fontSize: numberSetting({ label: "setting.font_size", group, section, default: fontSize, min: 10, max: 120, unit: "px" }),
     fontWeight: choiceSetting({
-      label: "Font weight",
+      label: "setting.font_weight",
       group,
       section,
       default: fontWeight,
       options: [
-        { value: "400", label: "Normal" },
-        { value: "600", label: "Semibold" },
-        { value: "700", label: "Bold" },
-        { value: "900", label: "Black" },
+        { value: "400", label: "option.weight.normal" },
+        { value: "600", label: "option.weight.semibold" },
+        { value: "700", label: "option.weight.bold" },
+        { value: "900", label: "option.weight.black" },
       ],
     }),
-    textColor: colorSetting({ label: "Text color", group, section, default: "#ffffff" }),
+    textColor: colorSetting({ label: "setting.text_color", group, section, default: "#ffffff" }),
   };
 }
 
 export function shadowSettings(section: string | undefined) {
-  return { textShadow: booleanSetting({ label: "Text shadow", group, section, default: true }) };
+  return { textShadow: booleanSetting({ label: "setting.text_shadow", group, section, default: true }) };
 }
 
 export function appearanceSettings(section: string | undefined, fontSize: number) {
   return {
     ...fontSettings(section, fontSize),
-    highlightColor: colorSetting({ label: "Highlight color", group, section, hint: "Used for names and numbers.", default: "#b9a8ff" }),
+    highlightColor: colorSetting({ label: "setting.highlight_color", group, section, hint: "setting.highlight_color.hint", default: "#b9a8ff" }),
     ...shadowSettings(section),
   };
 }
 
 export function sizeSettings(section: string | undefined, width: number, height: number) {
-  const sizeGroup = "Browser source size";
+  const sizeGroup = "group.source_size";
   return {
     width: numberSetting({
-      label: "Width",
+      label: "setting.width",
       group: sizeGroup,
       section,
-      hint: "Use the same size for the browser source in OBS. The preview uses it as well.",
+      hint: "setting.width.hint",
       default: width,
       min: 100,
       max: 3840,
       unit: "px",
     }),
-    height: numberSetting({ label: "Height", group: sizeGroup, section, default: height, min: 40, max: 2160, unit: "px" }),
+    height: numberSetting({ label: "setting.height", group: sizeGroup, section, default: height, min: 40, max: 2160, unit: "px" }),
   };
 }
 
