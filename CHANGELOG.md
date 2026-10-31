@@ -4,6 +4,18 @@ All notable changes to StreamXtras, grouped by version in the style of [Keep a C
 
 Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [Keep a Changelog](https://keepachangelog.com/de/). Der Abschnitt einer Version wird als ihre Release-Notizen verwendet.
 
+## [1.3.1] – 2026-10-31
+
+### English
+
+#### Changed
+- On Windows, the Twitch login and the update check are now stored in `%LOCALAPPDATA%\StreamXtras` instead of the roaming folder, as they belong to this computer. Existing files are moved on the first start, so you stay logged in.
+
+### Deutsch
+
+#### Geändert
+- Unter Windows liegen der Twitch-Login und die Update-Prüfung jetzt in `%LOCALAPPDATA%\StreamXtras` statt im Roaming-Ordner, da sie an diesen Rechner gebunden sind. Vorhandene Dateien werden beim ersten Start verschoben, du bleibst also angemeldet.
+
 ## [1.3.0] – 2026-10-31
 
 ### English
