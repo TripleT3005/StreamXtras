@@ -30,15 +30,20 @@ jobs:
         id: version
         run: |
           version=$(sed -n 's/^version = "\(.*\)"$/\1/p' companion/Cargo.toml | head -n 1)
-          package_version=$(jq -r .version package.json)
-          if [ -z "$version" ] || [ "$version" != "$package_version" ]; then
-            echo "::error::companion/Cargo.toml ($version) and package.json ($package_version) must have the same version"
+          if [ -z "$version" ]; then
+            echo "::error::companion/Cargo.toml has no package version"
             exit 1
           fi
-          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
-            echo "::error::CHANGELOG.md has no section for version $version"
-            exit 1
-          fi
+          for found in \
+            "package.json=$(jq -r .version package.json)" \
+            "package-lock.json=$(jq -r .version package-lock.json)" \
+            "package-lock.json (root package)=$(jq -r '.packages[""].version' package-lock.json)" \
+            "CHANGELOG.md (newest section)=$(sed -n 's/^## \[\([^]]*\)\].*/\1/p' CHANGELOG.md | head -n 1)"; do
+            if [ "${found#*=}" != "$version" ]; then
+              echo "::error::${found%%=*} has version ${found#*=}, but companion/Cargo.toml has $version"
+              exit 1
+            fi
+          done
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
