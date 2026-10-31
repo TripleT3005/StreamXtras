@@ -4,6 +4,26 @@ All notable changes to StreamXtras, grouped by version in the style of [Keep a C
 
 Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [Keep a Changelog](https://keepachangelog.com/de/). Der Abschnitt einer Version wird als ihre Release-Notizen verwendet.
 
+## [1.1.0] – 2026-10-31
+
+### English
+
+#### Added
+- Windows installer: installs for the current user without administrator rights or for all users, with Start menu entry, desktop shortcut and optional start with Windows; silent installation with parameters.
+- The Windows program declares per-monitor DPI awareness.
+
+#### Changed
+- The Windows archive is now named `…-windows-x64-portable.zip`; the release also contains the changelog.
+
+### Deutsch
+
+#### Neu
+- Windows-Installer: installiert für den aktuellen Benutzer ohne Administratorrechte oder für alle Benutzer, mit Startmenü-Eintrag, Desktop-Verknüpfung und optionalem Start mit Windows; stille Installation per Parameter.
+- Das Windows-Programm meldet Per-Monitor-DPI-Unterstützung.
+
+#### Geändert
+- Das Windows-Archiv heißt jetzt `…-windows-x64-portable.zip`; das Release enthält zusätzlich den Changelog.
+
 ## [1.0.1] – 2026-10-26
 
 ### English
