@@ -4,6 +4,7 @@ node_modules/
 # Build output
 web/scripts/
 companion/target/
+dist/
 
 # Local configuration
 *.config.json

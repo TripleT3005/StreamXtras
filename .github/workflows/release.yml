@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/release.yml
       - CHANGELOG.md
+      - installer/**
   workflow_dispatch:
 
 permissions:
@@ -67,14 +68,17 @@ jobs:
         include:
           - os: windows-latest
             platform: windows-x64
+            suffix: -portable
             binary: streamxtras.exe
             packaged: StreamXtras.exe
           - os: ubuntu-latest
             platform: linux-x64
+            suffix: ""
             binary: streamxtras
             packaged: streamxtras
           - os: macos-latest
             platform: macos-arm64
+            suffix: ""
             binary: streamxtras
             packaged: StreamXtras
     runs-on: ${{ matrix.os }}
@@ -109,11 +113,11 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          name="StreamXtras-${{ needs.version.outputs.version }}-${{ matrix.platform }}"
+          name="StreamXtras-${{ needs.version.outputs.version }}-${{ matrix.platform }}${{ matrix.suffix }}"
           mkdir -p "dist/$name"
           cp "companion/target/release/${{ matrix.binary }}" "dist/$name/${{ matrix.packaged }}"
           cp -R web "dist/$name/web"
-          cp LICENSE README.md "dist/$name/"
+          cp LICENSE README.md CHANGELOG.md "dist/$name/"
           cd dist
           case "${{ runner.os }}" in
             Windows) 7z a -tzip -bso0 "$name.zip" "$name" && archive="$name.zip" ;;
@@ -126,12 +130,30 @@ jobs:
             shasum -a 256 "$archive" > "$archive.sha256"
           fi
 
+      - name: Build installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          $compiler = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $compiler)) {
+            choco install innosetup --no-progress -y
+          }
+          & $compiler /Qp "/DAppVersion=$env:VERSION" installer\StreamXtras.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Set-Location dist
+          $setup = "StreamXtras-$env:VERSION-windows-x64-setup.exe"
+          $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash *$setup" | Out-File -Encoding ascii -NoNewline "$setup.sha256"
+
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.platform }}
           path: |
             dist/*.zip
             dist/*.tar.gz
+            dist/*.exe
             dist/*.sha256
           if-no-files-found: error
 
@@ -193,7 +215,7 @@ jobs:
             echo "### VirusTotal Scan Report"
             echo "Scanned on: $(date -u +%Y-%m-%d)"
             echo
-            for archive in *.zip *.tar.gz; do
+            for archive in *.zip *.tar.gz *.exe; do
               [ -e "$archive" ] || continue
               curl --fail --silent --show-error \
                 --header "x-apikey: $VT_API_KEY" \

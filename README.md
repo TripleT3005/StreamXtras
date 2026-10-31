@@ -19,15 +19,32 @@ A small companion app runs in the system tray, serves the overlays and a setting
 - **Companion app** – tray icon, local settings page with live preview, settings that apply without reloading the OBS source
 
 ### Installation
-1. Download the archive for your system from [Releases](../../releases): `windows-x64`, `macos-arm64` (Apple silicon) or `linux-x64`.
-2. Extract it to a folder of your choice, e.g. `Documents\StreamXtras`. Keep the `web` folder next to the program.
-3. Start `StreamXtras` (on Linux `streamxtras`, as commands there are lowercase by convention). The app is not signed, so the system may warn on the first start:
-   - **Windows:** SmartScreen → "More info" → "Run anyway"
-   - **macOS:** right-click the program → "Open", or allow it under System Settings → Privacy & Security
-   - **Linux:** the tray icon needs a desktop with StatusNotifierItem support (KDE Plasma, or GNOME with the AppIndicator extension); text-to-speech needs `espeak-ng`
-4. To start it automatically, add a shortcut to your autostart (Windows: press Win+R, enter `shell:startup`).
+**Windows:** download `StreamXtras-<version>-windows-x64-setup.exe` from [Releases](../../releases) and run it. It installs for the current user without administrator rights (to `%LOCALAPPDATA%\Programs\StreamXtras`); "Install for all users" installs to `C:\Program Files\StreamXtras` and asks for administrator rights. Options: Start menu entry (on), desktop shortcut (on), start with Windows (off). Instead of the installer you can use the portable archive `…-windows-x64-portable.zip`.
 
-Each archive has a `.sha256` file to verify the download.
+**macOS and Linux:** download `…-macos-arm64.zip` (Apple silicon) or `…-linux-x64.tar.gz` and extract it to a folder of your choice. Keep the `web` folder next to the program.
+
+The app is not signed, so the system may warn on the first start:
+- **Windows:** SmartScreen → "More info" → "Run anyway"
+- **macOS:** right-click the program → "Open", or allow it under System Settings → Privacy & Security
+- **Linux:** start `streamxtras` (lowercase, as usual for commands there). The tray icon needs a desktop with StatusNotifierItem support (KDE Plasma, or GNOME with the AppIndicator extension); text-to-speech needs `espeak-ng`
+
+With the portable archives, add a shortcut to your autostart to start StreamXtras with your system (Windows: press Win+R, enter `shell:startup`). Each download has a `.sha256` file to verify it.
+
+#### Installer parameters
+| Parameter | Effect |
+|---|---|
+| `/CURRENTUSER` | Install for the current user only (default) |
+| `/ALLUSERS` | Install for all users (asks for administrator rights) |
+| `/DIR="C:\Path"` | Installation folder |
+| `/SILENT`, `/VERYSILENT` | Without wizard (with or without progress window) |
+| `/SUPPRESSMSGBOXES` | No message boxes in silent mode |
+| `/TASKS="desktopicon,autostart"` | Selected options; `desktopicon` adds a desktop shortcut, `autostart` starts StreamXtras with Windows for the installing user. Without the parameter, the desktop shortcut is on and autostart off |
+| `/NOICONS` | No Start menu entry |
+| `/LOG="C:\Path\setup.log"` | Write a log file |
+
+Example: `StreamXtras-1.1.0-windows-x64-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /TASKS="autostart"`
+
+Settings and overlays are stored per user and are not set by the installer. Uninstalling removes the program, its shortcuts and the autostart entry but keeps the settings, the Twitch login and your uploaded files in `%APPDATA%\StreamXtras`.
 
 ### Usage
 1. Start the companion app. On the first start the settings page opens in your browser; later you open it with a click on the tray icon.
@@ -143,15 +160,32 @@ Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays
 - **Begleit-Anwendung** – Tray-Icon, lokale Einstellungsseite mit Live-Vorschau, Einstellungen wirken ohne Neuladen der OBS-Quelle
 
 ### Installation
-1. Das Archiv für dein System unter [Releases](../../releases) herunterladen: `windows-x64`, `macos-arm64` (Apple Silicon) oder `linux-x64`.
-2. In einen beliebigen Ordner entpacken, z. B. `Dokumente\StreamXtras`. Der Ordner `web` muss neben dem Programm bleiben.
-3. `StreamXtras` starten (unter Linux `streamxtras`, weil Befehle dort üblicherweise kleingeschrieben sind). Die Anwendung ist nicht signiert, deshalb warnt das System beim ersten Start eventuell:
-   - **Windows:** SmartScreen → „Weitere Informationen“ → „Trotzdem ausführen“
-   - **macOS:** Rechtsklick auf das Programm → „Öffnen“, oder unter Systemeinstellungen → Datenschutz & Sicherheit erlauben
-   - **Linux:** Das Tray-Icon braucht einen Desktop mit StatusNotifierItem-Unterstützung (KDE Plasma oder GNOME mit AppIndicator-Erweiterung); die Sprachausgabe braucht `espeak-ng`
-4. Für den automatischen Start eine Verknüpfung in den Autostart legen (Windows: Win+R, `shell:startup` eingeben).
+**Windows:** `StreamXtras-<Version>-windows-x64-setup.exe` unter [Releases](../../releases) herunterladen und ausführen. Es installiert für den aktuellen Benutzer ohne Administratorrechte (nach `%LOCALAPPDATA%\Programs\StreamXtras`); „Für alle Benutzer installieren“ installiert nach `C:\Program Files\StreamXtras` und fragt nach Administratorrechten. Optionen: Startmenü-Eintrag (an), Desktop-Verknüpfung (an), mit Windows starten (aus). Statt des Installers geht auch das portable Archiv `…-windows-x64-portable.zip`.
 
-Zu jedem Archiv gibt es eine `.sha256`-Datei, um den Download zu prüfen.
+**macOS und Linux:** `…-macos-arm64.zip` (Apple Silicon) oder `…-linux-x64.tar.gz` herunterladen und in einen beliebigen Ordner entpacken. Der Ordner `web` muss neben dem Programm bleiben.
+
+Die Anwendung ist nicht signiert, deshalb warnt das System beim ersten Start eventuell:
+- **Windows:** SmartScreen → „Weitere Informationen“ → „Trotzdem ausführen“
+- **macOS:** Rechtsklick auf das Programm → „Öffnen“, oder unter Systemeinstellungen → Datenschutz & Sicherheit erlauben
+- **Linux:** `streamxtras` starten (kleingeschrieben, wie dort für Befehle üblich). Das Tray-Icon braucht einen Desktop mit StatusNotifierItem-Unterstützung (KDE Plasma oder GNOME mit AppIndicator-Erweiterung); die Sprachausgabe braucht `espeak-ng`
+
+Bei den portablen Archiven für den automatischen Start eine Verknüpfung in den Autostart legen (Windows: Win+R, `shell:startup` eingeben). Zu jedem Download gibt es eine `.sha256`-Datei, um ihn zu prüfen.
+
+#### Installer-Parameter
+| Parameter | Wirkung |
+|---|---|
+| `/CURRENTUSER` | Nur für den aktuellen Benutzer installieren (Standard) |
+| `/ALLUSERS` | Für alle Benutzer installieren (fragt nach Administratorrechten) |
+| `/DIR="C:\Pfad"` | Installationsordner |
+| `/SILENT`, `/VERYSILENT` | Ohne Assistent (mit oder ohne Fortschrittsfenster) |
+| `/SUPPRESSMSGBOXES` | Keine Meldungsfenster bei stiller Installation |
+| `/TASKS="desktopicon,autostart"` | Gewählte Optionen; `desktopicon` legt eine Desktop-Verknüpfung an, `autostart` startet StreamXtras für den installierenden Benutzer mit Windows. Ohne den Parameter ist die Desktop-Verknüpfung an und der Autostart aus |
+| `/NOICONS` | Kein Startmenü-Eintrag |
+| `/LOG="C:\Pfad\setup.log"` | Protokolldatei schreiben |
+
+Beispiel: `StreamXtras-1.1.0-windows-x64-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /TASKS="autostart"`
+
+Einstellungen und Overlays gelten pro Benutzer und werden vom Installer nicht gesetzt. Die Deinstallation entfernt Programm, Verknüpfungen und Autostart-Eintrag, lässt Einstellungen, Twitch-Login und hochgeladene Dateien in `%APPDATA%\StreamXtras` aber stehen.
 
 ### Bedienung
 1. Begleit-Anwendung starten. Beim ersten Start öffnet sich die Einstellungsseite im Browser, danach per Klick auf das Tray-Icon.

@@ -11,9 +11,20 @@ const ICON_SIZES: [u16; 7] = [16, 20, 24, 32, 48, 64, 256];
 const RT_ICON: u16 = 3;
 const RT_GROUP_ICON: u16 = 14;
 const RT_VERSION: u16 = 16;
+const RT_MANIFEST: u16 = 24;
 const LANGUAGE_EN_US: u16 = 0x0409;
 const CODE_PAGE_UNICODE: u16 = 1200;
 const MEMORY_FLAGS: u16 = 0x1030;
+const MANIFEST: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+    </windowsSettings>
+  </application>
+</assembly>
+"#;
 
 // Build
 fn main() {
@@ -29,6 +40,36 @@ fn main() {
     let path = out_dir.join("streamxtras.res");
     fs::write(&path, resources()).expect("writing the resource file failed");
     println!("cargo:rustc-link-arg-bins={}", path.display());
+    if let Some(profile_dir) = out_dir.ancestors().nth(3) {
+        fs::write(profile_dir.join("StreamXtras.ico"), icon_file())
+            .expect("writing the icon file failed");
+    }
+}
+
+// Icon file
+fn icon_file() -> Vec<u8> {
+    let images: Vec<(u16, Vec<u8>)> = ICON_SIZES
+        .into_iter()
+        .map(|size| (size, icon_image(size)))
+        .collect();
+    let mut file = Vec::new();
+    push_u16(&mut file, 0);
+    push_u16(&mut file, 1);
+    push_u16(&mut file, u16::try_from(images.len()).unwrap_or(0));
+    let mut offset = 6 + 16 * images.len();
+    for (size, image) in &images {
+        let dimension = u8::try_from(*size).unwrap_or(0);
+        file.extend_from_slice(&[dimension, dimension, 0, 0]);
+        push_u16(&mut file, 1);
+        push_u16(&mut file, 32);
+        push_u32(&mut file, u32::try_from(image.len()).unwrap_or(0));
+        push_u32(&mut file, u32::try_from(offset).unwrap_or(0));
+        offset += image.len();
+    }
+    for (_, image) in &images {
+        file.extend_from_slice(image);
+    }
+    file
 }
 
 // Resources
@@ -63,6 +104,14 @@ fn resources() -> Vec<u8> {
         RT_VERSION,
         1,
         &version_info(),
+        MEMORY_FLAGS,
+        LANGUAGE_EN_US,
+    );
+    push_resource(
+        &mut file,
+        RT_MANIFEST,
+        1,
+        MANIFEST.as_bytes(),
         MEMORY_FLAGS,
         LANGUAGE_EN_US,
     );
