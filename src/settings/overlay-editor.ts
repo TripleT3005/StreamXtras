@@ -194,6 +194,7 @@ function createSourceUrl(path: string, id: string): HTMLElement {
   const url = element("input", "");
   url.id = id;
   url.readOnly = true;
+  url.dir = "ltr";
   url.value = new URL(path, location.origin).href;
   url.title = t("editor.url.hint");
   url.addEventListener("focus", () => url.select());
