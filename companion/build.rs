@@ -15,6 +15,16 @@ const RT_MANIFEST: u16 = 24;
 const LANGUAGE_EN_US: u16 = 0x0409;
 const CODE_PAGE_UNICODE: u16 = 1200;
 const MEMORY_FLAGS: u16 = 0x1030;
+const ICNS_ENTRIES: [(&[u8; 4], u16); 6] = [
+    (b"icp4", 16),
+    (b"icp5", 32),
+    (b"icp6", 64),
+    (b"ic07", 128),
+    (b"ic08", 256),
+    (b"ic09", 512),
+];
+const PNG_SIGNATURE: [u8; 8] = [0x89, b'P', b'N', b'G', b'\r', b'\n', 0x1A, b'\n'];
+const MAX_STORED_BLOCK: usize = 65_535;
 const MANIFEST: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
@@ -31,12 +41,18 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=src/icon.rs");
     println!("cargo:rerun-if-changed=Cargo.toml");
-    let is_windows = env::var("CARGO_CFG_TARGET_OS").is_ok_and(|os| os == "windows");
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let is_msvc = env::var("CARGO_CFG_TARGET_ENV").is_ok_and(|target_env| target_env == "msvc");
-    if !is_windows || !is_msvc {
+    let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is set by Cargo"));
+    if target_os == "macos"
+        && let Some(profile_dir) = out_dir.ancestors().nth(3)
+    {
+        fs::write(profile_dir.join("StreamXtras.icns"), icns_file())
+            .expect("writing the icon file failed");
+    }
+    if target_os != "windows" || !is_msvc {
         return;
     }
-    let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is set by Cargo"));
     let path = out_dir.join("streamxtras.res");
     fs::write(&path, resources()).expect("writing the resource file failed");
     println!("cargo:rustc-link-arg-bins={}", path.display());
@@ -70,6 +86,87 @@ fn icon_file() -> Vec<u8> {
         file.extend_from_slice(image);
     }
     file
+}
+
+// macOS icon
+fn icns_file() -> Vec<u8> {
+    let mut entries = Vec::new();
+    for (kind, size) in ICNS_ENTRIES {
+        let png = png_image(size);
+        entries.extend_from_slice(kind);
+        entries.extend_from_slice(&u32::try_from(png.len() + 8).unwrap_or(0).to_be_bytes());
+        entries.extend_from_slice(&png);
+    }
+    let mut file = b"icns".to_vec();
+    file.extend_from_slice(&u32::try_from(entries.len() + 8).unwrap_or(0).to_be_bytes());
+    file.extend_from_slice(&entries);
+    file
+}
+
+fn png_image(size: u16) -> Vec<u8> {
+    let rgba = icon::icon_pixels(size);
+    let row = usize::from(size) * 4;
+    let mut raw = Vec::with_capacity((row + 1) * usize::from(size));
+    for line in rgba.chunks(row) {
+        raw.push(0);
+        raw.extend_from_slice(line);
+    }
+    let mut header = Vec::new();
+    header.extend_from_slice(&u32::from(size).to_be_bytes());
+    header.extend_from_slice(&u32::from(size).to_be_bytes());
+    header.extend_from_slice(&[8, 6, 0, 0, 0]);
+    let mut png = PNG_SIGNATURE.to_vec();
+    png_chunk(&mut png, *b"IHDR", &header);
+    png_chunk(&mut png, *b"IDAT", &zlib_stored(&raw));
+    png_chunk(&mut png, *b"IEND", &[]);
+    png
+}
+
+fn png_chunk(png: &mut Vec<u8>, kind: [u8; 4], data: &[u8]) {
+    png.extend_from_slice(&u32::try_from(data.len()).unwrap_or(0).to_be_bytes());
+    let start = png.len();
+    png.extend_from_slice(&kind);
+    png.extend_from_slice(data);
+    let checksum = crc32(&png[start..]);
+    png.extend_from_slice(&checksum.to_be_bytes());
+}
+
+fn zlib_stored(data: &[u8]) -> Vec<u8> {
+    let mut output = vec![0x78, 0x01];
+    let blocks: Vec<&[u8]> = data.chunks(MAX_STORED_BLOCK).collect();
+    for (index, block) in blocks.iter().enumerate() {
+        output.push(u8::from(index + 1 == blocks.len()));
+        let length = u16::try_from(block.len()).unwrap_or(u16::MAX);
+        output.extend_from_slice(&length.to_le_bytes());
+        output.extend_from_slice(&(!length).to_le_bytes());
+        output.extend_from_slice(block);
+    }
+    output.extend_from_slice(&adler32(data).to_be_bytes());
+    output
+}
+
+fn crc32(data: &[u8]) -> u32 {
+    let mut crc = 0xFFFF_FFFF_u32;
+    for byte in data {
+        crc ^= u32::from(*byte);
+        for _ in 0..8 {
+            crc = if crc & 1 == 1 {
+                (crc >> 1) ^ 0xEDB8_8320
+            } else {
+                crc >> 1
+            };
+        }
+    }
+    !crc
+}
+
+fn adler32(data: &[u8]) -> u32 {
+    let (mut first, mut second) = (1_u32, 0_u32);
+    for byte in data {
+        first = (first + u32::from(*byte)) % 65_521;
+        second = (second + first) % 65_521;
+    }
+    (second << 16) | first
 }
 
 // Resources

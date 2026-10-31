@@ -113,13 +113,19 @@ fn run() -> Result<(), Box<dyn Error>> {
 }
 
 fn web_root() -> PathBuf {
-    let bundled = std::env::current_exe()
+    let executable_dir = std::env::current_exe()
         .ok()
-        .and_then(|exe| exe.parent().map(|directory| directory.join("web")));
-    if let Some(directory) = bundled
-        && directory.is_dir()
-    {
-        return directory;
+        .and_then(|exe| exe.parent().map(PathBuf::from));
+    let bundled = executable_dir.into_iter().flat_map(|directory| {
+        [
+            directory.join("web"),
+            directory.join("..").join("Resources").join("web"),
+        ]
+    });
+    for directory in bundled {
+        if directory.is_dir() {
+            return directory;
+        }
     }
     development_web_root()
 }
