@@ -1,6 +1,6 @@
 {
   "name": "streamxtras",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "Lightweight, self-hosted extras for OBS: chat box, alerts and more",
   "license": "MIT",
