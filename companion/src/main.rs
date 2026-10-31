@@ -47,6 +47,10 @@ fn main() -> ExitCode {
 fn run() -> Result<(), Box<dyn Error>> {
     let config_dir = paths::config_dir().ok_or(config::ConfigError::NoConfigDirectory)?;
     let (config, is_first_start) = config::load_or_create(&config_dir)?;
+    let local_dir = paths::local_dir().unwrap_or_else(|| config_dir.clone());
+    if let Err(error) = paths::move_local_files(&config_dir, &local_dir) {
+        eprintln!("Moving files to {} failed: {error}", local_dir.display());
+    }
     let port = config.port;
     let url = format!("http://127.0.0.1:{port}/");
 
@@ -65,11 +69,11 @@ fn run() -> Result<(), Box<dyn Error>> {
         .or_else(|| option_env!("TWITCH_CLIENT_ID").map(str::to_owned))
         .filter(|client_id| !client_id.trim().is_empty());
     let http = Arc::new(UreqHttp::new());
-    let twitch = TwitchAccount::new(http.clone(), client_id, &config_dir, Arc::clone(&events));
+    let twitch = TwitchAccount::new(http.clone(), client_id, &local_dir, Arc::clone(&events));
     twitch.start_maintenance();
     let update = Arc::new(update::UpdateChecker::new(
         http.clone(),
-        &config_dir,
+        &local_dir,
         env!("CARGO_PKG_VERSION"),
     ));
     let helix = Arc::new(HelixClient::new(http, Arc::clone(&twitch)));

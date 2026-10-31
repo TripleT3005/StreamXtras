@@ -46,7 +46,7 @@ With the portable archives, add a shortcut to your autostart to start StreamXtra
 
 Example: `StreamXtras-1.1.0-windows-x64-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /TASKS="autostart"`
 
-Settings and overlays are stored per user and are not set by the installer. Uninstalling removes the program, its shortcuts and the autostart entry but keeps the settings, the Twitch login and your uploaded files in `%APPDATA%\StreamXtras`.
+Settings and overlays are stored per user and are not set by the installer. Uninstalling removes the program, its shortcuts and the autostart entry but keeps the settings and your uploaded files in `%APPDATA%\StreamXtras` and the Twitch login in `%LOCALAPPDATA%\StreamXtras`.
 
 ### Usage
 1. Start the companion app. On the first start the settings page opens in your browser; later you open it with a click on the tray icon.
@@ -97,15 +97,15 @@ The companion app is a small Rust program with a tray icon and a web server that
 
 The chat box and the top emotes connect to the Twitch chat themselves, anonymously and read-only. With the Twitch login, the companion app receives follows, subscriptions, gift subs, cheers, raids and goal changes through Twitch EventSub and passes them to the overlays. Text-to-speech uses the speech engine of the operating system (Windows voices, `say` on macOS, `espeak-ng` on Linux).
 
-All data stays in the configuration folder of your user account (Windows: `%APPDATA%\StreamXtras`, macOS: `~/Library/Application Support/StreamXtras`, Linux: `~/.config/streamxtras`):
+All data stays in the folders of your user account. On Windows, everything that belongs to you and may roam with your profile is in `%APPDATA%\StreamXtras`, everything bound to this computer in `%LOCALAPPDATA%\StreamXtras`. On macOS (`~/Library/Application Support/StreamXtras`) and Linux (`~/.config/streamxtras`) everything is in one folder.
 
-| File | Content |
-|---|---|
-| `config.json` | Settings of all overlays and the port |
-| `twitch-token.json` | Twitch login (access and refresh token) |
-| `history.json` | The latest 20 events per type for the recent events |
-| `update-check.json` | Time and result of the last update check |
-| `media/` | Your uploaded images, videos and sounds |
+| File | Content | Windows folder |
+|---|---|---|
+| `config.json` | Settings of all overlays and the port | `%APPDATA%` |
+| `history.json` | The latest 20 events per type for the recent events | `%APPDATA%` |
+| `media/` | Your uploaded images, videos and sounds | `%APPDATA%` |
+| `twitch-token.json` | Twitch login (access and refresh token) | `%LOCALAPPDATA%` |
+| `update-check.json` | Time and result of the last update check | `%LOCALAPPDATA%` |
 
 ### Privacy
 StreamXtras has no telemetry and no server of its own. The settings page and the overlays only talk to the companion app on your computer. These network accesses exist:
@@ -189,7 +189,7 @@ Bei den portablen Archiven für den automatischen Start eine Verknüpfung in den
 
 Beispiel: `StreamXtras-1.1.0-windows-x64-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /TASKS="autostart"`
 
-Einstellungen und Overlays gelten pro Benutzer und werden vom Installer nicht gesetzt. Die Deinstallation entfernt Programm, Verknüpfungen und Autostart-Eintrag, lässt Einstellungen, Twitch-Login und hochgeladene Dateien in `%APPDATA%\StreamXtras` aber stehen.
+Einstellungen und Overlays gelten pro Benutzer und werden vom Installer nicht gesetzt. Die Deinstallation entfernt Programm, Verknüpfungen und Autostart-Eintrag, lässt Einstellungen und hochgeladene Dateien in `%APPDATA%\StreamXtras` und den Twitch-Login in `%LOCALAPPDATA%\StreamXtras` aber stehen.
 
 ### Bedienung
 1. Begleit-Anwendung starten. Beim ersten Start öffnet sich die Einstellungsseite im Browser, danach per Klick auf das Tray-Icon.
@@ -240,15 +240,15 @@ Die Begleit-Anwendung ist ein kleines Rust-Programm mit Tray-Icon und einem Webs
 
 Chatbox und Top-Emotes verbinden sich selbst mit dem Twitch-Chat, anonym und nur lesend. Mit dem Twitch-Login empfängt die Begleit-Anwendung Follows, Abos, Geschenkabos, Cheers, Raids und Zieländerungen über Twitch EventSub und gibt sie an die Overlays weiter. Die Sprachausgabe nutzt die Sprachausgabe des Betriebssystems (Windows-Stimmen, `say` unter macOS, `espeak-ng` unter Linux).
 
-Alle Daten bleiben im Konfigurationsordner deines Benutzerkontos (Windows: `%APPDATA%\StreamXtras`, macOS: `~/Library/Application Support/StreamXtras`, Linux: `~/.config/streamxtras`):
+Alle Daten bleiben in den Ordnern deines Benutzerkontos. Unter Windows liegt alles, was dir gehört und mit deinem Profil mitwandern darf, in `%APPDATA%\StreamXtras`, alles an diesen Rechner Gebundene in `%LOCALAPPDATA%\StreamXtras`. Unter macOS (`~/Library/Application Support/StreamXtras`) und Linux (`~/.config/streamxtras`) liegt alles in einem Ordner.
 
-| Datei | Inhalt |
-|---|---|
-| `config.json` | Einstellungen aller Overlays und der Port |
-| `twitch-token.json` | Twitch-Login (Zugriffs- und Erneuerungstoken) |
-| `history.json` | Die letzten 20 Ereignisse je Typ für die letzten Ereignisse |
-| `update-check.json` | Zeitpunkt und Ergebnis der letzten Update-Prüfung |
-| `media/` | Deine hochgeladenen Bilder, Videos und Sounds |
+| Datei | Inhalt | Ordner unter Windows |
+|---|---|---|
+| `config.json` | Einstellungen aller Overlays und der Port | `%APPDATA%` |
+| `history.json` | Die letzten 20 Ereignisse je Typ für die letzten Ereignisse | `%APPDATA%` |
+| `media/` | Deine hochgeladenen Bilder, Videos und Sounds | `%APPDATA%` |
+| `twitch-token.json` | Twitch-Login (Zugriffs- und Erneuerungstoken) | `%LOCALAPPDATA%` |
+| `update-check.json` | Zeitpunkt und Ergebnis der letzten Update-Prüfung | `%LOCALAPPDATA%` |
 
 ### Datenschutz
 StreamXtras hat keine Telemetrie und keinen eigenen Server. Einstellungsseite und Overlays sprechen nur mit der Begleit-Anwendung auf deinem Rechner. Diese Netzwerkzugriffe gibt es:
