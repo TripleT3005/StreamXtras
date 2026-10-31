@@ -126,6 +126,66 @@ jobs:
           esac
           sha256sum "$archive" > "$archive.sha256"
 
+      - name: Package Linux packages
+        if: runner.os == 'Linux'
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          package_version="${VERSION//-/\~}"
+          stage="$RUNNER_TEMP/package/root"
+          mkdir -p "$stage/usr/bin" "$stage/usr/share/streamxtras" "$stage/usr/share/applications" "$stage/usr/share/doc/streamxtras"
+          install -m 755 companion/target/release/streamxtras "$stage/usr/bin/streamxtras"
+          cp -R web "$stage/usr/share/streamxtras/web"
+          install -m 644 installer/linux/streamxtras.desktop "$stage/usr/share/applications/streamxtras.desktop"
+          for icon in companion/target/release/icons/*.png; do
+            size=$(basename "$icon" .png)
+            install -D -m 644 "$icon" "$stage/usr/share/icons/hicolor/${size}x${size}/apps/streamxtras.png"
+          done
+          install -D -m 644 web/favicon.svg "$stage/usr/share/icons/hicolor/scalable/apps/streamxtras.svg"
+          install -m 644 LICENSE README.md CHANGELOG.md installer/linux/copyright "$stage/usr/share/doc/streamxtras/"
+
+          deb="dist/streamxtras_${package_version}_amd64.deb"
+          deb_root="$RUNNER_TEMP/package/deb"
+          mkdir -p "$deb_root/DEBIAN"
+          cp -R "$stage/." "$deb_root/"
+          size=$(du -sk "$deb_root" | cut -f 1)
+          sed -e "s/APP_VERSION/$package_version/" -e "s/INSTALLED_SIZE/$size/" installer/linux/control > "$deb_root/DEBIAN/control"
+          dpkg-deb --root-owner-group --build "$deb_root" "$deb"
+
+          sudo apt-get install -y --no-install-recommends rpm > /dev/null
+          rpm_top="$RUNNER_TEMP/package/rpmbuild"
+          sed "s/APP_VERSION/$package_version/" installer/linux/streamxtras.spec > "$RUNNER_TEMP/package/streamxtras.spec"
+          rpmbuild -bb --quiet --define "_topdir $rpm_top" --define "_sourcedir $RUNNER_TEMP/package" "$RUNNER_TEMP/package/streamxtras.spec"
+          cp "$rpm_top"/RPMS/x86_64/*.rpm dist/
+
+          cd dist
+          for package in *.deb *.rpm; do
+            sha256sum "$package" > "$package.sha256"
+          done
+
+      - name: Check Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          dpkg-deb --info dist/*.deb
+          rpm -qpi dist/*.rpm
+          rpm -qlp dist/*.rpm | grep -q '^/usr/share/streamxtras/web/settings/index.html$'
+          sudo apt-get install -y ./dist/*.deb
+          test -x /usr/bin/streamxtras
+          test -f /usr/share/applications/streamxtras.desktop
+          desktop-file-validate /usr/share/applications/streamxtras.desktop || true
+          mkdir -p ~/.config/streamxtras
+          echo '{}' > ~/.config/streamxtras/config.json
+          (dbus-run-session -- timeout 10 streamxtras > "$RUNNER_TEMP/streamxtras.log" 2>&1 &)
+          for attempt in 1 2 3 4 5; do
+            sleep 1
+            if curl --fail --silent http://127.0.0.1:47820/settings/ > /dev/null; then
+              echo "The installed companion app serves the settings page"
+              exit 0
+            fi
+          done
+          cat "$RUNNER_TEMP/streamxtras.log"
+          exit 1
+
       - name: Package macOS app
         if: runner.os == 'macOS'
         env:
@@ -172,6 +232,8 @@ jobs:
             dist/*.tar.gz
             dist/*.exe
             dist/*.dmg
+            dist/*.deb
+            dist/*.rpm
             dist/*.sha256
           if-no-files-found: error
 
@@ -233,7 +295,7 @@ jobs:
             echo "### VirusTotal Scan Report"
             echo "Scanned on: $(date -u +%Y-%m-%d)"
             echo
-            for archive in *.zip *.tar.gz *.exe *.dmg; do
+            for archive in *.zip *.tar.gz *.exe *.dmg *.deb *.rpm; do
               [ -e "$archive" ] || continue
               curl --fail --silent --show-error \
                 --header "x-apikey: $VT_API_KEY" \

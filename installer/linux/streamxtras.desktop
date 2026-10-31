@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=StreamXtras
+Comment=Self-hosted chat box, alerts and more for OBS
+Comment[de]=Selbst betriebene Chatbox, Alerts und mehr für OBS
+Exec=streamxtras
+Icon=streamxtras
+Terminal=false
+Categories=AudioVideo;Video;Network;
+Keywords=OBS;Twitch;Overlay;Chat;Alerts;Stream;
+StartupNotify=false

@@ -120,6 +120,11 @@ fn web_root() -> PathBuf {
         [
             directory.join("web"),
             directory.join("..").join("Resources").join("web"),
+            directory
+                .join("..")
+                .join("share")
+                .join("streamxtras")
+                .join("web"),
         ]
     });
     for directory in bundled {

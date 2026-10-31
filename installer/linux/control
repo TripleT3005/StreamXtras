@@ -1,0 +1,14 @@
+Package: streamxtras
+Version: APP_VERSION
+Architecture: amd64
+Maintainer: TripleT3005 <97241354+TripleT3005@users.noreply.github.com>
+Installed-Size: INSTALLED_SIZE
+Depends: libc6, libgcc-s1
+Recommends: espeak-ng
+Section: video
+Priority: optional
+Homepage: https://github.com/TripleT3005/StreamXtras
+Description: Self-hosted chat box, alerts and more for OBS
+ A small companion app runs in the system tray, serves stream overlays
+ (chat box, alerts, goals, recent events, top emotes) and a settings page
+ on 127.0.0.1 and connects them to Twitch.
