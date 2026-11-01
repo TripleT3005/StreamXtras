@@ -1,4 +1,4 @@
-# <img src="web/favicon.svg" alt="" width="36" height="36"> StreamXtras
+# <img src="web/favicon.svg" alt="" width="40" height="40" align="center"> StreamXtras
 
 <!-- web:skip -->
 [English](#english) · [Deutsch](#deutsch)
@@ -9,7 +9,7 @@
 Lightweight, self-hosted extras for your stream in OBS – chat box, alerts and more – as a free alternative to hosted overlay services.
 A small companion app runs in the system tray, serves the overlays and a settings page on your computer and connects them to Twitch. No account with a third-party service, no tracking, no external fonts or scripts.
 
-> Feedback and bug reports are welcome as issues. Not affiliated with or endorsed by Twitch, 7TV, BetterTTV, FrankerFaceZ or Chatterino. Twitch is a trademark of Twitch Interactive, Inc.
+> Feedback and bug reports are welcome as [issues](../../issues). Not affiliated with or endorsed by Twitch, 7TV, BetterTTV, FrankerFaceZ or Chatterino. Twitch is a trademark of Twitch Interactive, Inc.
 
 ### Features
 - **Chat box** – reads the chat anonymously (no login), shows emotes from Twitch, 7TV, BetterTTV and FrankerFaceZ, highlights announcements, removes messages deleted by moderators and filters bots and words
@@ -32,7 +32,7 @@ The app is not signed, so the system may warn on the first start:
 - **macOS:** the app is not notarized by Apple. On the first start macOS refuses to open it; then choose System Settings → Privacy & Security → "Open Anyway" (on older versions: right-click the app → "Open"). This is needed only once.
 - **Linux:** start `streamxtras` (lowercase, as usual for commands there). The tray icon needs a desktop with StatusNotifierItem support (KDE Plasma, or GNOME with the AppIndicator extension); text-to-speech needs `espeak-ng`
 
-With the portable archives, add a shortcut to your autostart to start StreamXtras with your system (Windows: press Win+R, enter `shell:startup`). Each download has a `.sha256` file to verify it.
+With the portable archives, add a shortcut to your autostart to start StreamXtras with your system (Windows: press Win+R, enter `shell:startup`). Each download has a `.sha256` file to verify it. Changes are listed in the [changelog](CHANGELOG.md).
 
 #### Installer parameters
 | Parameter | Effect |
@@ -131,7 +131,7 @@ The Twitch token never leaves the companion app except to Twitch itself. Without
 
 <!-- web:skip -->
 
-### Build
+### Building
 Requires [Node.js](https://nodejs.org/) (LTS) for the overlays and [Rust](https://www.rust-lang.org/) (stable) for the companion app. The only Node dependency is the TypeScript compiler.
 
 ```
@@ -162,7 +162,7 @@ Releases: a new version in `companion/Cargo.toml`, `package.json` and `package-l
 Schlanke, selbst betriebene Extras für deinen Stream in OBS – Chatbox, Alerts und mehr – als kostenlose Alternative zu gehosteten Overlay-Diensten.
 Eine kleine Begleit-Anwendung läuft im Infobereich (Tray), liefert die Overlays und eine Einstellungsseite auf deinem Rechner aus und verbindet sie mit Twitch. Kein Konto bei einem Drittanbieter, kein Tracking, keine externen Schriften oder Skripte.
 
-> Rückmeldungen und Fehlerberichte gern als Issue. Keine Verbindung zu Twitch, 7TV, BetterTTV, FrankerFaceZ oder Chatterino und nicht von ihnen unterstützt. Twitch ist eine Marke von Twitch Interactive, Inc.
+> Rückmeldungen und Fehlerberichte gern als [Issue](../../issues). Keine Verbindung zu Twitch, 7TV, BetterTTV, FrankerFaceZ oder Chatterino und nicht von ihnen unterstützt. Twitch ist eine Marke von Twitch Interactive, Inc.
 
 ### Funktionen
 - **Chatbox** – liest den Chat anonym (ohne Login), zeigt Emotes von Twitch, 7TV, BetterTTV und FrankerFaceZ, hebt Ankündigungen hervor, entfernt von Moderatoren gelöschte Nachrichten und filtert Bots und Wörter
@@ -185,7 +185,7 @@ Die Anwendung ist nicht signiert, deshalb warnt das System beim ersten Start eve
 - **macOS:** Die App ist nicht von Apple beglaubigt. Beim ersten Start verweigert macOS das Öffnen; dann unter Systemeinstellungen → Datenschutz & Sicherheit „Dennoch öffnen“ wählen (bei älteren Versionen: Rechtsklick auf die App → „Öffnen“). Das ist nur einmal nötig.
 - **Linux:** `streamxtras` starten (kleingeschrieben, wie dort für Befehle üblich). Das Tray-Icon braucht einen Desktop mit StatusNotifierItem-Unterstützung (KDE Plasma oder GNOME mit AppIndicator-Erweiterung); die Sprachausgabe braucht `espeak-ng`
 
-Bei den portablen Archiven für den automatischen Start eine Verknüpfung in den Autostart legen (Windows: Win+R, `shell:startup` eingeben). Zu jedem Download gibt es eine `.sha256`-Datei, um ihn zu prüfen.
+Bei den portablen Archiven für den automatischen Start eine Verknüpfung in den Autostart legen (Windows: Win+R, `shell:startup` eingeben). Zu jedem Download gibt es eine `.sha256`-Datei, um ihn zu prüfen. Änderungen stehen im [Changelog](CHANGELOG.md).
 
 #### Installer-Parameter
 | Parameter | Wirkung |
