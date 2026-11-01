@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/release.yml
       - CHANGELOG.md
+      - assets/icons/**
       - installer/**
   workflow_dispatch:
 
@@ -137,11 +138,10 @@ jobs:
           install -m 755 companion/target/release/streamxtras "$stage/usr/bin/streamxtras"
           cp -R web "$stage/usr/share/streamxtras/web"
           install -m 644 installer/linux/streamxtras.desktop "$stage/usr/share/applications/streamxtras.desktop"
-          for icon in companion/target/release/icons/*.png; do
-            size=$(basename "$icon" .png)
-            install -D -m 644 "$icon" "$stage/usr/share/icons/hicolor/${size}x${size}/apps/streamxtras.png"
+          for size in 16 32 64 128 256; do
+            install -D -m 644 "assets/icons/icon-$size.png" "$stage/usr/share/icons/hicolor/${size}x${size}/apps/streamxtras.png"
           done
-          install -D -m 644 web/favicon.svg "$stage/usr/share/icons/hicolor/scalable/apps/streamxtras.svg"
+          install -D -m 644 assets/icons/icon.svg "$stage/usr/share/icons/hicolor/scalable/apps/streamxtras.svg"
           install -m 644 LICENSE README.md CHANGELOG.md installer/linux/copyright "$stage/usr/share/doc/streamxtras/"
 
           deb="dist/streamxtras_${package_version}_amd64.deb"
