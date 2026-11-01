@@ -307,3 +307,15 @@ jobs:
           } > notes.md
 
           gh release edit "$TAG" --repo "${{ github.repository }}" --notes-file notes.md
+
+  discord:
+    needs: [version, release]
+    uses: TripleT3005/TripleT3005/.github/workflows/discord-release.yml@main
+    with:
+      title: StreamXtras ${{ needs.version.outputs.version }}
+      version: ${{ needs.version.outputs.version }}
+      tag: v${{ needs.version.outputs.version }}
+      changelog: CHANGELOG.md
+      page: streamxtras
+    secrets:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
