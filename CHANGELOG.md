@@ -4,6 +4,18 @@ All notable changes to StreamXtras, grouped by version in the style of [Keep a C
 
 Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [Keep a Changelog](https://keepachangelog.com/de/). Der Abschnitt einer Version wird als ihre Release-Notizen verwendet.
 
+## [1.4.1] – 2026-11-01
+
+### English
+
+#### Changed
+- Program, setup, packages and the favicon of the web pages take their icon in every size from one logo file; it looks the same as before.
+
+### Deutsch
+
+#### Geändert
+- Programm, Setup, Pakete und das Favicon der Webseiten beziehen ihr Icon in jeder Größe aus einer einzigen Logo-Datei; es sieht aus wie bisher.
+
 ## [1.4.0] – 2026-10-31
 
 ### English

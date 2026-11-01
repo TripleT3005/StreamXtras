@@ -26,6 +26,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 const READ_TIMEOUT: Duration = Duration::from_secs(10);
 const KEEPALIVE_INTERVAL: Duration = Duration::from_secs(15);
 const MAX_OVERLAY_ID_LENGTH: usize = 40;
+const FAVICON: &[u8] = include_bytes!("../../assets/icons/icon.svg");
 
 // Types
 pub struct AppState {
@@ -95,6 +96,7 @@ fn route(request: &Request, state: &AppState) -> Outcome {
     let response =
         match (request.method, path, overlay_id) {
             (Method::Get, "/", _) => Response::redirect("/settings/"),
+            (Method::Get, "/favicon.svg", _) => Response::new(200, "image/svg+xml", FAVICON),
             (Method::Get, "/api/health", _) => Response::json(
                 200,
                 &serde_json::json!({ "name": APP_NAME, "version": VERSION }),
@@ -607,6 +609,20 @@ mod tests {
         assert_eq!(
             reply(&get("/"), &test.state).headers,
             vec![("Location", "/settings/".to_owned())]
+        );
+    }
+
+    #[test]
+    fn serves_the_favicon_from_the_logo() {
+        let test = test_state("favicon");
+        let favicon = reply(&get("/favicon.svg"), &test.state);
+        assert_eq!(
+            (
+                favicon.status,
+                favicon.content_type,
+                favicon.body.as_slice()
+            ),
+            (200, "image/svg+xml", FAVICON)
         );
     }
 
