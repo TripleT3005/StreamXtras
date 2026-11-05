@@ -159,6 +159,8 @@ Releases: a new version in `companion/Cargo.toml`, `package.json` and `package-l
 ### License
 [MIT](LICENSE)
 
+Release packages, the installer and the Linux packages include `THIRD-PARTY-LICENSES.txt` with the licenses of all third-party components built into the companion app; the overlays contain no third-party code. The CI fails if a dependency uses a license that is not on the allow list in [`tools/third_party_licenses.py`](tools/third_party_licenses.py). The list is created with Python 3 (standard library only), e.g. `python ../tools/third_party_licenses.py --rust-std --output ../THIRD-PARTY-LICENSES.txt` in `companion`; the Windows installer needs this file.
+
 ## Deutsch
 
 Schlanke, selbst betriebene Extras für deinen Stream in OBS – Chatbox, Alerts und mehr – als kostenlose Alternative zu gehosteten Overlay-Diensten.
@@ -313,3 +315,5 @@ Releases: Eine neue Version in `companion/Cargo.toml`, `package.json` und `packa
 
 ### Lizenz
 [MIT](LICENSE)
+
+Release-Pakete, Installer und Linux-Pakete enthalten `THIRD-PARTY-LICENSES.txt` mit den Lizenzen aller Fremdkomponenten, die in der Companion-App stecken; die Overlays enthalten keinen fremden Code. Die CI schlägt fehl, wenn eine Abhängigkeit eine Lizenz verwendet, die nicht auf der Liste erlaubter Lizenzen in [`tools/third_party_licenses.py`](tools/third_party_licenses.py) steht. Die Liste entsteht mit Python 3 (nur Standardbibliothek), z. B. mit `python ../tools/third_party_licenses.py --rust-std --output ../THIRD-PARTY-LICENSES.txt` in `companion`; der Windows-Installer braucht diese Datei.
