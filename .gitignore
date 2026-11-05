@@ -5,6 +5,8 @@ node_modules/
 web/scripts/
 companion/target/
 dist/
+THIRD-PARTY-LICENSES.txt
+__pycache__/
 
 # Local configuration
 *.config.json

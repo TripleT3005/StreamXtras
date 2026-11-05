@@ -1,6 +1,8 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: StreamXtras
 Source: https://github.com/TripleT3005/StreamXtras
+Comment: Licenses of the third-party components built into the companion app:
+ /usr/share/doc/streamxtras/THIRD-PARTY-LICENSES.txt
 
 Files: *
 Copyright: TripleT3005
