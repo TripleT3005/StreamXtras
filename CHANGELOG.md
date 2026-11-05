@@ -1,8 +1,20 @@
 # Changelog
 
-All notable changes to StreamXtras, grouped by version in the style of [Keep a Changelog](https://keepachangelog.com/). The section of each version is used as its release notes.
+All notable changes to StreamXtras, grouped by version in the style of [Keep a Changelog](https://keepachangelog.com/). The section of each version is used as its release notes. Changes on `main` that are not released yet are collected under [Unreleased] and move into the section of the next version.
 
-Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [Keep a Changelog](https://keepachangelog.com/de/). Der Abschnitt einer Version wird als ihre Release-Notizen verwendet.
+Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [Keep a Changelog](https://keepachangelog.com/de/). Der Abschnitt einer Version wird als ihre Release-Notizen verwendet. Änderungen auf `main`, die noch nicht veröffentlicht sind, stehen unter [Unreleased] und wandern mit der nächsten Version in deren Abschnitt.
+
+## [Unreleased]
+
+### English
+
+#### Added
+- Release packages, the setup and the Linux packages include the licenses of all third-party components in `THIRD-PARTY-LICENSES.txt`.
+
+### Deutsch
+
+#### Neu
+- Release-Pakete, Setup und Linux-Pakete enthalten die Lizenzen aller Fremdkomponenten in `THIRD-PARTY-LICENSES.txt`.
 
 ## [1.4.1] – 2026-11-01
 
