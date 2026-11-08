@@ -137,13 +137,13 @@ class GitTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.path = Path(self.directory.name)
         self.run_git("init", "--quiet")
-        (self.path / "companion").mkdir()
+        (self.path / "app").mkdir()
         self.commit("Initial", "Someone", "lock 1", tag="v1.0.0")
 
     def run_git(self, *arguments):
         subprocess.run(["git", *arguments], cwd=self.path, check=True, capture_output=True)
 
-    def commit(self, message, author, lock, tag=None, path="companion/Cargo.lock"):
+    def commit(self, message, author, lock, tag=None, path="app/Cargo.lock"):
         (self.path / path).write_text(lock, encoding="utf-8")
         self.run_git("add", "--all")
         self.run_git(
@@ -156,13 +156,18 @@ class GitTests(unittest.TestCase):
         self.commit(UREQ_MESSAGE, "dependabot[bot]", "lock 2")
         self.commit(GROUP_MESSAGE, "Someone", "lock 3")
         self.commit(UREQ_MESSAGE.replace("ureq", "toml"), "dependabot[bot]", "actions", path="workflow.yml")
-        self.assertEqual(updates.latest_tag(self.path), "v1.0.0")
-        messages = updates.dependabot_messages("v1.0.0", self.path)
+        self.assertEqual(updates.latest_tag("v*", self.path), "v1.0.0")
+        messages = updates.dependabot_messages("v1.0.0", "app/Cargo.lock", self.path)
         self.assertEqual(list(updates.collect_updates(messages)), ["ureq"])
+
+    def test_matches_tag_pattern(self):
+        self.commit("Firmware", "Someone", "lock 2", tag="firmware-v2.0.0")
+        self.assertEqual(updates.latest_tag("v*", self.path), "v1.0.0")
+        self.assertEqual(updates.latest_tag("firmware-v*", self.path), "firmware-v2.0.0")
 
     def test_returns_no_tag_without_release(self):
         self.run_git("tag", "--delete", "v1.0.0")
-        self.assertIsNone(updates.latest_tag(self.path))
+        self.assertIsNone(updates.latest_tag("v*", self.path))
 
 
 if __name__ == "__main__":

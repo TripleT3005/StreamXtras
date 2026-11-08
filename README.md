@@ -154,7 +154,7 @@ The icons in [`assets/icons`](assets/icons) (ICO and PNG in all common sizes) ar
 
 Releases: a new version in `companion/Cargo.toml`, `package.json` and `package-lock.json` (CI checks that all of them and the newest changelog section match) together with a section for it in [CHANGELOG.md](CHANGELOG.md) creates a release when merged into `main`; the changelog section becomes the release notes. Versions `0.x` and versions with a suffix such as `1.1.0-beta.1` are published as pre-releases. The release workflow needs the repository secret `TWITCH_CLIENT_ID`; `VT_API_KEY` (VirusTotal) and `DISCORD_WEBHOOK` (release announcement on Discord) are optional.
 
-Dependabot updates of components built into the companion app are not entered in the changelog one by one, but collected in the section of the next version, in English and German, e.g. `Updated third-party components: ureq 3.5.1.` [`tools/dependency_updates.py`](tools/dependency_updates.py) lists them since the last release and suggests the entry: `python tools/dependency_updates.py`. The release workflow fails if one of them is missing from the section of the new version.
+Dependabot updates of components built into the companion app are not entered in the changelog one by one, but collected in the section of the next version, in English and German, e.g. `Updated third-party components: ureq 3.5.1.` [`tools/dependency_updates.py`](tools/dependency_updates.py) lists them since the last release and suggests the entry: `python tools/dependency_updates.py --manifest-path companion/Cargo.toml`. The release workflow fails if one of them is missing from the section of the new version.
 
 <!-- /web:skip -->
 
@@ -313,7 +313,7 @@ Die Icons in [`assets/icons`](assets/icons) (ICO und PNG in allen gängigen Grö
 
 Releases: Eine neue Version in `companion/Cargo.toml`, `package.json` und `package-lock.json` (die CI prüft, dass alle und der neueste Changelog-Abschnitt übereinstimmen) zusammen mit einem Abschnitt dafür in der [CHANGELOG.md](CHANGELOG.md) erzeugt beim Merge in `main` ein Release; der Changelog-Abschnitt wird zu den Release-Notizen. Versionen `0.x` und Versionen mit Zusatz wie `1.1.0-beta.1` erscheinen als Vorabversion. Der Release-Workflow braucht das Repository-Secret `TWITCH_CLIENT_ID`; `VT_API_KEY` (VirusTotal) und `DISCORD_WEBHOOK` (Release-Ankündigung auf Discord) sind optional.
 
-Dependabot-Updates von Komponenten, die in der Companion-App stecken, kommen nicht einzeln in den Changelog, sondern gesammelt in den Abschnitt der nächsten Version, auf Englisch und Deutsch, z. B. `Fremdkomponenten aktualisiert: ureq 3.5.1.` [`tools/dependency_updates.py`](tools/dependency_updates.py) listet sie seit dem letzten Release auf und schlägt den Eintrag vor: `python tools/dependency_updates.py`. Der Release-Workflow schlägt fehl, wenn eines davon im Abschnitt der neuen Version fehlt.
+Dependabot-Updates von Komponenten, die in der Companion-App stecken, kommen nicht einzeln in den Changelog, sondern gesammelt in den Abschnitt der nächsten Version, auf Englisch und Deutsch, z. B. `Fremdkomponenten aktualisiert: ureq 3.5.1.` [`tools/dependency_updates.py`](tools/dependency_updates.py) listet sie seit dem letzten Release auf und schlägt den Eintrag vor: `python tools/dependency_updates.py --manifest-path companion/Cargo.toml`. Der Release-Workflow schlägt fehl, wenn eines davon im Abschnitt der neuen Version fehlt.
 
 <!-- /web:skip -->
 

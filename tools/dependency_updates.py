@@ -10,7 +10,6 @@ from third_party_licenses import cargo_metadata, runtime_packages
 
 # Constants
 DEPENDABOT_AUTHOR = r"dependabot\[bot\]"
-LOCKFILE = "companion/Cargo.lock"
 DEVELOPMENT_TYPE = "direct:development"
 LANGUAGES = {"English": "### English", "Deutsch": "### Deutsch"}
 ENTRY_TEMPLATES = {
@@ -33,17 +32,17 @@ def git(*arguments, cwd=None):
     return result.stdout
 
 
-def latest_tag(cwd=None):
+def latest_tag(pattern="v*", cwd=None):
     try:
-        return git("describe", "--tags", "--abbrev=0", "--match", "v*", "HEAD", cwd=cwd).strip() or None
+        return git("describe", "--tags", "--abbrev=0", "--match", pattern, "HEAD", cwd=cwd).strip() or None
     except subprocess.CalledProcessError:
         return None
 
 
-def dependabot_messages(since, cwd=None):
+def dependabot_messages(since, lockfile, cwd=None):
     revision_range = f"{since}..HEAD" if since else "HEAD"
     output = git(
-        "log", "--reverse", f"--author={DEPENDABOT_AUTHOR}", "--format=%B%x1e", revision_range, "--", LOCKFILE, cwd=cwd
+        "log", "--reverse", f"--author={DEPENDABOT_AUTHOR}", "--format=%B%x1e", revision_range, "--", lockfile, cwd=cwd
     )
     return [message.strip() for message in output.split("\x1e") if message.strip()]
 
@@ -161,16 +160,20 @@ def main(arguments=None):
         description="List the Dependabot updates of shipped Rust crates since the last release and check the changelog."
     )
     parser.add_argument("--repository", type=Path, default=Path("."))
-    parser.add_argument("--since", help="Git revision to start from (default: newest v* tag)")
+    parser.add_argument("--manifest-path", type=Path, default=Path("Cargo.toml"), help="Cargo.toml relative to the repository")
+    parser.add_argument("--tag-pattern", default="v*", help="Release tags to start from (default: v*)")
+    parser.add_argument("--since", help="Git revision to start from (default: newest release tag)")
     parser.add_argument("--platform", action="append", default=[])
     parser.add_argument("--check", metavar="VERSION", help="Fail if the changelog section of VERSION misses an update")
     parser.add_argument("--changelog", type=Path, default=Path("CHANGELOG.md"))
     options = parser.parse_args(arguments)
 
     repository = options.repository.resolve()
-    since = options.since or latest_tag(repository)
-    updates = collect_updates(dependabot_messages(since, repository))
-    packages = runtime_packages(cargo_metadata(repository / "companion" / "Cargo.toml", options.platform)) if updates else []
+    manifest = repository / options.manifest_path
+    lockfile = options.manifest_path.parent.joinpath("Cargo.lock").as_posix()
+    since = options.since or latest_tag(options.tag_pattern, repository)
+    updates = collect_updates(dependabot_messages(since, lockfile, repository))
+    packages = runtime_packages(cargo_metadata(manifest, options.platform)) if updates else []
     shipped = shipped_updates(updates, packages)
     start = since or "the first commit"
 
@@ -186,7 +189,7 @@ def main(arguments=None):
     changelog = options.changelog if options.changelog.is_absolute() else repository / options.changelog
     section = changelog_section(changelog.read_text(encoding="utf-8"), options.check)
     if section is None:
-        print(f"CHANGELOG.md has no section for {options.check}", file=sys.stderr)
+        print(f"{options.changelog} has no section for {options.check}", file=sys.stderr)
         return 1
     missing = missing_entries(section, shipped)
     if missing:
