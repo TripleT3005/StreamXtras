@@ -74,7 +74,8 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           rustup toolchain install stable --profile minimal && rustup default stable
-          if ! python3 tools/dependency_updates.py --check "$VERSION"             --platform x86_64-pc-windows-msvc --platform x86_64-unknown-linux-gnu --platform aarch64-apple-darwin; then
+          if ! python3 tools/dependency_updates.py --manifest-path companion/Cargo.toml --check "$VERSION" \
+            --platform x86_64-pc-windows-msvc --platform x86_64-unknown-linux-gnu --platform aarch64-apple-darwin; then
             echo "::error::CHANGELOG.md does not mention every Dependabot update since the last release; add them to the section for $VERSION"
             exit 1
           fi
