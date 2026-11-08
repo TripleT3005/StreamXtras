@@ -9,6 +9,7 @@ on:
       - CHANGELOG.md
       - assets/icons/**
       - installer/**
+      - tools/dependency_updates.py
       - tools/third_party_licenses.py
   workflow_dispatch:
 
@@ -28,6 +29,8 @@ jobs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Read version
         id: version
@@ -64,6 +67,17 @@ jobs:
             exit 1
           fi
           echo "exists=$exists" >> "$GITHUB_OUTPUT"
+
+      - name: Check dependency updates in changelog
+        if: steps.check.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          rustup toolchain install stable --profile minimal && rustup default stable
+          if ! python3 tools/dependency_updates.py --check "$VERSION"             --platform x86_64-pc-windows-msvc --platform x86_64-unknown-linux-gnu --platform aarch64-apple-darwin; then
+            echo "::error::CHANGELOG.md does not mention every Dependabot update since the last release; add them to the section for $VERSION"
+            exit 1
+          fi
 
   build:
     needs: version
