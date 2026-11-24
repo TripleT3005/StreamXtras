@@ -38,7 +38,10 @@ fn main() {
     let is_msvc = env::var("CARGO_CFG_TARGET_ENV").is_ok_and(|target_env| target_env == "msvc");
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is set by Cargo"));
     if target_os == "macos"
-        && let Some(profile_dir) = out_dir.ancestors().nth(3)
+        && let Some(profile_dir) = out_dir
+            .ancestors()
+            .find(|directory| directory.file_name().is_some_and(|name| name == "build"))
+            .and_then(|build_dir| build_dir.parent())
     {
         fs::write(profile_dir.join("StreamXtras.icns"), icns_file())
             .expect("writing the icon file failed");
