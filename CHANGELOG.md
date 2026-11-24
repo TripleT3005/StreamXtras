@@ -6,6 +6,8 @@ Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [
 
 ## [Unreleased]
 
+## [1.4.2] – 2026-11-24
+
 ### English
 
 #### Added
