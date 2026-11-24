@@ -12,7 +12,7 @@ Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [
 - Release packages, the setup and the Linux packages include the licenses of all third-party components in `THIRD-PARTY-LICENSES.txt`.
 
 #### Changed
-- Updated third-party components: ureq 3.5.1.
+- Updated third-party components: ureq 3.5.2.
 
 ### Deutsch
 
@@ -20,7 +20,7 @@ Alle wichtigen Änderungen an StreamXtras, gegliedert nach Version im Stil von [
 - Release-Pakete, Setup und Linux-Pakete enthalten die Lizenzen aller Fremdkomponenten in `THIRD-PARTY-LICENSES.txt`.
 
 #### Geändert
-- Fremdkomponenten aktualisiert: ureq 3.5.1.
+- Fremdkomponenten aktualisiert: ureq 3.5.2.
 
 ## [1.4.1] – 2026-11-01
 
